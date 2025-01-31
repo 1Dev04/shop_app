@@ -19,23 +19,15 @@ class _addFormState extends State<addForm> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color.fromRGBO(99, 136, 137, 1),
-        title: Center(
-          child: Text(
-            'Example',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-          ),
-        ),
+        title: Text("New Post"),
+        centerTitle: true,
       ),
+      backgroundColor: Color.fromRGBO(255, 255, 255, 0.937),
       body: SingleChildScrollView(
         child: Center(
           child: Form(
             child: Column(
               children: [
-                Text(
-                  'New Post',
-                  style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-                ),
                 SizedBox(height: 20),
                 TextFormField(
                   controller: titleController,

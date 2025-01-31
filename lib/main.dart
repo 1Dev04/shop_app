@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import './addForm.dart';
+import './login.dart';
+
 //import 'package:flutter_application_1/landPage.dart';
 
 void main() {
@@ -104,8 +106,32 @@ class _MyAppState extends State<MyApp> {
               GestureDetector(
                 onTap: () {
                   setState(() {
-                    screenIndex = 3;
-                    activeButton = 3;
+                    screenPushIndex = 1;
+                  });
+
+                  Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                          pageBuilder:
+                              (context, animation, secondaryAnimation) =>
+                                  Login(),
+                          transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
+                            const begin =
+                                Offset(0.0, 1.0); //Slide from right to left
+                            const end = Offset(0.0, 0.0);
+                            const curve = Curves.easeInOut;
+                            var tween = Tween(begin: begin, end: end)
+                                .chain(CurveTween(curve: curve));
+                            return SlideTransition(
+                              position: animation.drive(tween),
+                              child: child,
+                            );
+                          })).then((_) {
+                    setState(() {
+                      screenIndex = 2;
+                      activeButton = 2;
+                    });
                   });
                 },
                 child: Icon(
@@ -119,7 +145,7 @@ class _MyAppState extends State<MyApp> {
               FloatingActionButton(
                 onPressed: () {
                   setState(() {
-                    screenPushIndex = 1;
+                    screenPushIndex = 2;
                   });
 
                   Navigator.push(context,
@@ -220,14 +246,13 @@ class _SearchPageState extends State<SearchPage> {
                             decorationColor:
                                 Color.fromARGB(255, 0, 0, 0), // สีของเส้นใต้
                             height: 3,
-                            
                           ),
                         )
                       : Text("WOMEN",
                           style: TextStyle(
-                              color: Color.fromARGB(255, 40, 40, 40),
-                              height: 3,)
-                          ),               
+                            color: Color.fromARGB(255, 40, 40, 40),
+                            height: 3,
+                          )),
                 ),
                 GestureDetector(
                   onTap: () {
@@ -236,7 +261,7 @@ class _SearchPageState extends State<SearchPage> {
                       actionPageSearch = 1;
                     });
                   },
-                 child: actionPageSearch == 1
+                  child: actionPageSearch == 1
                       ? Text(
                           "MEN",
                           style: TextStyle(
@@ -247,14 +272,13 @@ class _SearchPageState extends State<SearchPage> {
                             decorationColor:
                                 Color.fromARGB(255, 0, 0, 0), // สีของเส้นใต้
                             height: 3,
-                            
                           ),
                         )
                       : Text("MEN",
                           style: TextStyle(
-                              color: Color.fromARGB(255, 40, 40, 40),
-                              height: 3,)
-                          ),      
+                            color: Color.fromARGB(255, 40, 40, 40),
+                            height: 3,
+                          )),
                 ),
                 GestureDetector(
                   onTap: () {
@@ -263,7 +287,7 @@ class _SearchPageState extends State<SearchPage> {
                       actionPageSearch = 2;
                     });
                   },
-                 child: actionPageSearch == 2
+                  child: actionPageSearch == 2
                       ? Text(
                           "KIDS",
                           style: TextStyle(
@@ -274,14 +298,13 @@ class _SearchPageState extends State<SearchPage> {
                             decorationColor:
                                 Color.fromARGB(255, 0, 0, 0), // สีของเส้นใต้
                             height: 3,
-                            
                           ),
                         )
                       : Text("KIDS",
                           style: TextStyle(
-                              color: Color.fromARGB(255, 40, 40, 40),
-                              height: 3,)
-                          ),      
+                            color: Color.fromARGB(255, 40, 40, 40),
+                            height: 3,
+                          )),
                 ),
                 GestureDetector(
                   onTap: () {
@@ -301,14 +324,13 @@ class _SearchPageState extends State<SearchPage> {
                             decorationColor:
                                 Color.fromARGB(255, 0, 0, 0), // สีของเส้นใต้
                             height: 3,
-                            
                           ),
                         )
                       : Text("BABY",
                           style: TextStyle(
-                              color: Color.fromARGB(255, 40, 40, 40),
-                              height: 3,)
-                          ),      
+                            color: Color.fromARGB(255, 40, 40, 40),
+                            height: 3,
+                          )),
                 ),
               ],
             ),
