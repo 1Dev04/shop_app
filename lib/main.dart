@@ -31,6 +31,24 @@ class _MyAppState extends State<MyApp> {
     ProfilePage()
   ];
 
+  String setTitle() {
+    if (screenIndex == 0) {
+      return "Search";
+    } else if (screenIndex == 1) {
+      return "Favorites";
+    } else if (screenIndex == 2) {
+      return "ABC_shop";
+    } else if (screenIndex == 3) {
+      return "Shops";
+    } else if (screenIndex == 4) {
+      return "Notification";
+    } else if (screenIndex == 5) {
+      return "Profile";
+    }
+
+    return setTitle();
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -38,7 +56,10 @@ class _MyAppState extends State<MyApp> {
       home: Scaffold(
         //------------------- AppBar -------------------
         appBar: AppBar(
-          title: Text('ABC_Shop', style: TextStyle(color: Colors.white)),
+          title: Text(
+            setTitle(),
+            style: TextStyle(color: Colors.white),
+          ),
           backgroundColor: Color.fromRGBO(0, 0, 0, 0.938),
           actions: [
             GestureDetector(
@@ -237,7 +258,7 @@ class _SearchPageState extends State<SearchPage> {
                   },
                   child: actionPageSearch == 0
                       ? Text(
-                          "WOMEN",
+                          "FEMALE",
                           style: TextStyle(
                             color: Color.fromARGB(255, 0, 0, 0),
                             fontWeight: FontWeight.bold,
@@ -248,7 +269,7 @@ class _SearchPageState extends State<SearchPage> {
                             height: 3,
                           ),
                         )
-                      : Text("WOMEN",
+                      : Text("FEMALE",
                           style: TextStyle(
                             color: Color.fromARGB(255, 40, 40, 40),
                             height: 3,
@@ -263,7 +284,7 @@ class _SearchPageState extends State<SearchPage> {
                   },
                   child: actionPageSearch == 1
                       ? Text(
-                          "MEN",
+                          "MALE",
                           style: TextStyle(
                             color: Color.fromARGB(255, 0, 0, 0),
                             fontWeight: FontWeight.bold,
@@ -274,7 +295,7 @@ class _SearchPageState extends State<SearchPage> {
                             height: 3,
                           ),
                         )
-                      : Text("MEN",
+                      : Text("MALE",
                           style: TextStyle(
                             color: Color.fromARGB(255, 40, 40, 40),
                             height: 3,
@@ -289,7 +310,7 @@ class _SearchPageState extends State<SearchPage> {
                   },
                   child: actionPageSearch == 2
                       ? Text(
-                          "KIDS",
+                          "KITTEN",
                           style: TextStyle(
                             color: Color.fromARGB(255, 0, 0, 0),
                             fontWeight: FontWeight.bold,
@@ -300,33 +321,7 @@ class _SearchPageState extends State<SearchPage> {
                             height: 3,
                           ),
                         )
-                      : Text("KIDS",
-                          style: TextStyle(
-                            color: Color.fromARGB(255, 40, 40, 40),
-                            height: 3,
-                          )),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    _goToPageSearch(3);
-                    setState(() {
-                      actionPageSearch = 3;
-                    });
-                  },
-                  child: actionPageSearch == 3
-                      ? Text(
-                          "BABY",
-                          style: TextStyle(
-                            color: Color.fromARGB(255, 0, 0, 0),
-                            fontWeight: FontWeight.bold,
-                            decoration: TextDecoration.underline,
-                            decorationThickness: 1, // ความหนาของเส้นใต้
-                            decorationColor:
-                                Color.fromARGB(255, 0, 0, 0), // สีของเส้นใต้
-                            height: 3,
-                          ),
-                        )
-                      : Text("BABY",
+                      : Text("KITTEN",
                           style: TextStyle(
                             color: Color.fromARGB(255, 40, 40, 40),
                             height: 3,
@@ -344,12 +339,7 @@ class _SearchPageState extends State<SearchPage> {
                 actionPageSearch = indexS;
               });
             },
-            children: [
-              Center(child: Text("WOMEN PAGE", style: TextStyle(fontSize: 24))),
-              Center(child: Text("MEN PAGE", style: TextStyle(fontSize: 24))),
-              Center(child: Text("KIDS PAGE", style: TextStyle(fontSize: 24))),
-              Center(child: Text("BABY PAGE", style: TextStyle(fontSize: 24))),
-            ],
+            children: [],
           )) // ส่วนขยาย ภายใน
         ],
       ),
@@ -386,7 +376,48 @@ class FavoritePage extends StatefulWidget {
 class _FavoritePageState extends State<FavoritePage> {
   @override
   Widget build(BuildContext context) {
-    return Text("Favorite");
+    return SafeArea(
+        child: Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        Center(
+          child: Container(
+            width: 400,
+            height: 50,
+            decoration: BoxDecoration(color: Color.fromARGB(15, 0, 0, 0)),
+            padding: EdgeInsets.all(10),
+            child: Row(mainAxisAlignment: MainAxisAlignment.start, children: [
+              Text(
+                "0 list",
+                style: TextStyle(fontSize: 15),
+              )
+            ]),
+          ),
+        ),
+        Container(
+          color: const Color.fromARGB(0, 0, 0, 0),
+          width: 400,
+          height: 410,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(Icons.pets_rounded, size: 80),
+              SizedBox(height: 20),
+              Text(
+                "0 items in your favorites",
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 5),
+              Text(
+                "Add products to your favorites list to check prices and stock availability.",
+                style: TextStyle(fontSize: 10, color: Colors.black54),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ));
   }
 }
 
@@ -577,9 +608,300 @@ class NotificationPage extends StatefulWidget {
 }
 
 class _NotificationPageState extends State<NotificationPage> {
+  final PageController _pageControlNotificate1 = PageController(initialPage: 0);
+  final PageController _pageControlPageMess = PageController(initialPage: 0);
+
+  int actionPageNotificate1 = 0;
+  int actionPageTwo = 0;
+
+  void _goToPageNotificate1(int pageIndexNotificate1) {
+    _pageControlNotificate1.animateToPage(
+      pageIndexNotificate1,
+      duration: Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  void _goToPageNotificate2(int pageIndexNotificate2) {
+    _pageControlPageMess.animateToPage(
+      pageIndexNotificate2,
+      duration: Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  final List<Map<String, String>> imagesNoti = [
+    {"imagesNoti": "assets/imagesNoti/imgN1.png"},
+    {"imagesNoti": "assets/imagesNoti/imgN2.png"},
+    {"imagesNoti": "assets/imagesNoti/imgN3.png"},
+    {"imagesNoti": "assets/imagesNoti/imgN4.png"},
+    {"imagesNoti": "assets/imagesNoti/imgN5.png"}
+  ];
+
+  final List<Map<String, String>> messageSet = [
+    {"messageImg": "assets/messageImg/imgN5.png"},
+    {"messageImg": "assets/messageImg/imgN6.png"},
+    {"messageImg": "assets/messageImg/imgN7.png"},
+  ];
+
+  final List<Map<String, String>> newsSet = [
+    {"newsImg": "assets/imagesNoti/imgN1.png"},
+    {"newsImg": "assets/imagesNoti/imgN2.png"},
+    {"newsImg": "assets/imagesNoti/imgN3.png"},
+    {"newsImg": "assets/imagesNoti/imgN4.png"},
+    {"newsImg": "assets/imagesNoti/imgN5.png"}
+  ];
+
   @override
   Widget build(BuildContext context) {
-    return Text("Notification");
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          SizedBox(
+            height: 120, // กำหนดความสูงของ PageView
+            child: PageView.builder(
+              controller: _pageControlNotificate1,
+              itemCount: imagesNoti.length,
+              physics: BouncingScrollPhysics(), // ปิดการเลื่อนของ PageView
+              onPageChanged: (index) {
+                setState(() {
+                  actionPageNotificate1 = index;
+                });
+              },
+              itemBuilder: (context, index) {
+                final item1 = imagesNoti[index % imagesNoti.length];
+                return Stack(
+                  children: [
+                    Image.asset(
+                      item1['imagesNoti']!,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: 120,
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+          SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              GestureDetector(
+                  onTap: () {
+                    _goToPageNotificate1(0);
+                    setState(() {
+                      actionPageNotificate1 = 0;
+                    });
+                  },
+                  child: actionPageNotificate1 == 0
+                      ? Icon(Icons.circle, size: 15)
+                      : Icon(Icons.circle_outlined, size: 15)),
+              SizedBox(width: 4),
+              GestureDetector(
+                  onTap: () {
+                    _goToPageNotificate1(1);
+                    setState(() {
+                      actionPageNotificate1 = 1;
+                    });
+                  },
+                  child: actionPageNotificate1 == 1
+                      ? Icon(Icons.circle, size: 15)
+                      : Icon(Icons.circle_outlined, size: 15)),
+              SizedBox(width: 4),
+              GestureDetector(
+                  onTap: () {
+                    _goToPageNotificate1(2);
+                    setState(() {
+                      actionPageNotificate1 = 2;
+                    });
+                  },
+                  child: actionPageNotificate1 == 2
+                      ? Icon(Icons.circle, size: 15)
+                      : Icon(Icons.circle_outlined, size: 15)),
+              SizedBox(width: 4),
+              GestureDetector(
+                  onTap: () {
+                    _goToPageNotificate1(3);
+                    setState(() {
+                      actionPageNotificate1 = 3;
+                    });
+                  },
+                  child: actionPageNotificate1 == 3
+                      ? Icon(Icons.circle, size: 15)
+                      : Icon(Icons.circle_outlined, size: 15)),
+              SizedBox(width: 4),
+              GestureDetector(
+                  onTap: () {
+                    _goToPageNotificate1(4);
+                    setState(() {
+                      actionPageNotificate1 = 4;
+                    });
+                  },
+                  child: actionPageNotificate1 == 4
+                      ? Icon(Icons.circle, size: 15)
+                      : Icon(Icons.circle_outlined, size: 15))
+            ],
+          ),
+          SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              GestureDetector(
+                onTap: () {
+                  _goToPageNotificate2(0);
+                  setState(() {
+                    actionPageTwo = 0;
+                  });
+                },
+                child: Container(
+                  width: 100,
+                  height: 40,
+                  decoration: BoxDecoration(
+                      border: Border(
+                          bottom: actionPageTwo == 0
+                              ? BorderSide(color: Colors.black, width: 2.0)
+                              : BorderSide(
+                                  color: Color.fromARGB(0, 0, 0, 0),
+                                  width: 2.0))),
+                  child: Center(
+                    child: Text(
+                      "Message",
+                      style: TextStyle(
+                          color: actionPageTwo == 0
+                              ? Colors.black
+                              : Colors.black38),
+                    ),
+                  ),
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  _goToPageNotificate2(1);
+                  setState(() {
+                    actionPageTwo = 1;
+                  });
+                },
+                child: Container(
+                  width: 100,
+                  height: 40,
+                  decoration: BoxDecoration(
+                      border: Border(
+                          bottom: actionPageTwo == 1
+                              ? BorderSide(color: Colors.black, width: 2.0)
+                              : BorderSide(
+                                  color: Color.fromARGB(0, 0, 0, 0),
+                                  width: 2.0))),
+                  child: Center(
+                    child: Text(
+                      "News",
+                      style: TextStyle(
+                          color: actionPageTwo == 1
+                              ? Colors.black
+                              : Colors.black38),
+                    ),
+                  ),
+                ),
+              )
+            ],
+          ),
+          Divider(color: Colors.black12, height: 2),
+          SizedBox(
+            height: 300,
+            child: PageView(
+              controller: _pageControlPageMess,
+              scrollDirection: Axis.horizontal,
+              onPageChanged: (indexS) {
+                setState(() {
+                  actionPageTwo = indexS;
+                });
+              },
+              children: [
+                Container(
+                  decoration: BoxDecoration(color: Color.fromARGB(0, 0, 0, 0)),
+                  child: Column(
+                    children: [
+                      Container(
+                          padding: EdgeInsets.all(15),
+                          decoration:
+                              BoxDecoration(color: Color.fromARGB(5, 0, 0, 0)),
+                          child: Row(
+                            children: [
+                              Image.asset(
+                                'assets/messageImg/imgN5.png',
+                                fit: BoxFit.cover,
+                                width: 100,
+                                height: 120,
+                              ),
+                              SizedBox(
+                                height: 20,
+                              ),
+                              Container(
+                                padding: EdgeInsets.symmetric(horizontal: 10),
+                                width: 230,
+                                height: 120,
+                                decoration: BoxDecoration(
+                                    color: Color.fromARGB(0, 0, 0, 0)),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "เสื้อแมวสุดคิ้วท์ ลดพิเศษ!",
+                                      style: TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    Text(
+                                      "ใส่สบาย น่ารัก ต้องมีติดตู้!",
+                                      style: TextStyle(
+                                          color: Colors.black87,
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.normal),
+                                    ),
+                                    Text("5/02/2025",
+                                        style: TextStyle(
+                                            color: Colors.black54,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.normal)),
+                                  ],
+                                ),
+                              )
+                            ],
+                          )),
+                      Divider(color: Colors.black12, height: 1),
+                    ],
+                  ),
+                ),
+                Container(
+                  decoration: BoxDecoration(color: Color.fromARGB(0, 0, 0, 0)),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(15),
+                            child: Image.asset(
+                              'assets/messageImg/imgN7.png',
+                              fit: BoxFit.cover,
+                              width: 100,
+                              height: 120,
+                            ),
+                          )
+                        ],
+                      ),
+                    ],
+                  ),
+                )
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -594,7 +916,300 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Stack(
-      children: [Text("Profile Page")],
+      children: [
+        SingleChildScrollView(
+          child: Column(
+            children: [
+              SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(5),
+                    child: Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                          color: Color.fromARGB(15, 0, 0, 0),
+                          borderRadius: BorderRadius.circular(5)),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [Icon(Icons.badge_outlined), Text('Profile')],
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: EdgeInsets.all(5),
+                    child: Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                          color: Color.fromARGB(15, 0, 0, 0),
+                          borderRadius: BorderRadius.circular(5)),
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(Icons.archive_outlined),
+                            Text('My Orders')
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: EdgeInsets.all(5),
+                    child: Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                          color: Color.fromARGB(15, 0, 0, 0),
+                          borderRadius: BorderRadius.circular(5)),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Icon(Icons.shopping_bag_outlined),
+                          Text('Order List')
+                        ],
+                      ),
+                    ),
+                  )
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(10),
+                    child: Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                          color: Color.fromARGB(15, 0, 0, 0),
+                          borderRadius: BorderRadius.circular(5)),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Icon(Icons.confirmation_num_outlined),
+                          Text('Coupon')
+                        ],
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: EdgeInsets.all(10),
+                    child: Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                          color: Color.fromARGB(15, 0, 0, 0),
+                          borderRadius: BorderRadius.circular(5)),
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(Icons.list_alt_outlined),
+                            Text('Survey Branch')
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: EdgeInsets.all(10),
+                    child: Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                          color: Color.fromARGB(15, 0, 0, 0),
+                          borderRadius: BorderRadius.circular(5)),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Icon(Icons.settings_outlined),
+                          Text('Setting')
+                        ],
+                      ),
+                    ),
+                  )
+                ],
+              ),
+              SizedBox(height: 10),
+              Column(
+                children: [
+                  Container(
+                    width: 400,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: Color.fromARGB(15, 0, 0, 0),
+                      border: Border(
+                        bottom: BorderSide(color: Colors.black12, width: 1),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 10),
+                          child: Text('Find branch locations'),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                              horizontal:
+                                  10), //padding = ระยะขอบ //horizontal = ซ้ายและขวา
+                          child: Transform(
+                            alignment: Alignment.center,
+                            transform: Matrix4.rotationY(-180), // rotate
+                            child: Icon(Icons.arrow_back_ios_new_outlined,
+                                size: 20),
+                          ),
+                        )
+                      ],
+                    ),
+                  ),
+                  Divider(color: Colors.black12, height: 1),
+                  Container(
+                    width: 400,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: Color.fromARGB(15, 0, 0, 0),
+                      border: Border(
+                        bottom: BorderSide(color: Colors.black12, width: 1),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 10),
+                          child: Text('Learn how to use it'),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                              horizontal:
+                                  10), //padding = ระยะขอบ //horizontal = ซ้ายและขวา
+                          child: Transform(
+                            alignment: Alignment.center,
+                            transform: Matrix4.rotationY(-180), // rotate
+                            child: Icon(Icons.arrow_back_ios_new_outlined,
+                                size: 20),
+                          ),
+                        )
+                      ],
+                    ),
+                  ),
+                  Divider(color: Colors.black12, height: 1),
+                  Container(
+                    width: 400,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: Color.fromARGB(15, 0, 0, 0),
+                      border: Border(
+                        bottom: BorderSide(color: Colors.black12, width: 1),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 10),
+                          child: Text('Frequently asked questions'),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                              horizontal:
+                                  10), //padding = ระยะขอบ //horizontal = ซ้ายและขวา
+                          child: Transform(
+                            alignment: Alignment.center,
+                            transform: Matrix4.rotationY(-180), // rotate
+                            child: Icon(Icons.arrow_back_ios_new_outlined,
+                                size: 20),
+                          ),
+                        )
+                      ],
+                    ),
+                  ),
+                  Divider(color: Colors.black12, height: 1),
+                  Container(
+                    width: 400,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: Color.fromARGB(15, 0, 0, 0),
+                      border: Border(
+                        bottom: BorderSide(color: Colors.black12, width: 1),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 10),
+                          child: Text('Terms of Use'),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                              horizontal:
+                                  10), //padding = ระยะขอบ //horizontal = ซ้ายและขวา
+                          child: Transform(
+                            alignment: Alignment.center,
+                            transform: Matrix4.rotationY(-180), // rotate
+                            child: Icon(Icons.arrow_back_ios_new_outlined,
+                                size: 20),
+                          ),
+                        )
+                      ],
+                    ),
+                  ),
+                  Divider(color: Colors.black12, height: 1),
+                  Container(
+                    width: 400,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: Color.fromARGB(15, 0, 0, 0),
+                      border: Border(
+                        bottom: BorderSide(color: Colors.black12, width: 1),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 10),
+                          child: Text('Privacy Policy'),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                              horizontal:
+                                  10), //padding = ระยะขอบ //horizontal = ซ้ายและขวา
+                          child: Transform(
+                            alignment: Alignment.center,
+                            transform: Matrix4.rotationY(-180), // rotate
+                            child: Icon(
+                              Icons.arrow_back_ios_new_outlined,
+                              size: 20,
+                            ),
+                          ),
+                        )
+                      ],
+                    ),
+                  ),
+                  Divider(color: Colors.black12, height: 1),
+                ],
+              ),
+              SizedBox(height: 10),
+              Center(
+                  child: Text("Version: 1.0 | By 1DEV",
+                      style: TextStyle(color: Colors.black54)))
+            ],
+          ),
+        )
+      ],
     );
   }
 }
