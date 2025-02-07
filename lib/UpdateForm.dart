@@ -1,33 +1,40 @@
+import './database.dart';
+import './model.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/database.dart';
-import 'package:flutter_application_1/model.dart';
 
-class addForm extends StatefulWidget {
-  const addForm({super.key});
-
+class UpdateForm extends StatefulWidget {
   @override
-  State<addForm> createState() => _addFormState();
+  State<UpdateForm> createState() => _UpdateFormState();
 }
 
-class _addFormState extends State<addForm> {
+class _UpdateFormState extends State<UpdateForm> {
   DatabaseApp db = DatabaseApp();
-
-  final titleController = TextEditingController();
-  final descriptionController = TextEditingController();
-
   @override
   Widget build(BuildContext context) {
+    final data = ModalRoute.of(context)!.settings.arguments as PostModels;
+
+    final titleController = TextEditingController(text: data.title);
+    final descriptionController = TextEditingController(text: data.description);
+
     return Scaffold(
       appBar: AppBar(
-        title: Text("New Post"),
-        centerTitle: true,
+        backgroundColor: Color.fromRGBO(99, 136, 137, 1),
+        title: Center(
+          child: Text(
+            'Example',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+        ),
       ),
-      backgroundColor: Color.fromRGBO(255, 255, 255, 0.937),
       body: SingleChildScrollView(
         child: Center(
           child: Form(
             child: Column(
               children: [
+                Text(
+                  'Edit Post',
+                  style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+                ),
                 SizedBox(height: 20),
                 TextFormField(
                   controller: titleController,
@@ -49,13 +56,15 @@ class _addFormState extends State<addForm> {
                 SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: () {
-                    Map data = {
+                    Map input = {
+                      'id': data.id,
                       'title': titleController.text,
-                      'description': descriptionController.text,
+                      'description': descriptionController.text
                     };
-                    insertDB(data);
+                    update(input);
+                    Navigator.pop(context);
                   },
-                  child: Text('Post'),
+                  child: Text('Edit'),
                 ),
               ],
             ),
@@ -65,10 +74,11 @@ class _addFormState extends State<addForm> {
     );
   }
 
-  void insertDB(Map input) async {
-    PostModels data = PostModels(
+  void update(Map input) async {
+    PostModels arg = PostModels(
+        id: input['id'],
         title: input['title'],
         description: input['description']);
-    await db.insertDB(data);
+    await db.updateData(arg);
   }
 }

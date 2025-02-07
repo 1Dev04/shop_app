@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/viewAccount.dart';
+
 import 'dart:async';
 import './addForm.dart';
 import './login.dart';
@@ -28,7 +30,7 @@ class _MyAppState extends State<MyApp> {
     HomePage(),
     ShopPage(),
     NotificationPage(),
-    ProfilePage()
+    ProfilePage(),
   ];
 
   String setTitle() {
@@ -90,6 +92,14 @@ class _MyAppState extends State<MyApp> {
                 color: activeButton == 1 ? Colors.white : Colors.white60,
               ),
             ),
+            IconButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => ViewAccount() )
+                  );
+                },
+                icon: Icon(Icons.abc)),
             SizedBox(width: 15)
           ],
         ),
@@ -609,10 +619,15 @@ class NotificationPage extends StatefulWidget {
 
 class _NotificationPageState extends State<NotificationPage> {
   final PageController _pageControlNotificate1 = PageController(initialPage: 0);
+  final PageController _pageControlNotificate2 = PageController(initialPage: 0);
+
   final PageController _pageControlPageMess = PageController(initialPage: 0);
+  final PageController _pageControlPageNew = PageController(initialPage: 0);
 
   int actionPageNotificate1 = 0;
   int actionPageTwo = 0;
+  int actionMessage = 0;
+  int actionNews = 0;
 
   void _goToPageNotificate1(int pageIndexNotificate1) {
     _pageControlNotificate1.animateToPage(
@@ -623,7 +638,7 @@ class _NotificationPageState extends State<NotificationPage> {
   }
 
   void _goToPageNotificate2(int pageIndexNotificate2) {
-    _pageControlPageMess.animateToPage(
+    _pageControlNotificate2.animateToPage(
       pageIndexNotificate2,
       duration: Duration(milliseconds: 300),
       curve: Curves.easeInOut,
@@ -639,17 +654,33 @@ class _NotificationPageState extends State<NotificationPage> {
   ];
 
   final List<Map<String, String>> messageSet = [
-    {"messageImg": "assets/messageImg/imgN5.png"},
-    {"messageImg": "assets/messageImg/imgN6.png"},
-    {"messageImg": "assets/messageImg/imgN7.png"},
+    {
+      "messageImg": "assets/messageImg/imgM1.png",
+      "messageText1": "เสื้อแมวสุดคิ้วท์ ลดพิเศษ!",
+      "messageText2": "ใส่สบาย น่ารัก ต้องมีติดตู้!",
+      "messageText3": "5/02/2025",
+    },
+    {
+      "messageImg": "assets/messageImg/imgM2.png",
+      "messageText1": "เสื้อแมวชุดเดท ลดพิเศษ!",
+      "messageText2": "ใส่สบาย น่ารัก ต้องมีติดตู้!",
+      "messageText3": "5/02/2025",
+    },
+    {
+      "messageImg": "assets/messageImg/imgM3.png",
+      "messageText1": "เสื้อแมว Halloween ลดพิเศษ!",
+      "messageText2": "ใส่สบาย น่ารัก ต้องมีติดตู้!",
+      "messageText3": "5/02/2025",
+    },
   ];
 
   final List<Map<String, String>> newsSet = [
-    {"newsImg": "assets/imagesNoti/imgN1.png"},
-    {"newsImg": "assets/imagesNoti/imgN2.png"},
-    {"newsImg": "assets/imagesNoti/imgN3.png"},
-    {"newsImg": "assets/imagesNoti/imgN4.png"},
-    {"newsImg": "assets/imagesNoti/imgN5.png"}
+    {
+      "newsImg": "assets/newsImg/imgNew1.png",
+      "newsText1": "เสื้อแมวสุดน่ารัก 199฿!",
+      "newsText2": "ให้เจ้าเหมียวดูดี ใส่สบาย ในราคาสุดคุ้ม",
+      "newsText3": "5/02/2025",
+    },
   ];
 
   @override
@@ -672,11 +703,13 @@ class _NotificationPageState extends State<NotificationPage> {
                 final item1 = imagesNoti[index % imagesNoti.length];
                 return Stack(
                   children: [
-                    Image.asset(
-                      item1['imagesNoti']!,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: 120,
+                    Center(
+                      child: Image.asset(
+                        item1['imagesNoti']!,
+                        fit: BoxFit.fill,
+                        width: double.infinity,
+                        height: 120,
+                      ),
                     ),
                   ],
                 );
@@ -744,7 +777,7 @@ class _NotificationPageState extends State<NotificationPage> {
                       : Icon(Icons.circle_outlined, size: 15))
             ],
           ),
-          SizedBox(height: 10),
+          SizedBox(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -809,9 +842,9 @@ class _NotificationPageState extends State<NotificationPage> {
           ),
           Divider(color: Colors.black12, height: 2),
           SizedBox(
-            height: 300,
+            height: 250,
             child: PageView(
-              controller: _pageControlPageMess,
+              controller: _pageControlNotificate2,
               scrollDirection: Axis.horizontal,
               onPageChanged: (indexS) {
                 setState(() {
@@ -820,82 +853,170 @@ class _NotificationPageState extends State<NotificationPage> {
               },
               children: [
                 Container(
+                  padding: EdgeInsets.all(1),
                   decoration: BoxDecoration(color: Color.fromARGB(0, 0, 0, 0)),
-                  child: Column(
-                    children: [
-                      Container(
-                          padding: EdgeInsets.all(15),
-                          decoration:
-                              BoxDecoration(color: Color.fromARGB(5, 0, 0, 0)),
+                  child: SizedBox(
+                    child: PageView.builder(
+                      controller: _pageControlPageMess,
+                      itemCount: messageSet.length,
+                      scrollDirection: Axis.vertical,
+                      physics: BouncingScrollPhysics(),
+                      onPageChanged: (index) {
+                        setState(() {
+                          actionMessage = index;
+                        });
+                      },
+                      itemBuilder: (context, index) {
+                        final itemMess = messageSet[index % messageSet.length];
+                        return Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 10),
                           child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Image.asset(
-                                'assets/messageImg/imgN5.png',
+                                itemMess["messageImg"]!,
                                 fit: BoxFit.cover,
-                                width: 100,
-                                height: 120,
+                                width: 150,
+                                height: 150,
                               ),
-                              SizedBox(
-                                height: 20,
-                              ),
-                              Container(
-                                padding: EdgeInsets.symmetric(horizontal: 10),
-                                width: 230,
-                                height: 120,
-                                decoration: BoxDecoration(
-                                    color: Color.fromARGB(0, 0, 0, 0)),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      "เสื้อแมวสุดคิ้วท์ ลดพิเศษ!",
-                                      style: TextStyle(
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: Container(
+                                  padding: EdgeInsets.all(5),
+                                  height: 120,
+                                  decoration: BoxDecoration(
+                                      color: Color.fromARGB(0, 0, 0, 0)),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        itemMess["messageText1"]!,
+                                        style: TextStyle(
                                           color: Colors.black,
                                           fontSize: 15,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                    Text(
-                                      "ใส่สบาย น่ารัก ต้องมีติดตู้!",
-                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        maxLines: 2,
+                                        softWrap: true,
+                                      ),
+                                      Text(
+                                        itemMess["messageText2"]!,
+                                        style: TextStyle(
                                           color: Colors.black87,
                                           fontSize: 15,
-                                          fontWeight: FontWeight.normal),
-                                    ),
-                                    Text("5/02/2025",
+                                          fontWeight: FontWeight.normal,
+                                        ),
+                                        maxLines: 3,
+                                        softWrap: true,
+                                      ),
+                                      Text(
+                                        itemMess["messageText3"]!,
                                         style: TextStyle(
-                                            color: Colors.black54,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.normal)),
-                                  ],
+                                          color: Colors.black54,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.normal,
+                                        ),
+                                        maxLines: 1,
+                                        softWrap: true,
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              )
+                              ),
+
+                              //Divider(color: Colors.black12, height: 1),
                             ],
-                          )),
-                      Divider(color: Colors.black12, height: 1),
-                    ],
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
                 Container(
+                  padding: EdgeInsets.all(15),
                   decoration: BoxDecoration(color: Color.fromARGB(0, 0, 0, 0)),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.all(15),
-                            child: Image.asset(
-                              'assets/messageImg/imgN7.png',
-                              fit: BoxFit.cover,
-                              width: 100,
-                              height: 120,
-                            ),
-                          )
-                        ],
-                      ),
-                    ],
+                  child: SizedBox(
+                    height: 100,
+                    child: PageView.builder(
+                      controller: _pageControlPageNew,
+                      itemCount: newsSet.length,
+                      scrollDirection: Axis.vertical,
+                      physics: BouncingScrollPhysics(),
+                      onPageChanged: (index) {
+                        setState(() {
+                          actionNews = index;
+                        });
+                      },
+                      itemBuilder: (context, index) {
+                        final itemNews = newsSet[index % newsSet.length];
+                        return Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 10),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Image.asset(
+                                itemNews["newsImg"]!,
+                                fit: BoxFit.cover,
+                                width: 150,
+                                height: 150,
+                              ),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: Container(
+                                  padding: EdgeInsets.all(5),
+                                  height: 120,
+                                  decoration: BoxDecoration(
+                                      color: Color.fromARGB(0, 0, 0, 0)),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        itemNews["newsText1"]!,
+                                        style: TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        maxLines: 2,
+                                        softWrap: true,
+                                      ),
+                                      Text(
+                                        itemNews["newsText2"]!,
+                                        style: TextStyle(
+                                          color: Colors.black87,
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.normal,
+                                        ),
+                                        maxLines: 3,
+                                        softWrap: true,
+                                      ),
+                                      Text(
+                                        itemNews["newsText3"]!,
+                                        style: TextStyle(
+                                          color: Colors.black54,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.normal,
+                                        ),
+                                        maxLines: 1,
+                                        softWrap: true,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                              //Divider(color: Colors.black12, height: 1),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                )
+                ),
               ],
             ),
           ),

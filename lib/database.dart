@@ -1,17 +1,18 @@
-import 'package:flutter_application_1/model.dart';
+import './model.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
 class DatabaseApp {
-  // build parameter Database
   static Database? _database;
 
-  Future<Database> initializeDB() async {
-    if (_database == null) _database = await createDB();
+  //------------- ฟังก์ชันสำหรับตรวจสอบว่ามีฐานข้อมูลอยู่แล้วหรือไม่ -------------
+  Future<Database> initializedb() async {
+    if (_database == null) _database = await createdb();
     return _database!;
   }
 
-  Future<Database> createDB() async {
+  //------------- ฟังก์ชันสำหรับสร้างฐานข้อมูลใหม่ กรณียังไม่มีฐานข้อมูล -------------
+  Future<Database> createdb() async {
     final path = await getDatabasesPath();
 
     var database = await openDatabase(
@@ -20,24 +21,25 @@ class DatabaseApp {
       onCreate: ((db, version) async {
         await db.execute(
           '''CREATE TABLE post(
-        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-        title TEXT,
-        description TEXT
-        )''',
+        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+        title TEXT, 
+        description TEXT)''',
         );
       }),
     );
     return database;
   }
 
-  Future insertDB(PostModels model) async {
-    var db = await initializeDB();
-    var result = await db.insert('post', model.toMap());
+  //------------- ฟังก์ชันสำหรับเพิ่มข้อมูลในฐานข้อมูล -------------
+  Future insertDB(PostModels data) async {
+    var db = await initializedb();
+    var result = await db.insert('post', data.toMap());
     return result;
   }
 
+  //------------- ฟังก์ชันสำหรับแสดงข้อมูลทั้งหมด -------------
   Future<List<PostModels>> getAllData() async {
-  var db = await initializeDB();
+    var db = await initializedb();
     List<Map<String, dynamic>> result = await db.query('post');
     return List.generate(
       result.length,
@@ -46,5 +48,28 @@ class DatabaseApp {
           title: result[index]['title'],
           description: result[index]['description']),
     );
+  }
+
+  //------------- ฟังก์ชันสำหรับลบข้อมูลตาม id ของข้อมูลที่เลือก -------------
+   Future deleteData(PostModels data) async {
+    var db = await initializedb();
+    var result = db.delete(
+      'post',
+      where: 'id=?',
+      whereArgs: [data.id],
+    );
+    return result;
+  }
+
+  //------------- ฟังก์ชันสำหรับแก้ไข/อัพเดทข้อมูลตาม id ของข้อมูลที่เลือก -------------
+ Future updateData(PostModels data) async {
+    var db = await initializedb();
+    var result = db.update(
+      'post',
+      data.toMap(),
+      where: 'id=?',
+      whereArgs: [data.id],
+    );
+    return result;
   }
 }
