@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/database.dart';
 import 'package:flutter_application_1/model.dart';
 import 'package:flutter_application_1/updateForm.dart';
-
+import 'package:flutter_slidable/flutter_slidable.dart';
 
 class ViewAccount extends StatefulWidget {
   const ViewAccount({super.key});
@@ -31,50 +31,87 @@ class _ViewAccount extends State<ViewAccount> {
                 itemCount: snapshot.data!.length,
                 itemBuilder: ((context, index) {
                   PostModels topic = snapshot.data![index];
-                  return ListTile(
-                    title: Text('${topic.title}'),
-                    subtitle: Container(
-                        alignment: Alignment.topLeft,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                  return Slidable(
+                    endActionPane:
+                        ActionPane(motion: DrawerMotion(), children: [
+                      SlidableAction(
+                        onPressed: (context) {
+                          Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => UpdateForm(),
+                                      settings:
+                                          RouteSettings(arguments: topic)))
+                              .then((value) {
+                            //setState หน้าใหม่หลังจากกลับมาจากหน้า updataForm
+                            setState(() {
+                              db.getAllData();
+                            });
+                          });
+                        },
+                        icon: Icons.edit,
+                        backgroundColor: Color.fromARGB(255, 165, 165, 165),
+                        foregroundColor: Colors.white,
+                        label: 'Edit',
+                      ),
+                      SlidableAction(
+                        onPressed: (context) {
+                          deleteDialog(topic);
+                        },
+                        icon: Icons.delete,
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        label: 'Delete',
+                      )
+                    ]),
+                    child: ListTile(
+                      title: Text('${topic.title}'),
+                      subtitle: Container(
+                          alignment: Alignment.topLeft,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text('${topic.description}'),
+                            ],
+                          )),
+                      /*trailing: Container(
+                        width: 70,
+                        child: Row(
                           children: [
-                            Text('${topic.description}'),
-                          ],
-                        )),
-                    trailing: Container(
-                      width: 70,
-                      child: Row(
-                        children: [
-                          //-------- Icon ดินสอ สำหรับแก้ไขข้อมูล --------
-                          Expanded(
+                            //-------- Icon ดินสอ สำหรับแก้ไขข้อมูล --------
+                            Expanded(
+                                child: IconButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      UpdateForm(),
+                                                  settings: RouteSettings(
+                                                      arguments: topic)))
+                                          .then((value) {
+                                        //setState หน้าใหม่หลังจากกลับมาจากหน้า updataForm
+                                        setState(() {
+                                          db.getAllData();
+                                        });
+                                      });
+                                    },
+                                    icon: Icon(Icons.edit))),
+                            //-------- Icon ถังขยะ สำหรับลบข้อมูล --------
+                            Expanded(
                               child: IconButton(
                                   onPressed: () {
-                                    Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                                builder: (context) =>
-                                                    UpdateForm(),
-                                                settings: RouteSettings(
-                                                    arguments: topic)))
-                                        .then((value) {
-                                      //setState หน้าใหม่หลังจากกลับมาจากหน้า updataForm
-                                      setState(() {
-                                        db.getAllData();
-                                      });
-                                    });
+                                    //เรียกใช้เมธอด deleteDialog
+                                    deleteDialog(topic);
                                   },
-                                  icon: Icon(Icons.edit))),
-                          //-------- Icon ถังขยะ สำหรับลบข้อมูล --------
-                          Expanded(
-                            child: IconButton(
-                                onPressed: () {
-                                  //เรียกใช้เมธอด deleteDialog
-                                  deleteDialog(topic);
-                                },
-                                icon: Icon(Icons.delete, color: Colors.red)),
-                          ),
-                        ],
+                                  icon: Icon(Icons.delete, color: Colors.red)),
+                            ),
+                          ],
+                        ),
+                      ),*/
+                      trailing: Container(
+                        child: Icon(Icons.arrow_back_ios_new_outlined),
                       ),
                     ),
                   );

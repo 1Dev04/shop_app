@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import './regisUser.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -41,14 +42,42 @@ class _LoginState extends State<Login> {
                                     fontSize: 25, fontWeight: FontWeight.bold),
                               ),
                               GestureDetector(
-                                onTap: () {
-                                  setState(() {});
-                                },
-                                child: Text(
-                                  "Create a new user account",
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ),
+                                  child: TextButton(
+                                      onPressed: () {
+                                        Navigator.push(
+                                            context,
+                                            PageRouteBuilder(
+                                                pageBuilder: (context,
+                                                        animation,
+                                                        secondaryAnimation) =>
+                                                    regisUser(),
+                                                transitionsBuilder: (context,
+                                                    animation,
+                                                    secondaryAnimation,
+                                                    child) {
+                                                  const begin = Offset(1.0,
+                                                      0.0); //Slide from right to left
+                                                  const end = Offset(0.0, 0.0);
+                                                  const curve =
+                                                      Curves.easeInOut;
+                                                  var tween = Tween(
+                                                          begin: begin,
+                                                          end: end)
+                                                      .chain(CurveTween(
+                                                          curve: curve));
+                                                  return SlideTransition(
+                                                    position:
+                                                        animation.drive(tween),
+                                                    child: child,
+                                                  );
+                                                })).then((_) {});
+                                      },
+                                      child: Text(
+                                        "Create a new user account",
+                                        style: TextStyle(
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.bold),
+                                      ))),
                             ],
                           ),
                         ),
@@ -83,11 +112,13 @@ class _LoginState extends State<Login> {
                         ),
                       ],
                     ),
-                    SizedBox(height: 10),
+                    SizedBox(height: 15),
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 10),
                       child: TextFormField(
+                        autofocus: true,
                         decoration: InputDecoration(
+                          
                           labelText: 'E-mail',
                           border: OutlineInputBorder(),
                           prefixIcon: Icon(Icons.person),
@@ -102,7 +133,7 @@ class _LoginState extends State<Login> {
                         },
                       ),
                     ),
-                    SizedBox(height: 10),
+                    SizedBox(height: 15),
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 10),
                       child: TextFormField(
@@ -154,7 +185,7 @@ class _LoginState extends State<Login> {
                               ),
                             ),
                           ),
-                          SizedBox(height: 10),
+                          SizedBox(height: 5),
                           Align(
                             alignment: Alignment.centerLeft,
                             child: GestureDetector(
@@ -170,6 +201,7 @@ class _LoginState extends State<Login> {
                         ],
                       ),
                     ),
+                    SizedBox(height: 5),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.black,
@@ -181,6 +213,37 @@ class _LoginState extends State<Login> {
                         }
                       },
                       child: Text('Confirm'),
+                    ),
+                    SizedBox(height: 10),
+                    Center(
+                      child: Text('Or continue with'),
+                    ),
+                    SizedBox(height: 5),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        GestureDetector(
+                          onTap: () {},
+                          child: CircleAvatar(
+                            radius: 20,
+                            backgroundColor: Color.fromRGBO(25, 0, 0, 0.2),
+                            child:
+                                Icon(Icons.mail_outline, color: Colors.white),
+                          ),
+                        ),
+                        SizedBox(width: 10),
+                        CircleAvatar(
+                          radius: 20,
+                          backgroundColor: Color.fromRGBO(25, 0, 0, 0.2),
+                          child: Icon(Icons.facebook, color: Colors.white),
+                        ),
+                        SizedBox(width: 10),
+                        CircleAvatar(
+                          radius: 20,
+                          backgroundColor: Color.fromRGBO(25, 0, 0, 0.2),
+                          child: Icon(Icons.apple, color: Colors.white),
+                        ),
+                      ],
                     ),
                     SizedBox(height: 10),
                     Container(
@@ -222,8 +285,28 @@ class _LoginState extends State<Login> {
                         backgroundColor: Colors.black,
                         foregroundColor: Colors.white,
                       ),
-                      onPressed: () {},
-                      child: Text('Confirm'),
+                      onPressed: () {
+                        Navigator.push(
+                            context,
+                            PageRouteBuilder(
+                                pageBuilder:
+                                    (context, animation, secondaryAnimation) =>
+                                        regisUser(),
+                                transitionsBuilder: (context, animation,
+                                    secondaryAnimation, child) {
+                                  const begin = Offset(
+                                      1.0, 0.0); //Slide from right to left
+                                  const end = Offset(0.0, 0.0);
+                                  const curve = Curves.easeInOut;
+                                  var tween = Tween(begin: begin, end: end)
+                                      .chain(CurveTween(curve: curve));
+                                  return SlideTransition(
+                                    position: animation.drive(tween),
+                                    child: child,
+                                  );
+                                })).then((_) {});
+                      },
+                      child: Text('Create'),
                     ),
                     SizedBox(height: 20),
                     Container(

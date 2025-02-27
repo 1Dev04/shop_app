@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "773184115397",
+    "project_id": "abc-shop-dad8c",
+    "storage_bucket": "abc-shop-dad8c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:773184115397:android:2da7bbeb6df9c7204596ac",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application_1"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "773184115397-gj8rq03nmkakk4lhodnqsv5d1sjbefgf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC1S9xZ9uaA6MlG7xIE8_x9sDWEFvw4ZUs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "773184115397-gj8rq03nmkakk4lhodnqsv5d1sjbefgf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
