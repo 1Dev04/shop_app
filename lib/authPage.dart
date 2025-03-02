@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+//ติดตั้งแพคเกจ firebase_auth จาก http://pub.dev
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_application_1/home.dart';
+import 'package:flutter_application_1/login.dart';
 
 class authPage extends StatelessWidget {
   const authPage({super.key});
@@ -6,13 +10,18 @@ class authPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Center(
-          child: Text('Firebase Auth', style: TextStyle(color: Colors.white)),
-        ),
-        actions: [Icon(Icons.help, color: Colors.white)],
-        backgroundColor: Color.fromRGBO(40, 84, 48, 1),
-      ),
+      body: StreamBuilder(
+          //authStateChanges ตรวจสอบว่าผู้ใช้ล็อกอินหรือยัง
+          stream: FirebaseAuth.instance.authStateChanges(),
+          builder: (context, snapshot) {
+            //Logged in ถ้าล็อกอินแล้วไปที่ homePage
+            if (snapshot.hasData ) {
+              return MyHome();
+            } else {
+              //NOT logged in ถ้ายังไม่ล็อกอินไปที่ loginPage
+              return Login();
+            }
+          }),
     );
   }
 }

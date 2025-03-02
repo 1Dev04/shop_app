@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/home.dart';
 import './regisUser.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -9,25 +12,88 @@ class Login extends StatefulWidget {
 }
 
 class _LoginState extends State<Login> {
-  final fromKey = GlobalKey<FormState>();
-  final gmailController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final emailController = TextEditingController();
   final passwordController = TextEditingController();
   bool visibleP = false;
+
+  void signUserIn() async {
+    showDialog(
+        context: context,
+        barrierDismissible: false, //Barrier Close
+        builder: (context) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        });
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+
+      //Dialog Successfully
+     
+      print("Login Successfully!");
+
+      //Next Page
+      Navigator.push(
+          context, MaterialPageRoute(builder: (context) => HomePage()));
+    } on FirebaseAuthException catch (e) {
+      Navigator.pop(context);
+      
+      if (e.code == 'user-not-found') {
+        print('No user found for that email.');
+      } else if (e.code == 'wrong-password') {
+        print('Wrong password provided for that user.');
+      } else {
+        print('Error: ${e.message}');
+      }
+    } catch (e) {
+      Navigator.pop(context);
+      print("Error: $e");
+    }
+  }
+
+  //---------- ฟังก์ชันสำหรับล็อกอินด้วย google account ----------
+  Future<UserCredential> signInWithGoogle() async {
+    // Trigger the authentication flow
+    final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+
+    // Obtain the auth details from the request
+    final GoogleSignInAuthentication? googleAuth =
+        await googleUser?.authentication;
+
+    // Create a new credential
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth?.accessToken,
+      idToken: googleAuth?.idToken,
+    );
+
+    // Once signed in, return the UserCredential
+    return await FirebaseAuth.instance.signInWithCredential(credential);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Login"),
-        centerTitle: true,
-      ),
       backgroundColor: Color.fromRGBO(255, 255, 255, 0.937),
       body: SafeArea(
         child: SingleChildScrollView(
             child: Form(
-                key: fromKey,
+                key: _formKey,
                 child: Column(
                   children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        IconButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                            icon: Icon(Icons.cancel_outlined))
+                      ],
+                    ),
                     Column(
                       children: [
                         Container(
@@ -118,7 +184,6 @@ class _LoginState extends State<Login> {
                       child: TextFormField(
                         autofocus: true,
                         decoration: InputDecoration(
-                          
                           labelText: 'E-mail',
                           border: OutlineInputBorder(),
                           prefixIcon: Icon(Icons.person),
@@ -156,7 +221,7 @@ class _LoginState extends State<Login> {
                         validator: (value) {
                           if (value!.isEmpty) {
                             return "Please input password.";
-                          } else if (value.length < 8) {
+                          } else if (value.length < 3) {
                             return '''The password should be between 8-20 characters \n and must contain both letters and numbers. \n Symbols allowed: !"#%'()*+,-./:;<=>?@[]^_`{}|~''';
                           } else if (value.length > 20) {
                             return "Password more than 20 characters";
@@ -208,8 +273,8 @@ class _LoginState extends State<Login> {
                         foregroundColor: Colors.white,
                       ),
                       onPressed: () {
-                        if (fromKey.currentState!.validate()) {
-                          print(gmailController.text);
+                        if (_formKey.currentState!.validate()) {
+                          signUserIn();
                         }
                       },
                       child: Text('Confirm'),
@@ -223,15 +288,18 @@ class _LoginState extends State<Login> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         GestureDetector(
-                          onTap: () {},
+                          onTap: () {
+                            signInWithGoogle();
+                          },
                           child: CircleAvatar(
                             radius: 20,
                             backgroundColor: Color.fromRGBO(25, 0, 0, 0.2),
                             child:
-                                Icon(Icons.mail_outline, color: Colors.white),
+                                Icon(Icons.g_mobiledata, color: Colors.white),
                           ),
                         ),
                         SizedBox(width: 10),
+                        /*
                         CircleAvatar(
                           radius: 20,
                           backgroundColor: Color.fromRGBO(25, 0, 0, 0.2),
@@ -243,6 +311,7 @@ class _LoginState extends State<Login> {
                           backgroundColor: Color.fromRGBO(25, 0, 0, 0.2),
                           child: Icon(Icons.apple, color: Colors.white),
                         ),
+                        */
                       ],
                     ),
                     SizedBox(height: 10),
