@@ -46,7 +46,7 @@ class _MyHomeState extends State<MyHome> {
     } else if (screenIndex == 4) {
       return "Notification";
     } else if (screenIndex == 5) {
-      return "Profile";
+      return "Menu";
     }
 
     return setTitle();
@@ -221,7 +221,7 @@ Navigator.push(
                   });
                 },
                 child: Icon(
-                  screenIndex == 5 ? Icons.person : Icons.person_outline,
+                  screenIndex == 5 ? Icons.menu_open : Icons.menu,
                   size: 25,
                   color: activeButton == 5 ? Colors.white : Colors.white60,
                 ),
@@ -2640,7 +2640,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 children: [
                   GestureDetector(
                     onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => Profile()));
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) => Profile()));
                     },
                     child: Container(
                       padding: EdgeInsets.all(5),
@@ -2943,6 +2944,8 @@ class ShopPage extends StatefulWidget {
 }
 
 class _ShopPageState extends State<ShopPage> {
+  /*
+  
   bool lightIsOn = false;
   bool homeIsOn = false;
   bool heartIsOn = false;
@@ -2950,12 +2953,49 @@ class _ShopPageState extends State<ShopPage> {
 
   IconData iconDefault = Icons.favorite_border_outlined;
   Color heartDefaultColor = Colors.black;
+
+  */
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(15), //เว้นระยะรอบวัตถุ 15 pixel
       child: Column(
         children: [
+          Container(
+            margin: EdgeInsets.symmetric(horizontal: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                CachedNetworkImage(
+                  imageUrl:
+                      "https://res.cloudinary.com/dag73dhpl/image/upload/v1740759438/animalshelter_ncqile.png",
+                  width: 50,
+                  height: 50,
+                  placeholder: (context, url) =>
+                      CircularProgressIndicator.adaptive(
+                    backgroundColor: Colors.white,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                        Color.fromARGB(75, 50, 50, 50)),
+                  ),
+                  errorWidget: (context, url, error) => Icon(Icons.error),
+                ),
+                GestureDetector(
+                    onTap: () {
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) => Profile()));
+                    },
+                    child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Icon(Icons.badge_outlined),
+                          Text('Profile'),
+                        ],
+                      ),)
+              ],
+            ),
+          ),
+          /*
           GestureDetector(
             onTap: () {
               setState(() {
@@ -3001,6 +3041,7 @@ class _ShopPageState extends State<ShopPage> {
               color: heartDefaultColor,
             ),
           ),
+          */
         ],
       ),
     );

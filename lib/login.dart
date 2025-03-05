@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/home.dart';
+import 'package:flutter_application_1/authPage.dart';
+
 import './regisUser.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+// import 'package:google_sign_in/google_sign_in.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -13,8 +14,8 @@ class Login extends StatefulWidget {
 
 class _LoginState extends State<Login> {
   final _formKey = GlobalKey<FormState>();
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
   bool visibleP = false;
 
   void signUserIn() async {
@@ -23,7 +24,11 @@ class _LoginState extends State<Login> {
         barrierDismissible: false, //Barrier Close
         builder: (context) {
           return const Center(
-            child: CircularProgressIndicator(),
+            child: CircularProgressIndicator.adaptive(
+              backgroundColor: Colors.white,
+              valueColor:
+                  AlwaysStoppedAnimation<Color>(Color.fromARGB(75, 50, 50, 50)),
+            ),
           );
         });
     try {
@@ -32,29 +37,37 @@ class _LoginState extends State<Login> {
         password: passwordController.text.trim(),
       );
 
-      //Dialog Successfully
-     
-      print("Login Successfully!");
-
-      //Next Page
-      Navigator.push(
-          context, MaterialPageRoute(builder: (context) => HomePage()));
+      // Close Dialog before change page
+      if (mounted) Navigator.pop(context);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Login successful! 🎉")));
+      //Home page
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (context) => authPage()));
     } on FirebaseAuthException catch (e) {
-      Navigator.pop(context);
-      
+      if (mounted) Navigator.pop(context);
+
+      String errorMessage;
       if (e.code == 'user-not-found') {
-        print('No user found for that email.');
+        errorMessage = 'No user found for that email.';
       } else if (e.code == 'wrong-password') {
-        print('Wrong password provided for that user.');
+        errorMessage = 'Wrong password provided for that user.';
       } else {
-        print('Error: ${e.message}');
+        errorMessage = 'Error: ${e.message}';
       }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMessage)),
+      );
     } catch (e) {
-      Navigator.pop(context);
-      print("Error: $e");
+      if (mounted) Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
     }
   }
 
+  /*
   //---------- ฟังก์ชันสำหรับล็อกอินด้วย google account ----------
   Future<UserCredential> signInWithGoogle() async {
     // Trigger the authentication flow
@@ -73,6 +86,7 @@ class _LoginState extends State<Login> {
     // Once signed in, return the UserCredential
     return await FirebaseAuth.instance.signInWithCredential(credential);
   }
+  */
 
   @override
   Widget build(BuildContext context) {
@@ -91,7 +105,7 @@ class _LoginState extends State<Login> {
                             onPressed: () {
                               Navigator.pop(context);
                             },
-                            icon: Icon(Icons.cancel_outlined))
+                            icon: Icon(Icons.cancel_outlined), iconSize: 30,)
                       ],
                     ),
                     Column(
@@ -169,7 +183,7 @@ class _LoginState extends State<Login> {
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
                               Text(
-                                "Please specify*",
+                                "Please Specify*",
                                 style: TextStyle(
                                     color: Color.fromARGB(255, 72, 169, 169)),
                               ),
@@ -182,17 +196,19 @@ class _LoginState extends State<Login> {
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 10),
                       child: TextFormField(
+                        controller: emailController,
                         autofocus: true,
+                        maxLength: 50,
                         decoration: InputDecoration(
                           labelText: 'E-mail',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.person),
                         ),
                         validator: (value) {
                           if (value!.isEmpty) {
-                            return 'Please input email.';
-                          } else if (value.length > 30) {
-                            return 'Email more than 30 characters.';
+                            return "Please input password.";
+                          } else if (value.length < 15) {
+                            return '''The password should be between 15-50 characters \n and must contain both letters and numbers. \n Symbols allowed: !"#%'()*+,-./:;<=>?@[]^_`{}|~''';
+                          } else if (value.length > 50) {
+                            return "Password more than 50 characters";
                           }
                           return null;
                         },
@@ -204,10 +220,9 @@ class _LoginState extends State<Login> {
                       child: TextFormField(
                         controller: passwordController,
                         obscureText: !visibleP,
+                        maxLength: 8,
                         decoration: InputDecoration(
                             labelText: 'Password',
-                            border: OutlineInputBorder(),
-                            prefixIcon: Icon(Icons.password),
                             suffixIcon: GestureDetector(
                               onTap: () {
                                 setState(() {
@@ -222,9 +237,9 @@ class _LoginState extends State<Login> {
                           if (value!.isEmpty) {
                             return "Please input password.";
                           } else if (value.length < 3) {
-                            return '''The password should be between 8-20 characters \n and must contain both letters and numbers. \n Symbols allowed: !"#%'()*+,-./:;<=>?@[]^_`{}|~''';
-                          } else if (value.length > 20) {
-                            return "Password more than 20 characters";
+                            return '''The password should be between 3-8 characters \n and must contain both letters and numbers. \n Symbols allowed: !"#%'()*+,-./:;<=>?@[]^_`{}|~''';
+                          } else if (value.length > 8) {
+                            return "Password more than 8 characters";
                           }
                           return null;
                         },
@@ -279,6 +294,7 @@ class _LoginState extends State<Login> {
                       },
                       child: Text('Confirm'),
                     ),
+                    /*
                     SizedBox(height: 10),
                     Center(
                       child: Text('Or continue with'),
@@ -299,7 +315,7 @@ class _LoginState extends State<Login> {
                           ),
                         ),
                         SizedBox(width: 10),
-                        /*
+                       
                         CircleAvatar(
                           radius: 20,
                           backgroundColor: Color.fromRGBO(25, 0, 0, 0.2),
@@ -311,9 +327,10 @@ class _LoginState extends State<Login> {
                           backgroundColor: Color.fromRGBO(25, 0, 0, 0.2),
                           child: Icon(Icons.apple, color: Colors.white),
                         ),
-                        */
+                        
                       ],
                     ),
+                    */
                     SizedBox(height: 10),
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 10),

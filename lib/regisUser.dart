@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_application_1/authPage.dart';
+
 
 
 class regisUser extends StatefulWidget {
@@ -13,10 +15,11 @@ class regisUser extends StatefulWidget {
 class _regisUserState extends State<regisUser> {
   final _formKey = GlobalKey<FormState>();
 
-  final nameController = TextEditingController();
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
-  final confirmPasswordController = TextEditingController();
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController zipController = TextEditingController();
   DateTime? selectedDate;
@@ -61,7 +64,11 @@ class _regisUserState extends State<regisUser> {
         barrierDismissible: false, // barrier close
         builder: (context) {
           return const Center(
-            child: CircularProgressIndicator(),
+            child: CircularProgressIndicator.adaptive(
+              backgroundColor: Colors.white,
+              valueColor:
+                  AlwaysStoppedAnimation<Color>(Color.fromARGB(75, 50, 50, 50)),
+            ),
           );
         });
     try {
@@ -85,6 +92,8 @@ class _regisUserState extends State<regisUser> {
       await FirebaseFirestore.instance.collection('users').doc(uid).set({
         'uid': uid,
         'name': nameController.text.trim(),
+        'password': passwordController.text.trim(),
+        'confirmPassword': confirmPasswordController.text.trim(),
         'email': emailController.text.trim(),
         'phone': phoneController.text.trim(),
         'zip': zipController.text.trim(),
@@ -95,7 +104,7 @@ class _regisUserState extends State<regisUser> {
         'createdAt': FieldValue.serverTimestamp()
       });
 
-      Navigator.pop(context);
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => authPage()));
       print("Successfully Registered");
     } on FirebaseAuthException catch (e) {
       print("An error occurred ${e.message}");
@@ -109,9 +118,9 @@ class _regisUserState extends State<regisUser> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Center(
-          child: Text('Create accout', style: TextStyle(color: Colors.black)),
-        ),
+        title:
+          Text('Create accout', style: TextStyle(color: Colors.black)),
+          centerTitle: true,
         backgroundColor: Colors.white,
       ),
       body: Container(
@@ -121,7 +130,7 @@ class _regisUserState extends State<regisUser> {
               Container(
                   color: const Color.fromARGB(15, 0, 0, 0),
                   width: double.infinity,
-                  height: 50,
+                  height: 80,
                   child: Container(
                     margin: EdgeInsets.symmetric(horizontal: 10),
                     child: Row(
@@ -168,27 +177,28 @@ class _regisUserState extends State<regisUser> {
                       ),
                     ]),
               ),
-              SizedBox(height: 20),
+              SizedBox(height: 10),
               Container(
                 margin: EdgeInsets.all(10),
                 child: Form(
                   key: _formKey,
                   child: Column(
                     children: [
-                      SizedBox(height: 20),
+                      SizedBox(height: 10),
                       TextFormField(
                         controller: nameController,
                         autofocus: true,
+                        maxLength: 30,
                         decoration: const InputDecoration(
                           labelText: 'Username',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.person),
                         ),
                         validator: (value) {
                           if (value!.isEmpty) {
-                            return 'Please input name.';
+                            return "Please input password.";
+                          } else if (value.length < 10) {
+                            return '''The password should be between 10-30 characters''';
                           } else if (value.length > 30) {
-                            return 'Name more than 30 characters.';
+                            return "Password more than 30 characters";
                           }
                           return null;
                         },
@@ -197,16 +207,17 @@ class _regisUserState extends State<regisUser> {
                       TextFormField(
                         controller: emailController,
                         autofocus: true,
+                        maxLength: 50,
                         decoration: const InputDecoration(
                           labelText: 'E-mail',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.email),
                         ),
                         validator: (value) {
                           if (value!.isEmpty) {
-                            return 'Please input email.';
-                          } else if (value.length > 30) {
-                            return 'Email more than 30 characters.';
+                            return "Please input password.";
+                          } else if (value.length < 15) {
+                            return '''The password should be between 15-50 characters.''';
+                          } else if (value.length > 50) {
+                            return "Password more than 50 characters";
                           }
                           return null;
                         },
@@ -215,10 +226,9 @@ class _regisUserState extends State<regisUser> {
                       TextFormField(
                         controller: passwordController,
                         obscureText: !visiblePassCon,
+                        maxLength: 8,
                         decoration: InputDecoration(
                             labelText: 'Password',
-                            border: OutlineInputBorder(),
-                            prefixIcon: Icon(Icons.password),
                             suffixIcon: GestureDetector(
                               onTap: () {
                                 setState(() {
@@ -230,7 +240,13 @@ class _regisUserState extends State<regisUser> {
                                   : Icon(Icons.visibility_off),
                             )),
                         validator: (value) {
-                          if (value!.isEmpty) return 'กรุณากรอกรหัสผ่าน';
+                          if (value!.isEmpty) {
+                            return "Please input password.";
+                          } else if (value.length < 3) {
+                            return '''The password should be between 3-8 characters \n and must contain both letters and numbers. \n Symbols allowed: !"#%'()*+,-./:;<=>?@[]^_`{}|~''';
+                          } else if (value.length > 8) {
+                            return "Password more than 8 characters";
+                          }
                           return null;
                         },
                       ),
@@ -238,10 +254,9 @@ class _regisUserState extends State<regisUser> {
                       TextFormField(
                         controller: confirmPasswordController,
                         obscureText: !visiblePassCon1,
+                        maxLength: 8,
                         decoration: InputDecoration(
                             labelText: 'Confirm Password',
-                            border: OutlineInputBorder(),
-                            prefixIcon: Icon(Icons.password),
                             suffixIcon: GestureDetector(
                               onTap: () {
                                 setState(() {
@@ -253,16 +268,25 @@ class _regisUserState extends State<regisUser> {
                                   : Icon(Icons.visibility_off),
                             )),
                         validator: (value) {
-                          if (value!.isEmpty) return 'กรุณากรอกรหัสยืนยัน';
+                          if (value!.isEmpty) {
+                            return "Please input password.";
+                          } else if (value.length < 3) {
+                            return '''The password should be between 3-8 characters \n and must contain both letters and numbers. \n Symbols allowed: !"#%'()*+,-./:;<=>?@[]^_`{}|~''';
+                          } else if (value.length > 8) {
+                            return "Password more than 8 characters";
+                          }
                           return null;
                         },
                       ),
+                      SizedBox(height: 15),
                       // เบอร์โทร (กรอกตัวเลข 10 ตัว)
                       TextFormField(
                         controller: phoneController,
                         keyboardType: TextInputType.number,
                         maxLength: 10,
-                        decoration: InputDecoration(labelText: "Phone Number"),
+                        decoration: InputDecoration(
+                          labelText: "Phone Number",
+                        ),
                         validator: (value) {
                           if (value == null ||
                               value.isEmpty ||
@@ -272,6 +296,7 @@ class _regisUserState extends State<regisUser> {
                           return null;
                         },
                       ),
+                      SizedBox(height: 15),
                       // รหัสไปรษณีย์ (กรอกตัวเลข 5 ตัว)
                       TextFormField(
                         controller: zipController,
@@ -298,6 +323,7 @@ class _regisUserState extends State<regisUser> {
                         trailing: Icon(Icons.calendar_today),
                         onTap: () => selectDate(context),
                       ),
+
                       SizedBox(height: 15),
                       // เพศ
                       Text("Gender"),
@@ -372,6 +398,7 @@ class _regisUserState extends State<regisUser> {
                         style: ElevatedButton.styleFrom(
                             backgroundColor: Color.fromRGBO(0, 0, 0, 1)),
                       ),
+                      SizedBox(height: 20),
                     ],
                   ),
                 ),
