@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_1/authPage.dart';
 
-
-
 class regisUser extends StatefulWidget {
   const regisUser({super.key});
 
@@ -21,7 +19,7 @@ class _regisUserState extends State<regisUser> {
   final TextEditingController confirmPasswordController =
       TextEditingController();
   final TextEditingController phoneController = TextEditingController();
-  final TextEditingController zipController = TextEditingController();
+  final TextEditingController postalController = TextEditingController();
   DateTime? selectedDate;
   String? selectedGender;
   bool subscribeNewsletter = false;
@@ -44,7 +42,7 @@ class _regisUserState extends State<regisUser> {
       print("Name: ${nameController}");
       print("Gmail: ${emailController}");
       print("Phone: ${phoneController}");
-      print("Zip Code: ${zipController}");
+      print("Postal Code: ${postalController}");
       print("Date: ${selectedDate}");
       print("Gender: ${selectedGender}");
       print("Subscribe to the newsletter: ${subscribeNewsletter}");
@@ -71,6 +69,7 @@ class _regisUserState extends State<regisUser> {
             ),
           );
         });
+
     try {
       // Check if the passwords match
       if (passwordController.text.trim() !=
@@ -96,7 +95,7 @@ class _regisUserState extends State<regisUser> {
         'confirmPassword': confirmPasswordController.text.trim(),
         'email': emailController.text.trim(),
         'phone': phoneController.text.trim(),
-        'zip': zipController.text.trim(),
+        'postal': postalController.text.trim(),
         'gender': selectedGender ?? "",
         'birthdate': selectedDate?.toIso8601String() ?? "",
         'subscribeNewsletter': subscribeNewsletter,
@@ -104,7 +103,8 @@ class _regisUserState extends State<regisUser> {
         'createdAt': FieldValue.serverTimestamp()
       });
 
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => authPage()));
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (context) => authPage()));
       print("Successfully Registered");
     } on FirebaseAuthException catch (e) {
       print("An error occurred ${e.message}");
@@ -118,9 +118,8 @@ class _regisUserState extends State<regisUser> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title:
-          Text('Create accout', style: TextStyle(color: Colors.black)),
-          centerTitle: true,
+        title: Text('Create accout', style: TextStyle(color: Colors.black)),
+        centerTitle: true,
         backgroundColor: Colors.white,
       ),
       body: Container(
@@ -193,13 +192,21 @@ class _regisUserState extends State<regisUser> {
                           labelText: 'Username',
                         ),
                         validator: (value) {
-                          if (value!.isEmpty) {
-                            return "Please input password.";
-                          } else if (value.length < 10) {
-                            return '''The password should be between 10-30 characters''';
-                          } else if (value.length > 30) {
-                            return "Password more than 30 characters";
+                          final RegExp nameRegex1 = RegExp(
+                              r'^(Mr|Ms)\. [A-Z][a-z]+(?: [A-Z][a-z]+)*(\.?)$');
+                          final RegExp nameRegex2 =
+                              RegExp(r'^(?!.*\s{2,})(?:\S+\s?){1,3}$');
+
+                          if (value == null || value.isEmpty) {
+                            return "Please input username.";
+                          } else if (value.length < 10 || value.length > 30) {
+                            return "The username should be between 10-30 characters";
+                          } else if (!nameRegex1.hasMatch(value)) {
+                            return "Invalid username format: \nMr. Jake Smith / Ms. Emma Olivia";
+                          } else if (!nameRegex2.hasMatch(value)) {
+                            return "The username format ${value} is invalid.";
                           }
+
                           return null;
                         },
                       ),
@@ -209,15 +216,21 @@ class _regisUserState extends State<regisUser> {
                         autofocus: true,
                         maxLength: 50,
                         decoration: const InputDecoration(
-                          labelText: 'E-mail',
+                          labelText: 'Email',
                         ),
                         validator: (value) {
-                          if (value!.isEmpty) {
-                            return "Please input password.";
-                          } else if (value.length < 15) {
-                            return '''The password should be between 15-50 characters.''';
-                          } else if (value.length > 50) {
-                            return "Password more than 50 characters";
+                          final RegExp emailRegExp1 = RegExp(
+                              r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&*!])[A-Za-z\d@#$%^&*!\.]{8,20}$');
+                          final RegExp emailRegExp2 = RegExp(r'^\S+$');
+
+                          if (value == null || value.isEmpty) {
+                            return "Please input email.";
+                          } else if (value.length < 15 || value.length > 50) {
+                            return '''The email should be between 15-50 characters.''';
+                          } else if (!emailRegExp1.hasMatch(value)) {
+                            return 'Invalid email format: \nUser1@example.com, Person1@example.co.th';
+                          } else if (!emailRegExp2.hasMatch(value)) {
+                            return 'The email format ${value} is invalid.';
                           }
                           return null;
                         },
@@ -226,7 +239,7 @@ class _regisUserState extends State<regisUser> {
                       TextFormField(
                         controller: passwordController,
                         obscureText: !visiblePassCon,
-                        maxLength: 8,
+                        maxLength: 20,
                         decoration: InputDecoration(
                             labelText: 'Password',
                             suffixIcon: GestureDetector(
@@ -240,12 +253,17 @@ class _regisUserState extends State<regisUser> {
                                   : Icon(Icons.visibility_off),
                             )),
                         validator: (value) {
-                          if (value!.isEmpty) {
+                          final RegExp passwordRegex1 = RegExp(
+                              r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&*])[A-Za-z\d@#$%^&*]{8,20}$');
+                          final RegExp passwordRegex2 = RegExp(r'^\S+$');
+                          if (value == null || value.isEmpty) {
                             return "Please input password.";
-                          } else if (value.length < 3) {
-                            return '''The password should be between 3-8 characters \n and must contain both letters and numbers. \n Symbols allowed: !"#%'()*+,-./:;<=>?@[]^_`{}|~''';
-                          } else if (value.length > 8) {
-                            return "Password more than 8 characters";
+                          } else if (value.length < 5 || value.length > 20) {
+                            return '''The password should be between 5-20 characters \n and must contain both letters and numbers. \n Symbols allowed: !"#%'()*+,-./:;<=>?@[]^_`{}|~''';
+                          } else if (!passwordRegex1.hasMatch(value)) {
+                            return "Invalid password format: \nP@ssw0rd!, P@ssw0rd";
+                          } else if (!passwordRegex2.hasMatch(value)) {
+                            return 'The password format ${value} is invalid.';
                           }
                           return null;
                         },
@@ -254,7 +272,7 @@ class _regisUserState extends State<regisUser> {
                       TextFormField(
                         controller: confirmPasswordController,
                         obscureText: !visiblePassCon1,
-                        maxLength: 8,
+                        maxLength: 20,
                         decoration: InputDecoration(
                             labelText: 'Confirm Password',
                             suffixIcon: GestureDetector(
@@ -268,12 +286,18 @@ class _regisUserState extends State<regisUser> {
                                   : Icon(Icons.visibility_off),
                             )),
                         validator: (value) {
-                          if (value!.isEmpty) {
-                            return "Please input password.";
-                          } else if (value.length < 3) {
-                            return '''The password should be between 3-8 characters \n and must contain both letters and numbers. \n Symbols allowed: !"#%'()*+,-./:;<=>?@[]^_`{}|~''';
-                          } else if (value.length > 8) {
-                            return "Password more than 8 characters";
+                          final RegExp conpasswordRegex1 = RegExp(
+                              r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&*])[A-Za-z\d@#$%^&*]{8,20}$');
+                          final RegExp conpasswordRegex2 = RegExp(r'^\S+$');
+
+                          if (value == null || value.isEmpty) {
+                            return "Please input confirm password.";
+                          } else if (value.length < 5 || value.length > 20) {
+                            return '''The confirm password should be between 5-20 characters \n and must contain both letters and numbers. \n Symbols allowed: !"#%'()*+,-./:;<=>?@[]^_`{}|~''';
+                          } else if (!conpasswordRegex1.hasMatch(value)) {
+                            return "Invalid confirm password format: \nP@ssw0rd!, P@ssw0rd";
+                          } else if (!conpasswordRegex2.hasMatch(value)) {
+                            return 'The password format ${value} is invalid.';
                           }
                           return null;
                         },
@@ -288,10 +312,18 @@ class _regisUserState extends State<regisUser> {
                           labelText: "Phone Number",
                         ),
                         validator: (value) {
-                          if (value == null ||
-                              value.isEmpty ||
-                              value.length != 10) {
-                            return "Please enter a 10-digit postal code.";
+                          final RegExp phoneRegex1 = RegExp(r'^[0-9]{10}$');
+                          final RegExp phoneRegex2 =
+                              RegExp(r'^(?!.*(\d)\1{2})\d{10}$');
+
+                          if (value == null || value.isEmpty) {
+                            return "Please input password";
+                          } else if (value.length != 10) {
+                            return "Please enter a 10-digit phone number.";
+                          } else if (!phoneRegex1.hasMatch(value)) {
+                            return "Invalid phone number format: \n0123456789, 0987654321";
+                          } else if (!phoneRegex2.hasMatch(value)) {
+                            return "The number format ${value} is invalid.";
                           }
                           return null;
                         },
@@ -299,15 +331,22 @@ class _regisUserState extends State<regisUser> {
                       SizedBox(height: 15),
                       // รหัสไปรษณีย์ (กรอกตัวเลข 5 ตัว)
                       TextFormField(
-                        controller: zipController,
+                        controller: postalController,
                         keyboardType: TextInputType.number,
                         maxLength: 5,
-                        decoration: InputDecoration(labelText: "Zip Password"),
+                        decoration: InputDecoration(labelText: "Postal Code"),
                         validator: (value) {
-                          if (value == null ||
-                              value.isEmpty ||
-                              value.length != 5) {
+                          final RegExp postalRegex1 = RegExp(r'^[0-9]{5}$');
+                          final RegExp postalRegex2 = RegExp(r'^\d{5}$');
+
+                          if (value == null || value.isEmpty) {
+                            return "Please input postal code";
+                          } else if (value.length != 5) {
                             return "Please enter a 5-digit postal code.";
+                          } else if (!postalRegex1.hasMatch(value)) {
+                            return "Invalid postal code format: 01234, 12345";
+                          } else if (!postalRegex2.hasMatch(value)) {
+                            return "The postal code format ${value} is invalid.";
                           }
                           return null;
                         },

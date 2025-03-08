@@ -19,19 +19,20 @@ class _LoginState extends State<Login> {
   bool visibleP = false;
 
   void signUserIn() async {
-    showDialog(
-        context: context,
-        barrierDismissible: false, //Barrier Close
-        builder: (context) {
-          return const Center(
-            child: CircularProgressIndicator.adaptive(
-              backgroundColor: Colors.white,
-              valueColor:
-                  AlwaysStoppedAnimation<Color>(Color.fromARGB(75, 50, 50, 50)),
-            ),
-          );
-        });
     try {
+      showDialog(
+          context: context,
+          barrierDismissible: false, //Barrier Close
+          builder: (context) {
+            return const Center(
+              child: CircularProgressIndicator.adaptive(
+                backgroundColor: Colors.white,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                    Color.fromARGB(75, 50, 50, 50)),
+              ),
+            );
+          });
+
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
@@ -102,10 +103,12 @@ class _LoginState extends State<Login> {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         IconButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
-                            icon: Icon(Icons.cancel_outlined), iconSize: 30,)
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          icon: Icon(Icons.cancel_outlined),
+                          iconSize: 30,
+                        )
                       ],
                     ),
                     Column(
@@ -200,15 +203,23 @@ class _LoginState extends State<Login> {
                         autofocus: true,
                         maxLength: 50,
                         decoration: InputDecoration(
-                          labelText: 'E-mail',
+                          labelText: 'Email',
                         ),
                         validator: (value) {
+                          final RegExp emailLoginRegex1 = RegExp(
+                              r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&*!])[A-Za-z\d@#$%^&*!\.]{8,20}$');
+                          final RegExp emailLoginRegex2 = RegExp(r'^\S+$');
+
                           if (value!.isEmpty) {
-                            return "Please input password.";
+                            return "Please input email.";
                           } else if (value.length < 15) {
-                            return '''The password should be between 15-50 characters \n and must contain both letters and numbers. \n Symbols allowed: !"#%'()*+,-./:;<=>?@[]^_`{}|~''';
+                            return '''The email should be between 15-50 characters''';
                           } else if (value.length > 50) {
                             return "Password more than 50 characters";
+                          } else if (!emailLoginRegex1.hasMatch(value)) {
+                            return 'Invalid email format: \nUser1@example.com, Person1@example.co.th';
+                          } else if (!emailLoginRegex2.hasMatch(value)) {
+                            return 'The email format ${value} is invalid.';
                           }
                           return null;
                         },
@@ -220,7 +231,7 @@ class _LoginState extends State<Login> {
                       child: TextFormField(
                         controller: passwordController,
                         obscureText: !visibleP,
-                        maxLength: 8,
+                        maxLength: 20,
                         decoration: InputDecoration(
                             labelText: 'Password',
                             suffixIcon: GestureDetector(
@@ -234,12 +245,18 @@ class _LoginState extends State<Login> {
                                   : Icon(Icons.visibility_off),
                             )),
                         validator: (value) {
-                          if (value!.isEmpty) {
+                          final RegExp passwordLoginRegex1 = RegExp(
+                              r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&*])[A-Za-z\d@#$%^&*]{8,20}$');
+                          final RegExp passwordLoginRegex2 = RegExp(r'^\S+$');
+
+                          if (value == null || value.isEmpty) {
                             return "Please input password.";
-                          } else if (value.length < 3) {
-                            return '''The password should be between 3-8 characters \n and must contain both letters and numbers. \n Symbols allowed: !"#%'()*+,-./:;<=>?@[]^_`{}|~''';
-                          } else if (value.length > 8) {
-                            return "Password more than 8 characters";
+                          } else if (value.length < 5 || value.length > 20) {
+                            return '''The password should be between 5-20 characters \n and must contain both letters and numbers. \n Symbols allowed: !"#%'()*+,-./:;<=>?@[]^_`{}|~''';
+                          } else if (!passwordLoginRegex1.hasMatch(value)) {
+                            return "Invalid password format: \nP@ssw0rd!, P@ssw0rd";
+                          } else if (!passwordLoginRegex2.hasMatch(value)) {
+                            return 'The password format ${value} is invalid.';
                           }
                           return null;
                         },

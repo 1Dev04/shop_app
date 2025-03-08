@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/authPage.dart';
 import 'package:flutter_application_1/profile.dart';
+import 'package:flutter_application_1/settingPage.dart';
 
 // import 'package:flutter_application_1/login.dart';
 import 'package:flutter_application_1/viewAccount.dart';
@@ -30,7 +32,7 @@ class _MyHomeState extends State<MyHome> {
     HomePage(),
     ShopPage(),
     NotificationPage(),
-    ProfilePage(),
+    MenuPage(),
   ];
 
   //Set Header Title
@@ -2619,14 +2621,14 @@ class _NotificationPageState extends State<NotificationPage> {
   }
 }
 
-class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+class MenuPage extends StatefulWidget {
+  const MenuPage({super.key});
 
   @override
-  State<ProfilePage> createState() => _ProfilePageState();
+  State<MenuPage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> {
+class _ProfilePageState extends State<MenuPage> {
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -2634,135 +2636,161 @@ class _ProfilePageState extends State<ProfilePage> {
         SingleChildScrollView(
           child: Column(
             children: [
-              SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (context) => Profile()));
-                    },
-                    child: Container(
-                      padding: EdgeInsets.all(5),
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        color: Color.fromARGB(15, 0, 0, 0),
-                        borderRadius: BorderRadius.circular(5),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Icon(Icons.badge_outlined),
-                          Text('Profile'),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Container(
-                    padding: EdgeInsets.all(5),
-                    child: Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                          color: Color.fromARGB(15, 0, 0, 0),
-                          borderRadius: BorderRadius.circular(5)),
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Icon(Icons.archive_outlined),
-                            Text('My Orders')
-                          ],
+              SizedBox(height: 20),
+              Container(
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => Profile()));
+                          },
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 5),
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              color: Color.fromARGB(15, 0, 0, 0),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Icon(Icons.badge_outlined),
+                                Text('Profile'),
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                  ),
-                  Container(
-                    padding: EdgeInsets.all(5),
-                    child: Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                          color: Color.fromARGB(15, 0, 0, 0),
-                          borderRadius: BorderRadius.circular(5)),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Icon(Icons.shopping_bag_outlined),
-                          Text('Order List')
-                        ],
-                      ),
-                    ),
-                  )
-                ],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(10),
-                    child: Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                          color: Color.fromARGB(15, 0, 0, 0),
-                          borderRadius: BorderRadius.circular(5)),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Icon(Icons.confirmation_num_outlined),
-                          Text('Coupon')
-                        ],
-                      ),
-                    ),
-                  ),
-                  Container(
-                    padding: EdgeInsets.all(10),
-                    child: Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                          color: Color.fromARGB(15, 0, 0, 0),
-                          borderRadius: BorderRadius.circular(5)),
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Icon(Icons.list_alt_outlined),
-                            Text('Survey Branch')
-                          ],
+                        GestureDetector(
+                          onTap: () {},
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 5),
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              color: Color.fromARGB(15, 0, 0, 0),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Icon(Icons.archive_outlined),
+                                Text('My Orders'),
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
+                        GestureDetector(
+                          onTap: () {},
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 5),
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              color: Color.fromARGB(15, 0, 0, 0),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Icon(Icons.shopping_bag_outlined),
+                                Text('Order List'),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  Container(
-                    padding: EdgeInsets.all(10),
-                    child: Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                          color: Color.fromARGB(15, 0, 0, 0),
-                          borderRadius: BorderRadius.circular(5)),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Icon(Icons.settings_outlined),
-                          Text('Setting')
-                        ],
-                      ),
+                    SizedBox(height: 10,),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        GestureDetector(
+                          onTap: () {},
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 5),
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              color: Color.fromARGB(15, 0, 0, 0),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Icon(Icons.confirmation_num_outlined),
+                                Text('Coupon'),
+                              ],
+                            ),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () {},
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 5),
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              color: Color.fromARGB(15, 0, 0, 0),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Icon(Icons.list_alt_outlined),
+                                Text('Survey B.'),
+                              ],
+                            ),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => Settingpage()));
+                          },
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 5),
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              color: Color.fromARGB(15, 0, 0, 0),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Icon(Icons.settings_outlined),
+                                Text('Setting'),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  )
-                ],
+                  ],
+                ),
               ),
-              SizedBox(height: 10),
+              SizedBox(height: 20),
               Column(
                 children: [
                   Container(
@@ -2807,6 +2835,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 10),
@@ -2926,7 +2955,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               SizedBox(height: 10),
               Center(
-                  child: Text("Version: 1.0 | By 1DEV",
+                  child: Text("Version: 2.0 | By 1DEV",
                       style: TextStyle(color: Colors.black54)))
             ],
           ),
@@ -2944,33 +2973,89 @@ class ShopPage extends StatefulWidget {
 }
 
 class _ShopPageState extends State<ShopPage> {
-  /*
-  
-  bool lightIsOn = false;
-  bool homeIsOn = false;
-  bool heartIsOn = false;
-  Color homeDefaultColor = Colors.black;
+  final PageController _pageControlShop1 = PageController(initialPage: 0);
+  final PageController _pageControlShop2 = PageController(initialPage: 0);
 
-  IconData iconDefault = Icons.favorite_border_outlined;
-  Color heartDefaultColor = Colors.black;
+  final List<Map<String, String>> imagesShop1 = [
+    {
+      "ImageShop":
+          "https://res.cloudinary.com/dag73dhpl/image/upload/v1741172937/kitty_rxmloz.jpg",
+      "CategoryL": "ABCSEX (For Male)",
+      "SizeRangeL": "XS–3XL",
+      "ProductD":
+          "เสื้อน้องแมว Pastel Kitty ดีไซน์อ่อนหวาน ความน่ารักและมินิมอล",
+      "ProductPr": "THB 590",
+      "ProductP": "ทำจากวัสดุรีไซเคิล",
+    },
+    {
+      "ImageShop":
+          "https://res.cloudinary.com/dag73dhpl/image/upload/v1741172937/rock_icucey.jpg",
+      "CategoryL": "ABCSEX (For Female)",
+      "SizeRangeL": "XS–3XL",
+      "ProductD": "เสื้อน้องแมว Rockstar Meow ลวดลายที่สะท้อนความเป็นร็อค",
+      "ProductPr": "THB 590",
+      "ProductP": "ทำจากวัสดุรีไซเคิล",
+    },
+    {
+      "ImageShop":
+          "https://res.cloudinary.com/dag73dhpl/image/upload/v1741172936/candy_ogwsew.jpg",
+      "CategoryL": "ABCSEX (For Kitten)",
+      "SizeRangeL": "XS–3XL",
+      "ProductD":
+          "เสื้อน้องแมว Candy Cutie แนวหวานๆ หรือมินิมอลที่เข้ากับไลฟ์สไตล์ของคนรักแมว",
+      "ProductPr": "THB 590",
+      "ProductP": "ทำจากวัสดุรีไซเคิล",
+    },
+  ];
 
-  */
+  final List<Map<String, String>> imagesShop2 = [
+    {
+      "ImageShop":
+          "https://res.cloudinary.com/dag73dhpl/image/upload/v1741169093/princesspaws_wxepsy.jpg",
+      "CategoryL": "ABCSEX (For Female)",
+      "SizeRangeL": "XS–3XL",
+      "ProductD":
+          "เสื้อน้องแมว Princess Paws สไตล์หรูหรา ที่เน้นความน่ารักและทันสมัย ",
+      "ProductPr": "THB 1290",
+      "ProductP": "ทำจากวัสดุรีไซเคิล",
+    },
+    {
+      "ImageShop":
+          "https://res.cloudinary.com/dag73dhpl/image/upload/v1741170571/royalqueen_ng40rd.jpg",
+      "CategoryL": "ABCSEX (For Female)",
+      "SizeRangeL": "XS–3XL",
+      "ProductD":
+          "เสื้อน้องแมว Royal Queen สไตล์ที่เน้นความหรูหรา, มีการตกแต่งด้วยลูกไม้",
+      "ProductPr": "THB 1290",
+      "ProductP": "ทำจากวัสดุรีไซเคิล",
+    },
+    {
+      "ImageShop":
+          "https://res.cloudinary.com/dag73dhpl/image/upload/v1741170942/sweetlolita_d1pg8d.jpg",
+      "CategoryL": "ABCSEX (For Female)",
+      "SizeRangeL": "XS–3XL",
+      "ProductD": "เสื้อน้องแมว Sweet Lolita สไตล์เน้นความหวานหรือความน่ารัก",
+      "ProductPr": "THB 1290",
+      "ProductP": "ทำจากวัสดุรีไซเคิล",
+    },
+  ];
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(15), //เว้นระยะรอบวัตถุ 15 pixel
+    return SingleChildScrollView(
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            margin: EdgeInsets.symmetric(horizontal: 10),
+            padding: EdgeInsets.all(15),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 CachedNetworkImage(
                   imageUrl:
                       "https://res.cloudinary.com/dag73dhpl/image/upload/v1740759438/animalshelter_ncqile.png",
-                  width: 50,
-                  height: 50,
+                  width: 40,
+                  height: 40,
                   placeholder: (context, url) =>
                       CircularProgressIndicator.adaptive(
                     backgroundColor: Colors.white,
@@ -2980,68 +3065,386 @@ class _ShopPageState extends State<ShopPage> {
                   errorWidget: (context, url, error) => Icon(Icons.error),
                 ),
                 GestureDetector(
-                    onTap: () {
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (context) => Profile()));
-                    },
-                    child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Icon(Icons.badge_outlined),
-                          Text('Profile'),
-                        ],
-                      ),)
+                  onTap: () {
+                    Navigator.push(context,
+                        MaterialPageRoute(builder: (context) => Profile()));
+                  },
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Icon(Icons.badge_outlined),
+                      Text('Profile'),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
-          /*
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                lightIsOn = !lightIsOn;
-              });
-            },
-            child: Icon((Icons.lightbulb),
-                // ignore: dead_code
-                size: 50,
-                color: lightIsOn ? Colors.yellow : Colors.black),
+          Divider(
+            color: Colors.black26,
+            thickness: 1,
           ),
-          GestureDetector(
-            onDoubleTap: () {
-              setState(() {
-                homeIsOn = !homeIsOn;
-                homeDefaultColor = homeIsOn ? Colors.blue : Colors.black;
-              });
-            },
-            onTap: () {
-              setState(() {
-                homeIsOn = !homeIsOn;
-                homeDefaultColor = homeIsOn ? Colors.green : Colors.black;
-              });
-            },
-            child: Icon(
-              (Icons.home),
-              size: 50,
-              color: homeDefaultColor,
+          SizedBox(
+            height: 10,
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 15),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Basket",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(
+                  height: 30,
+                ),
+                Text("Your basket is Emty."),
+                SizedBox(
+                  height: 30,
+                ),
+                ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) => authPage()));
+                    },
+                    child: Text(
+                      "Continue shopping",
+                      style: TextStyle(color: Colors.black),
+                    )),
+              ],
             ),
           ),
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                heartIsOn = !heartIsOn;
-                iconDefault =
-                    heartIsOn ? Icons.favorite : Icons.favorite_border_outlined;
-                heartDefaultColor = heartIsOn ? Colors.red : Colors.black;
-              });
-            },
-            child: Icon(
-              iconDefault,
-              size: 50,
-              color: heartDefaultColor,
+          SizedBox(
+            height: 20,
+          ),
+          Container(
+            child: Column(
+              children: [
+                Center(
+                  child: Text(
+                    "You might like this",
+                    style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                SizedBox(
+                  height: 490, // กำหนดความสูงของ PageView
+                  child: PageView.builder(
+                    controller: _pageControlShop1,
+                    itemCount: imagesShop1.length,
+                    scrollDirection: Axis.horizontal,
+                    // ปิดการเลื่อนของ PageView
+
+                    itemBuilder: (context, index) {
+                      final itemS1 = imagesShop1[index % imagesShop1.length];
+                      return Stack(
+                        children: [
+                          Container(
+                            color: Colors.white,
+                            child: Container(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 10),
+                                child: Column(
+                                  children: [
+                                    CachedNetworkImage(
+                                      imageUrl: itemS1["ImageShop"]!,
+                                      fit: BoxFit.fill,
+                                      width: double.infinity,
+                                      height: 350,
+                                      placeholder: (context, url) =>
+                                          CircularProgressIndicator.adaptive(
+                                        backgroundColor: Colors.white,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                                Color.fromARGB(75, 50, 50, 50)),
+                                      ),
+                                      errorWidget: (context, url, error) =>
+                                          Icon(Icons.error),
+                                    ),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          itemS1['CategoryL']!,
+                                          style: TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.black38
+                                              /*
+                                          shadows: [
+                                            
+                                            Shadow(
+                                              blurRadius: 5,
+                                              color: Colors.black45,
+                                              offset: Offset(2, 2),
+                                            ),
+                                            
+                                          ]*/
+                                              ),
+                                        ),
+                                        Text(
+                                          itemS1['SizeRangeL']!,
+                                          style: TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.black38
+                                              /*
+                                          shadows: [
+                                            
+                                            Shadow(
+                                              blurRadius: 5,
+                                              color: Colors.black45,
+                                              offset: Offset(2, 2),
+                                            ),
+                                            
+                                          ]*/
+                                              ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(
+                                      height: 10,
+                                    ),
+                                    Text(
+                                      itemS1['ProductD']!,
+                                      style: TextStyle(
+                                          fontSize: 15, color: Colors.black
+                                          /*
+                                          shadows: [
+                                            
+                                            Shadow(
+                                              blurRadius: 5,
+                                              color: Colors.black45,
+                                              offset: Offset(2, 2),
+                                            ),
+                                            
+                                          ]*/
+                                          ),
+                                    ),
+                                    SizedBox(
+                                      height: 10,
+                                    ),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          itemS1['ProductPr']!,
+                                          style: TextStyle(
+                                            fontSize: 20,
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.bold,
+
+                                            /*
+                                          shadows: [
+                                            
+                                            Shadow(
+                                              blurRadius: 5,
+                                              color: Colors.black45,
+                                              offset: Offset(2, 2),
+                                            ),
+                                            
+                                          ]*/
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          height: 10,
+                                        ),
+                                        Text(
+                                          itemS1['ProductP']!,
+                                          style: TextStyle(
+                                              fontSize: 15,
+                                              color: Colors.black38
+                                              /*
+                                          shadows: [
+                                            
+                                            Shadow(
+                                              blurRadius: 5,
+                                              color: Colors.black45,
+                                              offset: Offset(2, 2),
+                                            ),
+                                            
+                                          ]*/
+                                              ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                )),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
           ),
-          */
+          Container(
+            child: Column(
+              children: [
+                Center(
+                  child: Text(
+                    "Best Seller",
+                    style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                SizedBox(
+                  height: 490, // กำหนดความสูงของ PageView
+                  child: PageView.builder(
+                    controller: _pageControlShop2,
+                    itemCount: imagesShop2.length,
+                    scrollDirection: Axis.horizontal,
+                    // ปิดการเลื่อนของ PageView
+
+                    itemBuilder: (context, index) {
+                      final itemS2 = imagesShop2[index % imagesShop2.length];
+                      return Stack(
+                        children: [
+                          Container(
+                            color: Colors.white,
+                            child: Container(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 10),
+                                child: Column(
+                                  children: [
+                                    CachedNetworkImage(
+                                      imageUrl: itemS2["ImageShop"]!,
+                                      fit: BoxFit.fill,
+                                      width: double.infinity,
+                                      height: 350,
+                                      placeholder: (context, url) =>
+                                          CircularProgressIndicator.adaptive(
+                                        backgroundColor: Colors.white,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                                Color.fromARGB(75, 50, 50, 50)),
+                                      ),
+                                      errorWidget: (context, url, error) =>
+                                          Icon(Icons.error),
+                                    ),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          itemS2['CategoryL']!,
+                                          style: TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.black38
+                                              /*
+                                          shadows: [
+                                            
+                                            Shadow(
+                                              blurRadius: 5,
+                                              color: Colors.black45,
+                                              offset: Offset(2, 2),
+                                            ),
+                                            
+                                          ]*/
+                                              ),
+                                        ),
+                                        Text(
+                                          itemS2['SizeRangeL']!,
+                                          style: TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.black38
+                                              /*
+                                          shadows: [
+                                            
+                                            Shadow(
+                                              blurRadius: 5,
+                                              color: Colors.black45,
+                                              offset: Offset(2, 2),
+                                            ),
+                                            
+                                          ]*/
+                                              ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(
+                                      height: 10,
+                                    ),
+                                    Text(
+                                      itemS2['ProductD']!,
+                                      style: TextStyle(
+                                          fontSize: 15, color: Colors.black
+                                          /*
+                                          shadows: [
+                                            
+                                            Shadow(
+                                              blurRadius: 5,
+                                              color: Colors.black45,
+                                              offset: Offset(2, 2),
+                                            ),
+                                            
+                                          ]*/
+                                          ),
+                                    ),
+                                    SizedBox(
+                                      height: 10,
+                                    ),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          itemS2['ProductPr']!,
+                                          style: TextStyle(
+                                            fontSize: 20,
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.bold,
+
+                                            /*
+                                          shadows: [
+                                            
+                                            Shadow(
+                                              blurRadius: 5,
+                                              color: Colors.black45,
+                                              offset: Offset(2, 2),
+                                            ),
+                                            
+                                          ]*/
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          height: 10,
+                                        ),
+                                        Text(
+                                          itemS2['ProductP']!,
+                                          style: TextStyle(
+                                              fontSize: 15,
+                                              color: Colors.black38
+                                              /*
+                                          shadows: [
+                                            
+                                            Shadow(
+                                              blurRadius: 5,
+                                              color: Colors.black45,
+                                              offset: Offset(2, 2),
+                                            ),
+                                            
+                                          ]*/
+                                              ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                )),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

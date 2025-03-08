@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_application_1/editProfile.dart';
 import 'package:flutter_application_1/login.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
@@ -16,7 +17,7 @@ class _ProfileState extends State<Profile> {
   String _name = "";
   String _email = "";
   String _phone = "";
-  String _zip = "";
+  String _postal = "";
   String _birthdate = "";
   String _gender = "";
   String _newsletter = "";
@@ -85,7 +86,7 @@ class _ProfileState extends State<Profile> {
         _name = data['name'] ?? 'No name';
         _email = data['email'] ?? 'No email';
         _phone = data['phone'] ?? 'No phone';
-        _zip = data['zip'] ?? 'No zip';
+        _postal = data['postal'] ?? 'No postal code';
         _birthdate = data['birthdate'] ?? 'No date';
         _gender = data['gender'] ?? 'No gender';
         _newsletter = data['subscribeNewsletter'] != null
@@ -111,60 +112,92 @@ class _ProfileState extends State<Profile> {
       body: SingleChildScrollView(
         child: Container(
           margin: const EdgeInsets.all(10),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(height: 10),
-                CircleAvatar(
-                  radius: 100,
-                  backgroundImage: user?.photoURL != null
-                      ? NetworkImage(user!.photoURL!)
-                      : null,
-                  backgroundColor: Color.fromARGB(10, 0, 0, 0),
-                  child: user?.photoURL == null
-                      ? CachedNetworkImage(
-                          imageUrl:
-                              "https://res.cloudinary.com/dag73dhpl/image/upload/v1741013619/profile-cat_taidty.png",
-                          width: 180,
-                          height: 180,
-                          placeholder: (context, url) =>
-                              CircularProgressIndicator.adaptive(
-                            backgroundColor: Colors.white,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                                Color.fromARGB(75, 50, 50, 50)),
+          width: double.infinity,
+          child: Column(
+            children: [
+             
+  
+              Container(
+                margin: EdgeInsets.symmetric(horizontal: 15),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => editProfilePage(),
                           ),
-                          errorWidget: (context, url, error) =>
-                              Icon(Icons.error),
-                        )
-                      : null,
+                        );
+                      },
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Icon(Icons.edit_outlined),
+                          Text('Edit'),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                SizedBox(height: 20),
-                Text("Name: $_name", style: TextStyle(fontSize: 15)),
-                SizedBox(height: 10),
-                Text("Email: $_email", style: TextStyle(fontSize: 15)),
-                SizedBox(height: 10),
-                Text("Phone: $_phone", style: TextStyle(fontSize: 15)),
-                SizedBox(height: 10),
-                Text("Zip: $_zip", style: TextStyle(fontSize: 15)),
-                SizedBox(height: 10),
-                Text("Date: ${formatDate(_birthdate)}",
-                    style: TextStyle(fontSize: 15)),
-                SizedBox(height: 10),
-                Text("Gender: $_gender", style: TextStyle(fontSize: 15)),
-                SizedBox(height: 10),
-                Text("The newsletter: $_newsletter",
-                    style: TextStyle(fontSize: 15)),
-                SizedBox(height: 10),
-                Text("Member agreement: $_memberAgreement",
-                    style: TextStyle(fontSize: 15)),
-                SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: () => showLogAlertExit(context),
-                  child: Text("Logout"),
-                ),
-              ],
-            ),
+              ),
+              SizedBox(height: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  CircleAvatar(
+                    radius: 100,
+                    backgroundImage: user?.photoURL != null
+                        ? NetworkImage(user!.photoURL!)
+                        : null,
+                    backgroundColor: Color.fromARGB(10, 0, 0, 0),
+                    child: user?.photoURL == null
+                        ? CachedNetworkImage(
+                            imageUrl:
+                                "https://res.cloudinary.com/dag73dhpl/image/upload/v1741228008/cat2_y5dbkd.png",
+                            width: 180,
+                            height: 180,
+                            placeholder: (context, url) =>
+                                CircularProgressIndicator.adaptive(
+                              backgroundColor: Colors.white,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                  Color.fromARGB(75, 50, 50, 50)),
+                            ),
+                            errorWidget: (context, url, error) =>
+                                Icon(Icons.error),
+                          )
+                        : null,
+                  ),
+                  SizedBox(height: 20),
+                  Text("Name: $_name", style: TextStyle(fontSize: 15)),
+                  SizedBox(height: 10),
+                  Text("Email: $_email", style: TextStyle(fontSize: 15)),
+                  SizedBox(height: 10),
+                  Text("Phone: $_phone", style: TextStyle(fontSize: 15)),
+                  SizedBox(height: 10),
+                  Text("Postal Code: $_postal", style: TextStyle(fontSize: 15)),
+                  SizedBox(height: 10),
+                  Text("Date: ${formatDate(_birthdate)}",
+                      style: TextStyle(fontSize: 15)),
+                  SizedBox(height: 10),
+                  Text("Gender: $_gender", style: TextStyle(fontSize: 15)),
+                  SizedBox(height: 10),
+                  Text("The newsletter: $_newsletter",
+                      style: TextStyle(fontSize: 15)),
+                  SizedBox(height: 10),
+                  Text("Member agreement: $_memberAgreement",
+                      style: TextStyle(fontSize: 15)),
+                  SizedBox(height: 10),
+                  ElevatedButton(
+                    onPressed: () => showLogAlertExit(context),
+                    child: Text("Logout", style: TextStyle(color: Colors.black),),
+                  ),
+                ],
+              )
+            ],
           ),
         ),
       ),
