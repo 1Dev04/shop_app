@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-
-import 'package:flutter_application_1/database.dart';
-import 'package:flutter_application_1/model.dart';
-import 'package:flutter_application_1/updateForm.dart';
+import 'package:flutter_application_1/data/database.dart';
+import 'package:flutter_application_1/models/model.dart';
+import 'package:flutter_application_1/screen/UpdateForm.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 
 class ViewAccount extends StatefulWidget {
@@ -128,6 +127,7 @@ class _ViewAccount extends State<ViewAccount> {
   //-------- Delete Dialog ------
   deleteDialog(PostModels data) async {
     return showDialog(
+        
         context: context,
         builder: (context) {
           return AlertDialog(

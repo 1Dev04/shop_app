@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/authPage.dart';
-import 'package:flutter_application_1/profile.dart';
-import 'package:flutter_application_1/settingPage.dart';
+import 'package:flutter_application_1/provider/theme.dart';
+import 'package:flutter_application_1/provider/theme_provider.dart';
+import 'package:flutter_application_1/screen/ViewAccount.dart';
+import 'package:flutter_application_1/screen/authPage.dart';
+import 'package:flutter_application_1/screen/profile.dart';
+import 'package:flutter_application_1/screen/settingPage.dart';
 
 // import 'package:flutter_application_1/login.dart';
-import 'package:flutter_application_1/viewAccount.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:provider/provider.dart';
 
 import 'dart:async';
-import './addForm.dart';
+import 'addForm.dart';
 
 class MyHome extends StatefulWidget {
   const MyHome({super.key});
@@ -56,17 +59,23 @@ class _MyHomeState extends State<MyHome> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      themeMode: themeProvider.themeMode,
+      theme: AppThemes.lightTheme,
+      darkTheme: AppThemes.darkTheme,
       home: Scaffold(
         //------------------- AppBar -------------------
+      
         appBar: AppBar(
           title: Text(
             setTitle(),
             style: TextStyle(
-                color: Colors.white, fontFamily: 'Catfont', fontSize: 30),
+                color: Colors.white, fontFamily: 'Catfont', fontSize: 40),
           ),
           backgroundColor: Color.fromRGBO(0, 0, 0, 0.938),
+          
           actions: [
             GestureDetector(
               onTap: () {
@@ -77,9 +86,12 @@ class _MyHomeState extends State<MyHome> {
               },
               child: Icon(
                 screenIndex == 0 ? Icons.cancel_outlined : Icons.search,
-                size: 25,
+                size: 30,
                 color: activeButton == 0 ? Colors.white : Colors.white60,
               ),
+            ),
+            SizedBox(
+              width: 10,
             ),
             GestureDetector(
               onTap: () {
@@ -92,19 +104,27 @@ class _MyHomeState extends State<MyHome> {
                 screenIndex == 1
                     ? Icons.favorite
                     : Icons.favorite_border_outlined,
-                size: 25,
+                size: 30,
                 color: activeButton == 1 ? Colors.white : Colors.white60,
               ),
+            ),
+            SizedBox(
+              width: 10,
             ),
             IconButton(
                 onPressed: () {
                   Navigator.push(context,
                       MaterialPageRoute(builder: (context) => ViewAccount()));
                 },
-                icon: Icon(Icons.add_chart_outlined, color: Colors.white)),
+                icon: Icon(
+                  Icons.add_chart_outlined,
+                  color: Colors.white,
+                  size: 30,
+                )),
             SizedBox(width: 15)
           ],
         ),
+        
         //------------------- body -------------------
         body: SafeArea(
           child: mobileScreen[screenIndex],
@@ -112,7 +132,7 @@ class _MyHomeState extends State<MyHome> {
 
         //------------------- bottomNavigationBar -------------------
         bottomNavigationBar: Container(
-          height: 100,
+          height: 80,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(0),
@@ -132,7 +152,7 @@ class _MyHomeState extends State<MyHome> {
                 },
                 child: Icon(
                   screenIndex == 2 ? Icons.home : Icons.home_outlined,
-                  size: 25,
+                  size: 30,
                   color: activeButton == 2 ? Colors.white : Colors.white60,
                 ),
               ),
@@ -179,7 +199,7 @@ Navigator.push(
                   screenIndex == 3
                       ? Icons.shopping_cart_rounded
                       : Icons.shopping_cart_outlined,
-                  size: 25,
+                  size: 30,
                   color: activeButton == 3 ? Colors.white : Colors.white60,
                 ),
               ),
@@ -198,7 +218,7 @@ Navigator.push(
                     });
                   });
                 },
-                child: Icon(Icons.add, color: Colors.white),
+                child: Icon(Icons.add, color: Colors.white, size: 30),
               ),
               GestureDetector(
                 onTap: () {
@@ -211,7 +231,7 @@ Navigator.push(
                   screenIndex == 4
                       ? Icons.notifications
                       : Icons.notifications_outlined,
-                  size: 25,
+                  size: 30,
                   color: activeButton == 4 ? Colors.white : Colors.white60,
                 ),
               ),
@@ -224,7 +244,7 @@ Navigator.push(
                 },
                 child: Icon(
                   screenIndex == 5 ? Icons.menu_open : Icons.menu,
-                  size: 25,
+                  size: 30,
                   color: activeButton == 5 ? Colors.white : Colors.white60,
                 ),
               ),
@@ -263,88 +283,97 @@ class _SearchPageState extends State<SearchPage> {
       body: Column(
         children: [
           SafeArea(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    _goToPageSearch(0);
-                    setState(() {
-                      actionPageSearch = 0;
-                    });
-                  },
-                  child: actionPageSearch == 0
-                      ? Text(
-                          "FEMALE",
-                          style: TextStyle(
-                            color: Color.fromARGB(255, 0, 0, 0),
-                            fontWeight: FontWeight.bold,
-                            decoration: TextDecoration.underline,
-                            decorationThickness: 1, // ความหนาของเส้นใต้
-                            decorationColor:
-                                Color.fromARGB(255, 0, 0, 0), // สีของเส้นใต้
-                            height: 3,
-                          ),
-                        )
-                      : Text("FEMALE",
-                          style: TextStyle(
-                            color: Color.fromARGB(255, 40, 40, 40),
-                            height: 3,
-                          )),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    _goToPageSearch(1);
-                    setState(() {
-                      actionPageSearch = 1;
-                    });
-                  },
-                  child: actionPageSearch == 1
-                      ? Text(
-                          "MALE",
-                          style: TextStyle(
-                            color: Color.fromARGB(255, 0, 0, 0),
-                            fontWeight: FontWeight.bold,
-                            decoration: TextDecoration.underline,
-                            decorationThickness: 1, // ความหนาของเส้นใต้
-                            decorationColor:
-                                Color.fromARGB(255, 0, 0, 0), // สีของเส้นใต้
-                            height: 3,
-                          ),
-                        )
-                      : Text("MALE",
-                          style: TextStyle(
-                            color: Color.fromARGB(255, 40, 40, 40),
-                            height: 3,
-                          )),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    _goToPageSearch(2);
-                    setState(() {
-                      actionPageSearch = 2;
-                    });
-                  },
-                  child: actionPageSearch == 2
-                      ? Text(
-                          "KITTEN",
-                          style: TextStyle(
-                            color: Color.fromARGB(255, 0, 0, 0),
-                            fontWeight: FontWeight.bold,
-                            decoration: TextDecoration.underline,
-                            decorationThickness: 1, // ความหนาของเส้นใต้
-                            decorationColor:
-                                Color.fromARGB(255, 0, 0, 0), // สีของเส้นใต้
-                            height: 3,
-                          ),
-                        )
-                      : Text("KITTEN",
-                          style: TextStyle(
-                            color: Color.fromARGB(255, 40, 40, 40),
-                            height: 3,
-                          )),
-                ),
-              ],
+            child: Container(
+              color: Color.fromARGB(15, 0, 0, 0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      _goToPageSearch(0);
+                      setState(() {
+                        actionPageSearch = 0;
+                      });
+                    },
+                    child: actionPageSearch == 0
+                        ? Text(
+                            "FEMALE",
+                            style: TextStyle(
+                              color: Color.fromARGB(255, 0, 0, 0),
+                              fontWeight: FontWeight.bold,
+                              decoration: TextDecoration.underline,
+                              decorationThickness: 1, // ความหนาของเส้นใต้
+                              decorationColor:
+                                  Color.fromARGB(255, 0, 0, 0), // สีของเส้นใต้
+                              fontSize: 18,
+                              height: 3,
+                            ),
+                          )
+                        : Text("FEMALE",
+                            style: TextStyle(
+                              color: Color.fromARGB(255, 40, 40, 40),
+                              fontSize: 15,
+                              height: 3,
+                            )),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      _goToPageSearch(1);
+                      setState(() {
+                        actionPageSearch = 1;
+                      });
+                    },
+                    child: actionPageSearch == 1
+                        ? Text(
+                            "MALE",
+                            style: TextStyle(
+                              color: Color.fromARGB(255, 0, 0, 0),
+                              fontWeight: FontWeight.bold,
+                              decoration: TextDecoration.underline,
+                              decorationThickness: 1, // ความหนาของเส้นใต้
+                              decorationColor:
+                                  Color.fromARGB(255, 0, 0, 0), // สีของเส้นใต้
+                              fontSize: 18,
+                              height: 3,
+                            ),
+                          )
+                        : Text("MALE",
+                            style: TextStyle(
+                              color: Color.fromARGB(255, 40, 40, 40),
+                              fontSize: 15,
+                              height: 3,
+                            )),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      _goToPageSearch(2);
+                      setState(() {
+                        actionPageSearch = 2;
+                      });
+                    },
+                    child: actionPageSearch == 2
+                        ? Text(
+                            "KITTEN",
+                            style: TextStyle(
+                              color: Color.fromARGB(255, 0, 0, 0),
+                              fontWeight: FontWeight.bold,
+                              decoration: TextDecoration.underline,
+                              decorationThickness: 1, // ความหนาของเส้นใต้
+                              decorationColor:
+                                  Color.fromARGB(255, 0, 0, 0), // สีของเส้นใต้
+                              fontSize: 18,
+                              height: 3,
+                            ),
+                          )
+                        : Text("KITTEN",
+                            style: TextStyle(
+                              color: Color.fromARGB(255, 40, 40, 40),
+                              fontSize: 15,
+                              height: 3,
+                            )),
+                  ),
+                ],
+              ),
             ),
           ),
           Expanded(
@@ -362,20 +391,19 @@ class _SearchPageState extends State<SearchPage> {
                   children: [
                     //Section 1
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         //Female 1
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Container(
-                            width: 170,
+                            width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(5, 0, 0, 0),
+                                color: Color.fromARGB(2, 0, 0, 0),
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 CachedNetworkImage(
                                   imageUrl:
@@ -412,14 +440,13 @@ class _SearchPageState extends State<SearchPage> {
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Container(
-                            width: 170,
+                            width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(5, 0, 0, 0),
+                                color: Color.fromARGB(2, 0, 0, 0),
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 CachedNetworkImage(
                                   imageUrl:
@@ -457,16 +484,16 @@ class _SearchPageState extends State<SearchPage> {
                     SizedBox(height: 10),
                     //Section 2
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         //Female 3
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Container(
-                            width: 170,
+                            width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(5, 0, 0, 0),
+                                color: Color.fromARGB(2, 0, 0, 0),
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -507,10 +534,10 @@ class _SearchPageState extends State<SearchPage> {
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Container(
-                            width: 170,
+                            width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(5, 0, 0, 0),
+                                color: Color.fromARGB(2, 0, 0, 0),
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -552,16 +579,16 @@ class _SearchPageState extends State<SearchPage> {
                     SizedBox(height: 10),
                     //Section 3
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         //Female 5
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Container(
-                            width: 170,
+                            width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(5, 0, 0, 0),
+                                color: Color.fromARGB(2, 0, 0, 0),
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -602,10 +629,10 @@ class _SearchPageState extends State<SearchPage> {
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Container(
-                            width: 170,
+                            width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(5, 0, 0, 0),
+                                color: Color.fromARGB(2, 0, 0, 0),
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -647,16 +674,16 @@ class _SearchPageState extends State<SearchPage> {
                     SizedBox(height: 10),
                     //Section 4
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         //Female 7
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Container(
-                            width: 170,
+                            width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(5, 0, 0, 0),
+                                color: Color.fromARGB(2, 0, 0, 0),
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -697,10 +724,10 @@ class _SearchPageState extends State<SearchPage> {
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Container(
-                            width: 170,
+                            width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(5, 0, 0, 0),
+                                color: Color.fromARGB(2, 0, 0, 0),
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -742,16 +769,16 @@ class _SearchPageState extends State<SearchPage> {
                     SizedBox(height: 10),
                     //Section 9
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         //Female 9
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Container(
-                            width: 170,
+                            width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(5, 0, 0, 0),
+                                color: Color.fromARGB(2, 0, 0, 0),
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -792,10 +819,10 @@ class _SearchPageState extends State<SearchPage> {
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Container(
-                            width: 170,
+                            width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(5, 0, 0, 0),
+                                color: Color.fromARGB(2, 0, 0, 0),
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -843,16 +870,16 @@ class _SearchPageState extends State<SearchPage> {
                   children: [
                     //Section 1
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         //Male 1
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Container(
-                            width: 170,
+                            width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(5, 0, 0, 0),
+                                color: Color.fromARGB(2, 0, 0, 0),
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -893,10 +920,10 @@ class _SearchPageState extends State<SearchPage> {
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Container(
-                            width: 170,
+                            width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(5, 0, 0, 0),
+                                color: Color.fromARGB(2, 0, 0, 0),
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -938,16 +965,16 @@ class _SearchPageState extends State<SearchPage> {
                     SizedBox(height: 10),
                     //Section 2
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         //Male 3
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Container(
-                            width: 170,
+                            width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(5, 0, 0, 0),
+                                color: Color.fromARGB(2, 0, 0, 0),
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -988,10 +1015,10 @@ class _SearchPageState extends State<SearchPage> {
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Container(
-                            width: 170,
+                            width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(5, 0, 0, 0),
+                                color: Color.fromARGB(2, 0, 0, 0),
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1033,16 +1060,16 @@ class _SearchPageState extends State<SearchPage> {
                     SizedBox(height: 10),
                     //Section 3
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         //Male 5
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Container(
-                            width: 170,
+                            width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(5, 0, 0, 0),
+                                color: Color.fromARGB(2, 0, 0, 0),
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1083,10 +1110,10 @@ class _SearchPageState extends State<SearchPage> {
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Container(
-                            width: 170,
+                            width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(5, 0, 0, 0),
+                                color: Color.fromARGB(2, 0, 0, 0),
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1128,16 +1155,16 @@ class _SearchPageState extends State<SearchPage> {
                     SizedBox(height: 10),
                     //Section 4
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         //Male 7
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Container(
-                            width: 170,
+                            width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(5, 0, 0, 0),
+                                color: Color.fromARGB(2, 0, 0, 0),
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1178,10 +1205,10 @@ class _SearchPageState extends State<SearchPage> {
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Container(
-                            width: 170,
+                            width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(5, 0, 0, 0),
+                                color: Color.fromARGB(2, 0, 0, 0),
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1223,16 +1250,16 @@ class _SearchPageState extends State<SearchPage> {
                     SizedBox(height: 10),
                     //Section 9
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         //Male 9
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Container(
-                            width: 170,
+                            width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(5, 0, 0, 0),
+                                color: Color.fromARGB(2, 0, 0, 0),
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1273,10 +1300,10 @@ class _SearchPageState extends State<SearchPage> {
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Container(
-                            width: 170,
+                            width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(5, 0, 0, 0),
+                                color: Color.fromARGB(2, 0, 0, 0),
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1324,16 +1351,16 @@ class _SearchPageState extends State<SearchPage> {
                   children: [
                     //Section 1
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         //Kittin 1
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Container(
-                            width: 170,
+                            width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(5, 0, 0, 0),
+                                color: Color.fromARGB(2, 0, 0, 0),
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1374,10 +1401,10 @@ class _SearchPageState extends State<SearchPage> {
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Container(
-                            width: 170,
+                            width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(5, 0, 0, 0),
+                                color: Color.fromARGB(2, 0, 0, 0),
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1419,16 +1446,16 @@ class _SearchPageState extends State<SearchPage> {
                     SizedBox(height: 10),
                     //Section 2
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         //Kittin 3
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Container(
-                            width: 170,
+                            width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(5, 0, 0, 0),
+                                color: Color.fromARGB(2, 0, 0, 0),
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1469,10 +1496,10 @@ class _SearchPageState extends State<SearchPage> {
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Container(
-                            width: 170,
+                            width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(5, 0, 0, 0),
+                                color: Color.fromARGB(2, 0, 0, 0),
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1514,16 +1541,16 @@ class _SearchPageState extends State<SearchPage> {
                     SizedBox(height: 10),
                     //Section 3
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         //Kittin 5
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Container(
-                            width: 170,
+                            width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(5, 0, 0, 0),
+                                color: Color.fromARGB(2, 0, 0, 0),
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1564,10 +1591,10 @@ class _SearchPageState extends State<SearchPage> {
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Container(
-                            width: 170,
+                            width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(5, 0, 0, 0),
+                                color: Color.fromARGB(2, 0, 0, 0),
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1609,16 +1636,16 @@ class _SearchPageState extends State<SearchPage> {
                     SizedBox(height: 10),
                     //Section 4
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         //Kittin 7
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Container(
-                            width: 170,
+                            width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(5, 0, 0, 0),
+                                color: Color.fromARGB(2, 0, 0, 0),
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1659,10 +1686,10 @@ class _SearchPageState extends State<SearchPage> {
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Container(
-                            width: 170,
+                            width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(5, 0, 0, 0),
+                                color: Color.fromARGB(2, 0, 0, 0),
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1704,16 +1731,16 @@ class _SearchPageState extends State<SearchPage> {
                     SizedBox(height: 10),
                     //Section 9
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         //Kittin 9
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Container(
-                            width: 170,
+                            width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(5, 0, 0, 0),
+                                color: Color.fromARGB(2, 0, 0, 0),
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1754,10 +1781,10 @@ class _SearchPageState extends State<SearchPage> {
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Container(
-                            width: 170,
+                            width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(5, 0, 0, 0),
+                                color: Color.fromARGB(2, 0, 0, 0),
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1843,22 +1870,22 @@ class _FavoritePageState extends State<FavoritePage> {
       children: [
         Center(
           child: Container(
-            width: 400,
-            height: 50,
+            width: double.infinity,
+            height: 70,
             decoration: BoxDecoration(color: Color.fromARGB(15, 0, 0, 0)),
             padding: EdgeInsets.all(10),
             child: Row(mainAxisAlignment: MainAxisAlignment.start, children: [
               Text(
                 "0 list",
-                style: TextStyle(fontSize: 15),
+                style: TextStyle(fontSize: 18),
               )
             ]),
           ),
         ),
         Container(
           color: const Color.fromARGB(0, 0, 0, 0),
-          width: 400,
-          height: 410,
+          width: double.infinity,
+          height: 600,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -1867,12 +1894,12 @@ class _FavoritePageState extends State<FavoritePage> {
               SizedBox(height: 20),
               Text(
                 "0 items in your favorites",
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 5),
               Text(
                 "Add products to your favorites list to check prices and stock availability.",
-                style: TextStyle(fontSize: 10, color: Colors.black54),
+                style: TextStyle(fontSize: 12, color: Colors.black54),
               ),
             ],
           ),
@@ -2014,7 +2041,7 @@ class _HomePageState extends State<HomePage> {
                       item['title']!,
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 25,
+                        fontSize: 30,
                         fontWeight: FontWeight.bold,
                         shadows: [
                           Shadow(
@@ -2034,7 +2061,7 @@ class _HomePageState extends State<HomePage> {
                       item['description']!,
                       style: TextStyle(
                         color: Color.fromRGBO(255, 255, 255, 1),
-                        fontSize: 16,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
                         shadows: [
                           Shadow(
@@ -2077,6 +2104,7 @@ class _HomePageState extends State<HomePage> {
                       },
                       child: Icon(
                         Icons.shopping_cart_outlined,
+                        size: 30,
                         color: Colors.black,
                       ),
                       backgroundColor: Color.fromARGB(194, 255, 250, 250),
@@ -2259,7 +2287,7 @@ class _NotificationPageState extends State<NotificationPage> {
       child: Column(
         children: [
           SizedBox(
-            height: 120, // กำหนดความสูงของ PageView
+            height: 135, // กำหนดความสูงของ PageView
             child: PageView.builder(
               controller: _pageControlNotificate1,
               itemCount: imagesNoti.length,
@@ -2372,7 +2400,7 @@ class _NotificationPageState extends State<NotificationPage> {
                 },
                 child: Container(
                   width: 100,
-                  height: 40,
+                  height: 50,
                   decoration: BoxDecoration(
                       border: Border(
                           bottom: actionPageTwo == 0
@@ -2386,7 +2414,8 @@ class _NotificationPageState extends State<NotificationPage> {
                       style: TextStyle(
                           color: actionPageTwo == 0
                               ? Colors.black
-                              : Colors.black38),
+                              : Colors.black38,
+                          fontSize: actionPageTwo == 0 ? 18 : 15),
                     ),
                   ),
                 ),
@@ -2400,7 +2429,7 @@ class _NotificationPageState extends State<NotificationPage> {
                 },
                 child: Container(
                   width: 100,
-                  height: 40,
+                  height: 50,
                   decoration: BoxDecoration(
                       border: Border(
                           bottom: actionPageTwo == 1
@@ -2414,7 +2443,8 @@ class _NotificationPageState extends State<NotificationPage> {
                       style: TextStyle(
                           color: actionPageTwo == 1
                               ? Colors.black
-                              : Colors.black38),
+                              : Colors.black38,
+                          fontSize: actionPageTwo == 1 ? 18 : 15),
                     ),
                   ),
                 ),
@@ -2423,7 +2453,7 @@ class _NotificationPageState extends State<NotificationPage> {
           ),
           Divider(color: Colors.black12, height: 2),
           SizedBox(
-            height: 250,
+            height: 450,
             child: PageView(
               controller: _pageControlNotificate2,
               scrollDirection: Axis.horizontal,
@@ -2434,7 +2464,6 @@ class _NotificationPageState extends State<NotificationPage> {
               },
               children: [
                 Container(
-                  padding: EdgeInsets.all(1),
                   decoration: BoxDecoration(color: Color.fromARGB(0, 0, 0, 0)),
                   child: SizedBox(
                     child: PageView.builder(
@@ -2456,8 +2485,8 @@ class _NotificationPageState extends State<NotificationPage> {
                               CachedNetworkImage(
                                 imageUrl: item2["messageImg"]!,
                                 fit: BoxFit.cover,
-                                width: 150,
-                                height: 150,
+                                width: 180,
+                                height: 180,
                                 placeholder: (context, url) =>
                                     CircularProgressIndicator.adaptive(
                                   backgroundColor: Colors.white,
@@ -2471,7 +2500,7 @@ class _NotificationPageState extends State<NotificationPage> {
                               Expanded(
                                 child: Container(
                                   padding: EdgeInsets.all(5),
-                                  height: 120,
+                                  height: 200,
                                   decoration: BoxDecoration(
                                       color: Color.fromARGB(0, 0, 0, 0)),
                                   child: Column(
@@ -2483,7 +2512,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                         item2["messageText1"]!,
                                         style: TextStyle(
                                           color: Colors.black,
-                                          fontSize: 15,
+                                          fontSize: 20,
                                           fontWeight: FontWeight.bold,
                                         ),
                                         maxLines: 2,
@@ -2493,7 +2522,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                         item2["messageText2"]!,
                                         style: TextStyle(
                                           color: Colors.black87,
-                                          fontSize: 15,
+                                          fontSize: 16,
                                           fontWeight: FontWeight.normal,
                                         ),
                                         maxLines: 3,
@@ -2503,7 +2532,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                         item2["messageText3"]!,
                                         style: TextStyle(
                                           color: Colors.black54,
-                                          fontSize: 10,
+                                          fontSize: 12,
                                           fontWeight: FontWeight.normal,
                                         ),
                                         maxLines: 1,
@@ -2523,10 +2552,8 @@ class _NotificationPageState extends State<NotificationPage> {
                   ),
                 ),
                 Container(
-                  padding: EdgeInsets.all(15),
                   decoration: BoxDecoration(color: Color.fromARGB(0, 0, 0, 0)),
                   child: SizedBox(
-                    height: 100,
                     child: PageView.builder(
                       controller: _pageControlPageNew,
                       itemCount: newsSet.length,
@@ -2546,8 +2573,8 @@ class _NotificationPageState extends State<NotificationPage> {
                               CachedNetworkImage(
                                 imageUrl: item3["newsImg"]!,
                                 fit: BoxFit.cover,
-                                width: 150,
-                                height: 150,
+                                width: 180,
+                                height: 180,
                                 placeholder: (context, url) =>
                                     CircularProgressIndicator.adaptive(
                                   backgroundColor: Colors.white,
@@ -2561,9 +2588,9 @@ class _NotificationPageState extends State<NotificationPage> {
                               Expanded(
                                 child: Container(
                                   padding: EdgeInsets.all(5),
-                                  height: 120,
+                                  height: 200,
                                   decoration: BoxDecoration(
-                                      color: Color.fromARGB(0, 0, 0, 0)),
+                                      color: Color.fromARGB(0, 28, 22, 22)),
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.start,
                                     crossAxisAlignment:
@@ -2573,7 +2600,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                         item3["newsText1"]!,
                                         style: TextStyle(
                                           color: Colors.black,
-                                          fontSize: 15,
+                                          fontSize: 20,
                                           fontWeight: FontWeight.bold,
                                         ),
                                         maxLines: 2,
@@ -2583,7 +2610,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                         item3["newsText2"]!,
                                         style: TextStyle(
                                           color: Colors.black87,
-                                          fontSize: 15,
+                                          fontSize: 16,
                                           fontWeight: FontWeight.normal,
                                         ),
                                         maxLines: 3,
@@ -2593,7 +2620,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                         item3["newsText3"]!,
                                         style: TextStyle(
                                           color: Colors.black54,
-                                          fontSize: 10,
+                                          fontSize: 12,
                                           fontWeight: FontWeight.normal,
                                         ),
                                         maxLines: 1,
@@ -2653,18 +2680,24 @@ class _ProfilePageState extends State<MenuPage> {
                           child: Container(
                             padding: EdgeInsets.symmetric(
                                 horizontal: 5, vertical: 5),
-                            width: 100,
-                            height: 100,
+                            width: 120,
+                            height: 120,
                             decoration: BoxDecoration(
-                              color: Color.fromARGB(15, 0, 0, 0),
+                              color: Theme.of(context).primaryColor,
                               borderRadius: BorderRadius.circular(5),
                             ),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                Icon(Icons.badge_outlined),
-                                Text('Profile'),
+                                Icon(
+                                  Icons.badge_outlined,
+                                  size: 30,
+                                ),
+                                Text(
+                                  'Profile',
+                                  style: TextStyle(fontSize: 16),
+                                ),
                               ],
                             ),
                           ),
@@ -2674,18 +2707,21 @@ class _ProfilePageState extends State<MenuPage> {
                           child: Container(
                             padding: EdgeInsets.symmetric(
                                 horizontal: 5, vertical: 5),
-                            width: 100,
-                            height: 100,
+                            width: 120,
+                            height: 120,
                             decoration: BoxDecoration(
-                              color: Color.fromARGB(15, 0, 0, 0),
+                              color: Theme.of(context).primaryColor,
                               borderRadius: BorderRadius.circular(5),
                             ),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                Icon(Icons.archive_outlined),
-                                Text('My Orders'),
+                                Icon(Icons.archive_outlined, size: 30),
+                                Text(
+                                  'My Orders',
+                                  style: TextStyle(fontSize: 16),
+                                ),
                               ],
                             ),
                           ),
@@ -2695,25 +2731,30 @@ class _ProfilePageState extends State<MenuPage> {
                           child: Container(
                             padding: EdgeInsets.symmetric(
                                 horizontal: 5, vertical: 5),
-                            width: 100,
-                            height: 100,
+                            width: 120,
+                            height: 120,
                             decoration: BoxDecoration(
-                              color: Color.fromARGB(15, 0, 0, 0),
+                              color: Theme.of(context).primaryColor,
                               borderRadius: BorderRadius.circular(5),
                             ),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                Icon(Icons.shopping_bag_outlined),
-                                Text('Order List'),
+                                Icon(Icons.shopping_bag_outlined, size: 30),
+                                Text(
+                                  'Order List',
+                                  style: TextStyle(fontSize: 16),
+                                ),
                               ],
                             ),
                           ),
                         ),
                       ],
                     ),
-                    SizedBox(height: 10,),
+                    SizedBox(
+                      height: 14,
+                    ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
@@ -2722,18 +2763,21 @@ class _ProfilePageState extends State<MenuPage> {
                           child: Container(
                             padding: EdgeInsets.symmetric(
                                 horizontal: 5, vertical: 5),
-                            width: 100,
-                            height: 100,
+                            width: 120,
+                            height: 120,
                             decoration: BoxDecoration(
-                              color: Color.fromARGB(15, 0, 0, 0),
+                              color: Theme.of(context).primaryColor,
                               borderRadius: BorderRadius.circular(5),
                             ),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                Icon(Icons.confirmation_num_outlined),
-                                Text('Coupon'),
+                                Icon(Icons.confirmation_num_outlined, size: 30),
+                                Text(
+                                  'Coupon',
+                                  style: TextStyle(fontSize: 16),
+                                ),
                               ],
                             ),
                           ),
@@ -2743,18 +2787,21 @@ class _ProfilePageState extends State<MenuPage> {
                           child: Container(
                             padding: EdgeInsets.symmetric(
                                 horizontal: 5, vertical: 5),
-                            width: 100,
-                            height: 100,
+                            width: 120,
+                            height: 120,
                             decoration: BoxDecoration(
-                              color: Color.fromARGB(15, 0, 0, 0),
+                              color: Theme.of(context).primaryColor,
                               borderRadius: BorderRadius.circular(5),
                             ),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                Icon(Icons.list_alt_outlined),
-                                Text('Survey B.'),
+                                Icon(Icons.list_alt_outlined, size: 30),
+                                Text(
+                                  'Survey B.',
+                                  style: TextStyle(fontSize: 16),
+                                ),
                               ],
                             ),
                           ),
@@ -2769,18 +2816,21 @@ class _ProfilePageState extends State<MenuPage> {
                           child: Container(
                             padding: EdgeInsets.symmetric(
                                 horizontal: 5, vertical: 5),
-                            width: 100,
-                            height: 100,
+                            width: 120,
+                            height: 120,
                             decoration: BoxDecoration(
-                              color: Color.fromARGB(15, 0, 0, 0),
+                              color: Theme.of(context).primaryColor,
                               borderRadius: BorderRadius.circular(5),
                             ),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                Icon(Icons.settings_outlined),
-                                Text('Setting'),
+                                Icon(Icons.settings_outlined, size: 30),
+                                Text(
+                                  'Setting',
+                                  style: TextStyle(fontSize: 16),
+                                ),
                               ],
                             ),
                           ),
@@ -2794,8 +2844,8 @@ class _ProfilePageState extends State<MenuPage> {
               Column(
                 children: [
                   Container(
-                    width: 400,
-                    height: 50,
+                    width: double.infinity,
+                    height: 70,
                     decoration: BoxDecoration(
                       color: Color.fromARGB(15, 0, 0, 0),
                       border: Border(
@@ -2807,7 +2857,8 @@ class _ProfilePageState extends State<MenuPage> {
                       children: [
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 10),
-                          child: Text('Find branch locations'),
+                          child: Text('Find branch locations',
+                              style: TextStyle(fontSize: 18)),
                         ),
                         Padding(
                           padding: EdgeInsets.symmetric(
@@ -2823,10 +2874,10 @@ class _ProfilePageState extends State<MenuPage> {
                       ],
                     ),
                   ),
-                  Divider(color: Colors.black12, height: 1),
+                  Divider(height: 1),
                   Container(
-                    width: 400,
-                    height: 50,
+                    width: double.infinity,
+                    height: 70,
                     decoration: BoxDecoration(
                       color: Color.fromARGB(15, 0, 0, 0),
                       border: Border(
@@ -2839,7 +2890,8 @@ class _ProfilePageState extends State<MenuPage> {
                       children: [
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 10),
-                          child: Text('Learn how to use it'),
+                          child: Text('Learn how to use it',
+                              style: TextStyle(fontSize: 18)),
                         ),
                         Padding(
                           padding: EdgeInsets.symmetric(
@@ -2855,10 +2907,10 @@ class _ProfilePageState extends State<MenuPage> {
                       ],
                     ),
                   ),
-                  Divider(color: Colors.black12, height: 1),
+                  Divider(height: 1),
                   Container(
-                    width: 400,
-                    height: 50,
+                    width: double.infinity,
+                    height: 70,
                     decoration: BoxDecoration(
                       color: Color.fromARGB(15, 0, 0, 0),
                       border: Border(
@@ -2870,7 +2922,8 @@ class _ProfilePageState extends State<MenuPage> {
                       children: [
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 10),
-                          child: Text('Frequently asked questions'),
+                          child: Text('Frequently asked questions',
+                              style: TextStyle(fontSize: 18)),
                         ),
                         Padding(
                           padding: EdgeInsets.symmetric(
@@ -2886,10 +2939,10 @@ class _ProfilePageState extends State<MenuPage> {
                       ],
                     ),
                   ),
-                  Divider(color: Colors.black12, height: 1),
+                  Divider(height: 1),
                   Container(
-                    width: 400,
-                    height: 50,
+                    width: double.infinity,
+                    height: 70,
                     decoration: BoxDecoration(
                       color: Color.fromARGB(15, 0, 0, 0),
                       border: Border(
@@ -2901,7 +2954,8 @@ class _ProfilePageState extends State<MenuPage> {
                       children: [
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 10),
-                          child: Text('Terms of Use'),
+                          child: Text('Terms of Use',
+                              style: TextStyle(fontSize: 18)),
                         ),
                         Padding(
                           padding: EdgeInsets.symmetric(
@@ -2917,10 +2971,10 @@ class _ProfilePageState extends State<MenuPage> {
                       ],
                     ),
                   ),
-                  Divider(color: Colors.black12, height: 1),
+                  Divider( height: 1),
                   Container(
-                    width: 400,
-                    height: 50,
+                    width: double.infinity,
+                    height: 70,
                     decoration: BoxDecoration(
                       color: Color.fromARGB(15, 0, 0, 0),
                       border: Border(
@@ -2932,7 +2986,8 @@ class _ProfilePageState extends State<MenuPage> {
                       children: [
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 10),
-                          child: Text('Privacy Policy'),
+                          child: Text('Privacy Policy',
+                              style: TextStyle(fontSize: 18)),
                         ),
                         Padding(
                           padding: EdgeInsets.symmetric(
@@ -2950,13 +3005,13 @@ class _ProfilePageState extends State<MenuPage> {
                       ],
                     ),
                   ),
-                  Divider(color: Colors.black12, height: 1),
+                  Divider( height: 1),
                 ],
               ),
               SizedBox(height: 10),
               Center(
                   child: Text("Version: 2.0 | By 1DEV",
-                      style: TextStyle(color: Colors.black54)))
+                      style: TextStyle(fontSize: 15)))
             ],
           ),
         )
@@ -3054,8 +3109,8 @@ class _ShopPageState extends State<ShopPage> {
                 CachedNetworkImage(
                   imageUrl:
                       "https://res.cloudinary.com/dag73dhpl/image/upload/v1740759438/animalshelter_ncqile.png",
-                  width: 40,
-                  height: 40,
+                  width: 50,
+                  height: 50,
                   placeholder: (context, url) =>
                       CircularProgressIndicator.adaptive(
                     backgroundColor: Colors.white,
@@ -3073,8 +3128,14 @@ class _ShopPageState extends State<ShopPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Icon(Icons.badge_outlined),
-                      Text('Profile'),
+                      Icon(
+                        Icons.badge_outlined,
+                        size: 30,
+                      ),
+                      Text(
+                        'Profile',
+                        style: TextStyle(fontSize: 16),
+                      ),
                     ],
                   ),
                 ),
@@ -3095,12 +3156,15 @@ class _ShopPageState extends State<ShopPage> {
               children: [
                 Text(
                   "Basket",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(
                   height: 30,
                 ),
-                Text("Your basket is Emty."),
+                Text(
+                  "Your basket is Emty.",
+                  style: TextStyle(fontSize: 15),
+                ),
                 SizedBox(
                   height: 30,
                 ),

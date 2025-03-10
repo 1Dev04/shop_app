@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/authPage.dart';
+import 'package:flutter_application_1/screen/authPage.dart';
 
-import './regisUser.dart';
+import 'regisUser.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 // import 'package:google_sign_in/google_sign_in.dart';
 
@@ -20,18 +20,7 @@ class _LoginState extends State<Login> {
 
   void signUserIn() async {
     try {
-      showDialog(
-          context: context,
-          barrierDismissible: false, //Barrier Close
-          builder: (context) {
-            return const Center(
-              child: CircularProgressIndicator.adaptive(
-                backgroundColor: Colors.white,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                    Color.fromARGB(75, 50, 50, 50)),
-              ),
-            );
-          });
+      
 
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailController.text.trim(),

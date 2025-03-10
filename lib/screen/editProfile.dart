@@ -185,7 +185,8 @@ class _editProfilePageState extends State<editProfilePage> {
                   validator: (value) {
                     final RegExp editNameRegex1 = RegExp(
                         r'^(Mr|Ms)\. [A-Z][a-z]+(?: [A-Z][a-z]+)*(\.?)$');
-                    final RegExp editNameRegex2 = RegExp(r'^(?!.*\s{2,})(?:\S+\s?){1,3}$');
+                    final RegExp editNameRegex2 =
+                        RegExp(r'^(?!.*\s{2,})(?:\S+\s?){1,3}$');
                     if (value == null || value.isEmpty) {
                       return "Please input username.";
                     } else if (value.length < 10 || value.length > 30) {
@@ -261,7 +262,7 @@ class _editProfilePageState extends State<editProfilePage> {
                     } else if (!editConPasswordRegex1.hasMatch(value)) {
                       return "Invalid confirm password format: \nP@ssw0rd!, P@ssw0rd";
                     } else if (!editConPasswordRegex2.hasMatch(value)) {
-                       return "The confirm password format ${value} is invalid.";
+                      return "The confirm password format ${value} is invalid.";
                     }
                     return null;
                   },
@@ -372,10 +373,9 @@ class _editProfilePageState extends State<editProfilePage> {
                   },
                   child: Text(
                     'Confirm',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(fontSize: 16),
                   ),
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: Color.fromRGBO(0, 0, 0, 1)),
+                  style: ElevatedButton.styleFrom(),
                 ),
                 SizedBox(height: 20),
               ],

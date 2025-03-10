@@ -1,4 +1,6 @@
-import './model.dart';
+
+import 'package:flutter_application_1/models/model.dart';
+
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 

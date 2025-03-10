@@ -2,8 +2,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_application_1/editProfile.dart';
-import 'package:flutter_application_1/login.dart';
+import 'package:flutter_application_1/screen/editProfile.dart';
+import 'package:flutter_application_1/screen/login.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
 
@@ -55,7 +55,7 @@ class _ProfileState extends State<Profile> {
                 },
                 child: const Text(
                   "Confirm",
-                  style: TextStyle(color: Colors.black),
+                
                 ),
               ),
             ],
@@ -104,10 +104,10 @@ class _ProfileState extends State<Profile> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Profile",
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: Color.fromRGBO(0, 0, 0, 0.938), // ✅ ใช้สีดำตรงๆ
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 28)),
         centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.white),
+
+        // iconTheme: const IconThemeData(),
       ),
       body: SingleChildScrollView(
         child: Container(
@@ -115,31 +115,39 @@ class _ProfileState extends State<Profile> {
           width: double.infinity,
           child: Column(
             children: [
-             
-  
               Container(
                 margin: EdgeInsets.symmetric(horizontal: 15),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
-                  
                   children: [
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => editProfilePage(),
-                          ),
-                        );
-                      },
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Icon(Icons.edit_outlined),
-                          Text('Edit'),
-                        ],
-                      ),
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => editProfilePage(),
+                                ),
+                              );
+                            },
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.edit_outlined,
+                                  size: 30,
+                                ),
+                                Text(
+                                  'Edit',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ],
+                            ))
+                      ],
                     ),
                   ],
                 ),
@@ -153,7 +161,6 @@ class _ProfileState extends State<Profile> {
                     backgroundImage: user?.photoURL != null
                         ? NetworkImage(user!.photoURL!)
                         : null,
-                    backgroundColor: Color.fromARGB(10, 0, 0, 0),
                     child: user?.photoURL == null
                         ? CachedNetworkImage(
                             imageUrl:
@@ -172,28 +179,31 @@ class _ProfileState extends State<Profile> {
                         : null,
                   ),
                   SizedBox(height: 20),
-                  Text("Name: $_name", style: TextStyle(fontSize: 15)),
-                  SizedBox(height: 10),
-                  Text("Email: $_email", style: TextStyle(fontSize: 15)),
-                  SizedBox(height: 10),
-                  Text("Phone: $_phone", style: TextStyle(fontSize: 15)),
-                  SizedBox(height: 10),
-                  Text("Postal Code: $_postal", style: TextStyle(fontSize: 15)),
-                  SizedBox(height: 10),
+                  Text("Name: $_name", style: TextStyle(fontSize: 18)),
+                  SizedBox(height: 15),
+                  Text("Email: $_email", style: TextStyle(fontSize: 18)),
+                  SizedBox(height: 15),
+                  Text("Phone: $_phone", style: TextStyle(fontSize: 18)),
+                  SizedBox(height: 15),
+                  Text("Postal Code: $_postal", style: TextStyle(fontSize: 18)),
+                  SizedBox(height: 15),
                   Text("Date: ${formatDate(_birthdate)}",
-                      style: TextStyle(fontSize: 15)),
-                  SizedBox(height: 10),
-                  Text("Gender: $_gender", style: TextStyle(fontSize: 15)),
-                  SizedBox(height: 10),
+                      style: TextStyle(fontSize: 18)),
+                  SizedBox(height: 15),
+                  Text("Gender: $_gender", style: TextStyle(fontSize: 18)),
+                  SizedBox(height: 15),
                   Text("The newsletter: $_newsletter",
-                      style: TextStyle(fontSize: 15)),
-                  SizedBox(height: 10),
+                      style: TextStyle(fontSize: 18)),
+                  SizedBox(height: 15),
                   Text("Member agreement: $_memberAgreement",
-                      style: TextStyle(fontSize: 15)),
-                  SizedBox(height: 10),
+                      style: TextStyle(fontSize: 18)),
+                  SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: () => showLogAlertExit(context),
-                    child: Text("Logout", style: TextStyle(color: Colors.black),),
+                    child: Text(
+                      "Logout",
+                      style: TextStyle(fontSize: 16 ,),
+                    ),
                   ),
                 ],
               )
