@@ -18,23 +18,14 @@ class _UpdateFormState extends State<UpdateForm> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color.fromRGBO(99, 136, 137, 1),
-        title: Center(
-          child: Text(
-            'Example',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-          ),
-        ),
+        title: Text("Update Feedback", style: TextStyle(fontWeight: FontWeight.bold),),
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
         child: Center(
           child: Form(
             child: Column(
               children: [
-                Text(
-                  'Edit Post',
-                  style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-                ),
                 SizedBox(height: 20),
                 TextFormField(
                   controller: titleController,

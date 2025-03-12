@@ -17,7 +17,10 @@ class _ViewAccount extends State<ViewAccount> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+        title: Text("Feedback", style: TextStyle(fontWeight: FontWeight.bold),),
+        centerTitle: true,
+      ),
       body: FutureBuilder<List<PostModels>>(
           //------ ดึงข้อมูลทั้งหมดจากฐานข้อมูล ------
           future: db.getAllData(),

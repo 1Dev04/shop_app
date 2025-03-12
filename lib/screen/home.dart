@@ -67,15 +67,12 @@ class _MyHomeState extends State<MyHome> {
       darkTheme: AppThemes.darkTheme,
       home: Scaffold(
         //------------------- AppBar -------------------
-      
         appBar: AppBar(
           title: Text(
             setTitle(),
-            style: TextStyle(
-                color: Colors.white, fontFamily: 'Catfont', fontSize: 40),
+            style: TextStyle(fontFamily: 'Catfont', fontSize: 40, color: Theme.of(context).appBarTheme.backgroundColor),
           ),
-          backgroundColor: Color.fromRGBO(0, 0, 0, 0.938),
-          
+          backgroundColor: themeProvider.themeMode == ThemeMode.dark ? Colors.black : Colors.white,
           actions: [
             GestureDetector(
               onTap: () {
@@ -87,7 +84,9 @@ class _MyHomeState extends State<MyHome> {
               child: Icon(
                 screenIndex == 0 ? Icons.cancel_outlined : Icons.search,
                 size: 30,
-                color: activeButton == 0 ? Colors.white : Colors.white60,
+                color: activeButton == 0
+                    ? AppBarTheme.of(context).iconTheme?.color
+                    : AppBarTheme.of(context).iconTheme?.color,
               ),
             ),
             SizedBox(
@@ -105,7 +104,9 @@ class _MyHomeState extends State<MyHome> {
                     ? Icons.favorite
                     : Icons.favorite_border_outlined,
                 size: 30,
-                color: activeButton == 1 ? Colors.white : Colors.white60,
+                color: activeButton == 1
+                    ? AppBarTheme.of(context).iconTheme?.color
+                    : AppBarTheme.of(context).iconTheme?.color,
               ),
             ),
             SizedBox(
@@ -118,13 +119,13 @@ class _MyHomeState extends State<MyHome> {
                 },
                 icon: Icon(
                   Icons.add_chart_outlined,
-                  color: Colors.white,
+                  color: AppBarTheme.of(context).iconTheme?.color,
                   size: 30,
                 )),
             SizedBox(width: 15)
           ],
         ),
-        
+
         //------------------- body -------------------
         body: SafeArea(
           child: mobileScreen[screenIndex],
@@ -133,12 +134,15 @@ class _MyHomeState extends State<MyHome> {
         //------------------- bottomNavigationBar -------------------
         bottomNavigationBar: Container(
           height: 80,
+          width: double.infinity,
           decoration: BoxDecoration(
+            color: themeProvider.themeMode == ThemeMode.dark
+                ? Colors.black
+                : Colors.white,
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(0),
               topRight: Radius.circular(0),
             ),
-            color: Color.fromRGBO(0, 0, 0, 0.938),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -153,7 +157,9 @@ class _MyHomeState extends State<MyHome> {
                 child: Icon(
                   screenIndex == 2 ? Icons.home : Icons.home_outlined,
                   size: 30,
-                  color: activeButton == 2 ? Colors.white : Colors.white60,
+                  color: activeButton == 2
+                      ? AppBarTheme.of(context).iconTheme?.color
+                      : AppBarTheme.of(context).iconTheme?.color,
                 ),
               ),
               GestureDetector(
@@ -200,7 +206,9 @@ Navigator.push(
                       ? Icons.shopping_cart_rounded
                       : Icons.shopping_cart_outlined,
                   size: 30,
-                  color: activeButton == 3 ? Colors.white : Colors.white60,
+                  color: activeButton == 3
+                      ? AppBarTheme.of(context).iconTheme?.color
+                      : AppBarTheme.of(context).iconTheme?.color,
                 ),
               ),
               GestureDetector(
@@ -218,7 +226,8 @@ Navigator.push(
                     });
                   });
                 },
-                child: Icon(Icons.add, color: Colors.white, size: 30),
+                child: Icon(Icons.add,
+                    color: AppBarTheme.of(context).iconTheme?.color, size: 30),
               ),
               GestureDetector(
                 onTap: () {
@@ -232,7 +241,9 @@ Navigator.push(
                       ? Icons.notifications
                       : Icons.notifications_outlined,
                   size: 30,
-                  color: activeButton == 4 ? Colors.white : Colors.white60,
+                  color: activeButton == 4
+                      ? AppBarTheme.of(context).iconTheme?.color
+                      : AppBarTheme.of(context).iconTheme?.color,
                 ),
               ),
               GestureDetector(
@@ -245,7 +256,9 @@ Navigator.push(
                 child: Icon(
                   screenIndex == 5 ? Icons.menu_open : Icons.menu,
                   size: 30,
-                  color: activeButton == 5 ? Colors.white : Colors.white60,
+                  color: activeButton == 5
+                      ? AppBarTheme.of(context).iconTheme?.color
+                      : AppBarTheme.of(context).iconTheme?.color,
                 ),
               ),
             ],
@@ -284,7 +297,7 @@ class _SearchPageState extends State<SearchPage> {
         children: [
           SafeArea(
             child: Container(
-              color: Color.fromARGB(15, 0, 0, 0),
+              color: Theme.of(context).snackBarTheme.backgroundColor,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
@@ -299,19 +312,19 @@ class _SearchPageState extends State<SearchPage> {
                         ? Text(
                             "FEMALE",
                             style: TextStyle(
-                              color: Color.fromARGB(255, 0, 0, 0),
+                              color: Theme.of(context).snackBarTheme.contentTextStyle?.color,
                               fontWeight: FontWeight.bold,
                               decoration: TextDecoration.underline,
                               decorationThickness: 1, // ความหนาของเส้นใต้
                               decorationColor:
-                                  Color.fromARGB(255, 0, 0, 0), // สีของเส้นใต้
+                                  Theme.of(context).snackBarTheme.contentTextStyle?.color, 
                               fontSize: 18,
                               height: 3,
                             ),
                           )
                         : Text("FEMALE",
                             style: TextStyle(
-                              color: Color.fromARGB(255, 40, 40, 40),
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontSize: 15,
                               height: 3,
                             )),
@@ -327,19 +340,19 @@ class _SearchPageState extends State<SearchPage> {
                         ? Text(
                             "MALE",
                             style: TextStyle(
-                              color: Color.fromARGB(255, 0, 0, 0),
+                              color: Theme.of(context).snackBarTheme.contentTextStyle?.color,
                               fontWeight: FontWeight.bold,
                               decoration: TextDecoration.underline,
                               decorationThickness: 1, // ความหนาของเส้นใต้
                               decorationColor:
-                                  Color.fromARGB(255, 0, 0, 0), // สีของเส้นใต้
+                                  Theme.of(context).snackBarTheme.contentTextStyle?.color, // สีของเส้นใต้
                               fontSize: 18,
                               height: 3,
                             ),
                           )
                         : Text("MALE",
                             style: TextStyle(
-                              color: Color.fromARGB(255, 40, 40, 40),
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontSize: 15,
                               height: 3,
                             )),
@@ -355,19 +368,19 @@ class _SearchPageState extends State<SearchPage> {
                         ? Text(
                             "KITTEN",
                             style: TextStyle(
-                              color: Color.fromARGB(255, 0, 0, 0),
+                              color: Theme.of(context).snackBarTheme.contentTextStyle?.color,
                               fontWeight: FontWeight.bold,
                               decoration: TextDecoration.underline,
                               decorationThickness: 1, // ความหนาของเส้นใต้
                               decorationColor:
-                                  Color.fromARGB(255, 0, 0, 0), // สีของเส้นใต้
+                                  Theme.of(context).snackBarTheme.contentTextStyle?.color, // สีของเส้นใต้
                               fontSize: 18,
                               height: 3,
                             ),
                           )
                         : Text("KITTEN",
                             style: TextStyle(
-                              color: Color.fromARGB(255, 40, 40, 40),
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontSize: 15,
                               height: 3,
                             )),
@@ -376,6 +389,8 @@ class _SearchPageState extends State<SearchPage> {
               ),
             ),
           ),
+
+          SizedBox(height: 20,),
           Expanded(
               child: PageView(
             controller: _pageControlSearch,
@@ -400,7 +415,7 @@ class _SearchPageState extends State<SearchPage> {
                             width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(2, 0, 0, 0),
+                                color: Theme.of(context).primaryColor,
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -412,7 +427,7 @@ class _SearchPageState extends State<SearchPage> {
                                   height: 50,
                                   placeholder: (context, url) =>
                                       CircularProgressIndicator.adaptive(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.transparent,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         Color.fromARGB(75, 50, 50, 50)),
                                   ),
@@ -424,8 +439,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Princess Paws',
                                     style: TextStyle(
-                                      color: Color.fromRGBO(0, 0, 0, 1),
-                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 14,
                                     ),
                                     maxLines: 2,
                                     // overflow: TextOverflow.ellipsis, // ...
@@ -443,7 +458,7 @@ class _SearchPageState extends State<SearchPage> {
                             width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(2, 0, 0, 0),
+                                color: Theme.of(context).primaryColor,
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -455,7 +470,7 @@ class _SearchPageState extends State<SearchPage> {
                                   height: 50,
                                   placeholder: (context, url) =>
                                       CircularProgressIndicator.adaptive(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.transparent,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         Color.fromARGB(75, 50, 50, 50)),
                                   ),
@@ -467,8 +482,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Floral Feline',
                                     style: TextStyle(
-                                      color: Color.fromRGBO(0, 0, 0, 1),
-                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 14,
                                     ),
                                     maxLines: 2,
                                     // overflow: TextOverflow.ellipsis, // ...
@@ -493,7 +508,7 @@ class _SearchPageState extends State<SearchPage> {
                             width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(2, 0, 0, 0),
+                                color: Theme.of(context).primaryColor,
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -506,7 +521,7 @@ class _SearchPageState extends State<SearchPage> {
                                   height: 50,
                                   placeholder: (context, url) =>
                                       CircularProgressIndicator.adaptive(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.transparent,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         Color.fromARGB(75, 50, 50, 50)),
                                   ),
@@ -518,8 +533,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Elegant Diva',
                                     style: TextStyle(
-                                      color: Color.fromRGBO(0, 0, 0, 1),
-                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 14,
                                     ),
                                     maxLines: 2,
                                     // overflow: TextOverflow.ellipsis, // ...
@@ -537,7 +552,7 @@ class _SearchPageState extends State<SearchPage> {
                             width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(2, 0, 0, 0),
+                                color: Theme.of(context).primaryColor,
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -550,7 +565,7 @@ class _SearchPageState extends State<SearchPage> {
                                   height: 50,
                                   placeholder: (context, url) =>
                                       CircularProgressIndicator.adaptive(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.transparent,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         Color.fromARGB(75, 50, 50, 50)),
                                   ),
@@ -562,8 +577,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Pastel Kitty',
                                     style: TextStyle(
-                                      color: Color.fromRGBO(0, 0, 0, 1),
-                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 14,
                                     ),
                                     maxLines: 2,
                                     // overflow: TextOverflow.ellipsis, // ...
@@ -588,7 +603,7 @@ class _SearchPageState extends State<SearchPage> {
                             width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(2, 0, 0, 0),
+                                color: Theme.of(context).primaryColor,
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -601,7 +616,7 @@ class _SearchPageState extends State<SearchPage> {
                                   height: 50,
                                   placeholder: (context, url) =>
                                       CircularProgressIndicator.adaptive(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.transparent,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         Color.fromARGB(75, 50, 50, 50)),
                                   ),
@@ -613,8 +628,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Royal Queen',
                                     style: TextStyle(
-                                      color: Color.fromRGBO(0, 0, 0, 1),
-                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 14,
                                     ),
                                     maxLines: 2,
                                     // overflow: TextOverflow.ellipsis, // ...
@@ -632,7 +647,7 @@ class _SearchPageState extends State<SearchPage> {
                             width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(2, 0, 0, 0),
+                                color: Theme.of(context).primaryColor,
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -645,7 +660,7 @@ class _SearchPageState extends State<SearchPage> {
                                   height: 50,
                                   placeholder: (context, url) =>
                                       CircularProgressIndicator.adaptive(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.transparent,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         Color.fromARGB(75, 50, 50, 50)),
                                   ),
@@ -657,8 +672,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Fairy Tale Cat',
                                     style: TextStyle(
-                                      color: Color.fromRGBO(0, 0, 0, 1),
-                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 14,
                                     ),
                                     maxLines: 2,
                                     // overflow: TextOverflow.ellipsis, // ...
@@ -683,7 +698,7 @@ class _SearchPageState extends State<SearchPage> {
                             width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(2, 0, 0, 0),
+                                color: Theme.of(context).primaryColor,
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -696,7 +711,7 @@ class _SearchPageState extends State<SearchPage> {
                                   height: 50,
                                   placeholder: (context, url) =>
                                       CircularProgressIndicator.adaptive(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.transparent,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         Color.fromARGB(75, 50, 50, 50)),
                                   ),
@@ -708,8 +723,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Sweet Lolita',
                                     style: TextStyle(
-                                      color: Color.fromRGBO(0, 0, 0, 1),
-                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 14,
                                     ),
                                     maxLines: 2,
                                     // overflow: TextOverflow.ellipsis, // ...
@@ -727,7 +742,7 @@ class _SearchPageState extends State<SearchPage> {
                             width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(2, 0, 0, 0),
+                                color: Theme.of(context).primaryColor,
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -740,7 +755,7 @@ class _SearchPageState extends State<SearchPage> {
                                   height: 50,
                                   placeholder: (context, url) =>
                                       CircularProgressIndicator.adaptive(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.transparent,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         Color.fromARGB(75, 50, 50, 50)),
                                   ),
@@ -752,8 +767,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Chic & Trendy',
                                     style: TextStyle(
-                                      color: Color.fromRGBO(0, 0, 0, 1),
-                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 14,
                                     ),
                                     maxLines: 2,
                                     // overflow: TextOverflow.ellipsis, // ...
@@ -778,7 +793,7 @@ class _SearchPageState extends State<SearchPage> {
                             width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(2, 0, 0, 0),
+                                color: Theme.of(context).primaryColor,
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -791,7 +806,7 @@ class _SearchPageState extends State<SearchPage> {
                                   height: 50,
                                   placeholder: (context, url) =>
                                       CircularProgressIndicator.adaptive(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.transparent,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         Color.fromARGB(75, 50, 50, 50)),
                                   ),
@@ -803,8 +818,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Romantic Lace',
                                     style: TextStyle(
-                                      color: Color.fromRGBO(0, 0, 0, 1),
-                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 14,
                                     ),
                                     maxLines: 2,
                                     // overflow: TextOverflow.ellipsis, // ...
@@ -822,7 +837,7 @@ class _SearchPageState extends State<SearchPage> {
                             width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(2, 0, 0, 0),
+                                color: Theme.of(context).primaryColor,
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -835,7 +850,7 @@ class _SearchPageState extends State<SearchPage> {
                                   height: 50,
                                   placeholder: (context, url) =>
                                       CircularProgressIndicator.adaptive(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.transparent,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         Color.fromARGB(75, 50, 50, 50)),
                                   ),
@@ -847,8 +862,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Tutu & Frills',
                                     style: TextStyle(
-                                      color: Color.fromRGBO(0, 0, 0, 1),
-                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 14,
                                     ),
                                     maxLines: 2,
                                     // overflow: TextOverflow.ellipsis, // ...
@@ -879,7 +894,7 @@ class _SearchPageState extends State<SearchPage> {
                             width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(2, 0, 0, 0),
+                                color: Theme.of(context).primaryColor,
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -892,7 +907,7 @@ class _SearchPageState extends State<SearchPage> {
                                   height: 50,
                                   placeholder: (context, url) =>
                                       CircularProgressIndicator.adaptive(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.transparent,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         Color.fromARGB(75, 50, 50, 50)),
                                   ),
@@ -904,8 +919,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Gentleman Paws',
                                     style: TextStyle(
-                                      color: Color.fromRGBO(0, 0, 0, 1),
-                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 14,
                                     ),
                                     maxLines: 2,
                                     // overflow: TextOverflow.ellipsis, // ...
@@ -923,7 +938,7 @@ class _SearchPageState extends State<SearchPage> {
                             width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(2, 0, 0, 0),
+                                color: Theme.of(context).primaryColor,
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -936,7 +951,7 @@ class _SearchPageState extends State<SearchPage> {
                                   height: 50,
                                   placeholder: (context, url) =>
                                       CircularProgressIndicator.adaptive(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.transparent,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         Color.fromARGB(75, 50, 50, 50)),
                                   ),
@@ -948,8 +963,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Sporty Cat',
                                     style: TextStyle(
-                                      color: Color.fromRGBO(0, 0, 0, 1),
-                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 14,
                                     ),
                                     maxLines: 2,
                                     // overflow: TextOverflow.ellipsis, // ...
@@ -974,7 +989,7 @@ class _SearchPageState extends State<SearchPage> {
                             width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(2, 0, 0, 0),
+                                color: Theme.of(context).primaryColor,
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -987,7 +1002,7 @@ class _SearchPageState extends State<SearchPage> {
                                   height: 50,
                                   placeholder: (context, url) =>
                                       CircularProgressIndicator.adaptive(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.transparent,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         Color.fromARGB(75, 50, 50, 50)),
                                   ),
@@ -999,8 +1014,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Cool Street Style',
                                     style: TextStyle(
-                                      color: Color.fromRGBO(0, 0, 0, 1),
-                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 14,
                                     ),
                                     maxLines: 2,
                                     // overflow: TextOverflow.ellipsis, // ...
@@ -1018,7 +1033,7 @@ class _SearchPageState extends State<SearchPage> {
                             width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(2, 0, 0, 0),
+                                color: Theme.of(context).primaryColor,
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1031,7 +1046,7 @@ class _SearchPageState extends State<SearchPage> {
                                   height: 50,
                                   placeholder: (context, url) =>
                                       CircularProgressIndicator.adaptive(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.transparent,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         Color.fromARGB(75, 50, 50, 50)),
                                   ),
@@ -1043,8 +1058,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Dapper Kitty',
                                     style: TextStyle(
-                                      color: Color.fromRGBO(0, 0, 0, 1),
-                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 14,
                                     ),
                                     maxLines: 2,
                                     // overflow: TextOverflow.ellipsis, // ...
@@ -1069,7 +1084,7 @@ class _SearchPageState extends State<SearchPage> {
                             width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(2, 0, 0, 0),
+                                color: Theme.of(context).primaryColor,
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1082,7 +1097,7 @@ class _SearchPageState extends State<SearchPage> {
                                   height: 50,
                                   placeholder: (context, url) =>
                                       CircularProgressIndicator.adaptive(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.transparent,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         Color.fromARGB(75, 50, 50, 50)),
                                   ),
@@ -1094,8 +1109,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Retro Vibes',
                                     style: TextStyle(
-                                      color: Color.fromRGBO(0, 0, 0, 1),
-                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 14,
                                     ),
                                     maxLines: 2,
                                     // overflow: TextOverflow.ellipsis, // ...
@@ -1113,7 +1128,7 @@ class _SearchPageState extends State<SearchPage> {
                             width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(2, 0, 0, 0),
+                                color: Theme.of(context).primaryColor,
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1126,7 +1141,7 @@ class _SearchPageState extends State<SearchPage> {
                                   height: 50,
                                   placeholder: (context, url) =>
                                       CircularProgressIndicator.adaptive(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.transparent,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         Color.fromARGB(75, 50, 50, 50)),
                                   ),
@@ -1138,8 +1153,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Rockstar Meow',
                                     style: TextStyle(
-                                      color: Color.fromRGBO(0, 0, 0, 1),
-                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 14,
                                     ),
                                     maxLines: 2,
                                     // overflow: TextOverflow.ellipsis, // ...
@@ -1164,7 +1179,7 @@ class _SearchPageState extends State<SearchPage> {
                             width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(2, 0, 0, 0),
+                                color: Theme.of(context).primaryColor,
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1177,7 +1192,7 @@ class _SearchPageState extends State<SearchPage> {
                                   height: 50,
                                   placeholder: (context, url) =>
                                       CircularProgressIndicator.adaptive(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.transparent,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         Color.fromARGB(75, 50, 50, 50)),
                                   ),
@@ -1189,8 +1204,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Minimalist Chic',
                                     style: TextStyle(
-                                      color: Color.fromRGBO(0, 0, 0, 1),
-                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 14,
                                     ),
                                     maxLines: 2,
                                     // overflow: TextOverflow.ellipsis, // ...
@@ -1208,7 +1223,7 @@ class _SearchPageState extends State<SearchPage> {
                             width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(2, 0, 0, 0),
+                                color: Theme.of(context).primaryColor,
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1221,7 +1236,7 @@ class _SearchPageState extends State<SearchPage> {
                                   height: 50,
                                   placeholder: (context, url) =>
                                       CircularProgressIndicator.adaptive(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.transparent,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         Color.fromARGB(75, 50, 50, 50)),
                                   ),
@@ -1233,8 +1248,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Bad Boy Cat',
                                     style: TextStyle(
-                                      color: Color.fromRGBO(0, 0, 0, 1),
-                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 14,
                                     ),
                                     maxLines: 2,
                                     // overflow: TextOverflow.ellipsis, // ...
@@ -1259,7 +1274,7 @@ class _SearchPageState extends State<SearchPage> {
                             width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(2, 0, 0, 0),
+                                color: Theme.of(context).primaryColor,
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1272,7 +1287,7 @@ class _SearchPageState extends State<SearchPage> {
                                   height: 50,
                                   placeholder: (context, url) =>
                                       CircularProgressIndicator.adaptive(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.transparent,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         Color.fromARGB(75, 50, 50, 50)),
                                   ),
@@ -1284,8 +1299,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Sailor & Navy',
                                     style: TextStyle(
-                                      color: Color.fromRGBO(0, 0, 0, 1),
-                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 14,
                                     ),
                                     maxLines: 2,
                                     // overflow: TextOverflow.ellipsis, // ...
@@ -1303,7 +1318,7 @@ class _SearchPageState extends State<SearchPage> {
                             width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(2, 0, 0, 0),
+                                color: Theme.of(context).primaryColor,
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1316,7 +1331,7 @@ class _SearchPageState extends State<SearchPage> {
                                   height: 50,
                                   placeholder: (context, url) =>
                                       CircularProgressIndicator.adaptive(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.transparent,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         Color.fromARGB(75, 50, 50, 50)),
                                   ),
@@ -1328,8 +1343,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Adventure Outfit',
                                     style: TextStyle(
-                                      color: Color.fromRGBO(0, 0, 0, 1),
-                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 14,
                                     ),
                                     maxLines: 2,
                                     // overflow: TextOverflow.ellipsis, // ...
@@ -1360,7 +1375,7 @@ class _SearchPageState extends State<SearchPage> {
                             width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(2, 0, 0, 0),
+                                color: Theme.of(context).primaryColor,
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1373,7 +1388,7 @@ class _SearchPageState extends State<SearchPage> {
                                   height: 50,
                                   placeholder: (context, url) =>
                                       CircularProgressIndicator.adaptive(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.transparent,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         Color.fromARGB(75, 50, 50, 50)),
                                   ),
@@ -1385,8 +1400,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Baby Meow',
                                     style: TextStyle(
-                                      color: Color.fromRGBO(0, 0, 0, 1),
-                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 14,
                                     ),
                                     maxLines: 2,
                                     // overflow: TextOverflow.ellipsis, // ...
@@ -1404,7 +1419,7 @@ class _SearchPageState extends State<SearchPage> {
                             width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(2, 0, 0, 0),
+                                color: Theme.of(context).primaryColor,
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1417,7 +1432,7 @@ class _SearchPageState extends State<SearchPage> {
                                   height: 50,
                                   placeholder: (context, url) =>
                                       CircularProgressIndicator.adaptive(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.transparent,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         Color.fromARGB(75, 50, 50, 50)),
                                   ),
@@ -1429,8 +1444,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Fluffy Bunny',
                                     style: TextStyle(
-                                      color: Color.fromRGBO(0, 0, 0, 1),
-                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 14,
                                     ),
                                     maxLines: 2,
                                     // overflow: TextOverflow.ellipsis, // ...
@@ -1455,7 +1470,7 @@ class _SearchPageState extends State<SearchPage> {
                             width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(2, 0, 0, 0),
+                                color: Theme.of(context).primaryColor,
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1468,7 +1483,7 @@ class _SearchPageState extends State<SearchPage> {
                                   height: 50,
                                   placeholder: (context, url) =>
                                       CircularProgressIndicator.adaptive(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.transparent,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         Color.fromARGB(75, 50, 50, 50)),
                                   ),
@@ -1480,8 +1495,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Candy Cutie',
                                     style: TextStyle(
-                                      color: Color.fromRGBO(0, 0, 0, 1),
-                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 14,
                                     ),
                                     maxLines: 2,
                                     // overflow: TextOverflow.ellipsis, // ...
@@ -1499,7 +1514,7 @@ class _SearchPageState extends State<SearchPage> {
                             width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(2, 0, 0, 0),
+                                color: Theme.of(context).primaryColor,
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1512,7 +1527,7 @@ class _SearchPageState extends State<SearchPage> {
                                   height: 50,
                                   placeholder: (context, url) =>
                                       CircularProgressIndicator.adaptive(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.transparent,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         Color.fromARGB(75, 50, 50, 50)),
                                   ),
@@ -1524,8 +1539,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Little Sailor',
                                     style: TextStyle(
-                                      color: Color.fromRGBO(0, 0, 0, 1),
-                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 14,
                                     ),
                                     maxLines: 2,
                                     // overflow: TextOverflow.ellipsis, // ...
@@ -1550,7 +1565,7 @@ class _SearchPageState extends State<SearchPage> {
                             width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(2, 0, 0, 0),
+                                color: Theme.of(context).primaryColor,
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1563,7 +1578,7 @@ class _SearchPageState extends State<SearchPage> {
                                   height: 50,
                                   placeholder: (context, url) =>
                                       CircularProgressIndicator.adaptive(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.transparent,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         Color.fromARGB(75, 50, 50, 50)),
                                   ),
@@ -1575,8 +1590,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Tiny Teddy',
                                     style: TextStyle(
-                                      color: Color.fromRGBO(0, 0, 0, 1),
-                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 14,
                                     ),
                                     maxLines: 2,
                                     // overflow: TextOverflow.ellipsis, // ...
@@ -1594,7 +1609,7 @@ class _SearchPageState extends State<SearchPage> {
                             width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(2, 0, 0, 0),
+                                color: Theme.of(context).primaryColor,
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1607,7 +1622,7 @@ class _SearchPageState extends State<SearchPage> {
                                   height: 50,
                                   placeholder: (context, url) =>
                                       CircularProgressIndicator.adaptive(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.transparent,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         Color.fromARGB(75, 50, 50, 50)),
                                   ),
@@ -1619,8 +1634,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Playful Paws',
                                     style: TextStyle(
-                                      color: Color.fromRGBO(0, 0, 0, 1),
-                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 14,
                                     ),
                                     maxLines: 2,
                                     // overflow: TextOverflow.ellipsis, // ...
@@ -1645,7 +1660,7 @@ class _SearchPageState extends State<SearchPage> {
                             width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(2, 0, 0, 0),
+                                color: Theme.of(context).primaryColor,
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1658,7 +1673,7 @@ class _SearchPageState extends State<SearchPage> {
                                   height: 50,
                                   placeholder: (context, url) =>
                                       CircularProgressIndicator.adaptive(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.transparent,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         Color.fromARGB(75, 50, 50, 50)),
                                   ),
@@ -1670,8 +1685,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Rainbow Kitten',
                                     style: TextStyle(
-                                      color: Color.fromRGBO(0, 0, 0, 1),
-                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 14,
                                     ),
                                     maxLines: 2,
                                     // overflow: TextOverflow.ellipsis, // ...
@@ -1689,7 +1704,7 @@ class _SearchPageState extends State<SearchPage> {
                             width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(2, 0, 0, 0),
+                                color: Theme.of(context).primaryColor,
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1702,7 +1717,7 @@ class _SearchPageState extends State<SearchPage> {
                                   height: 50,
                                   placeholder: (context, url) =>
                                       CircularProgressIndicator.adaptive(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.transparent,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         Color.fromARGB(75, 50, 50, 50)),
                                   ),
@@ -1714,8 +1729,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Mini Prince & Princess',
                                     style: TextStyle(
-                                      color: Color.fromRGBO(0, 0, 0, 1),
-                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 14,
                                     ),
                                     maxLines: 2,
                                     // overflow: TextOverflow.ellipsis, // ...
@@ -1740,7 +1755,7 @@ class _SearchPageState extends State<SearchPage> {
                             width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(2, 0, 0, 0),
+                                color: Theme.of(context).primaryColor,
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1753,7 +1768,7 @@ class _SearchPageState extends State<SearchPage> {
                                   height: 50,
                                   placeholder: (context, url) =>
                                       CircularProgressIndicator.adaptive(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.transparent,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         Color.fromARGB(75, 50, 50, 50)),
                                   ),
@@ -1765,8 +1780,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Dreamy Cloud',
                                     style: TextStyle(
-                                      color: Color.fromRGBO(0, 0, 0, 1),
-                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 14,
                                     ),
                                     maxLines: 2,
                                     // overflow: TextOverflow.ellipsis, // ...
@@ -1784,7 +1799,7 @@ class _SearchPageState extends State<SearchPage> {
                             width: 180,
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Color.fromARGB(2, 0, 0, 0),
+                                color: Theme.of(context).primaryColor,
                                 borderRadius: BorderRadius.circular(5)),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1797,7 +1812,7 @@ class _SearchPageState extends State<SearchPage> {
                                   height: 50,
                                   placeholder: (context, url) =>
                                       CircularProgressIndicator.adaptive(
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: Colors.transparent,
                                     valueColor: AlwaysStoppedAnimation<Color>(
                                         Color.fromARGB(75, 50, 50, 50)),
                                   ),
@@ -1809,8 +1824,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Cozy Pajamas',
                                     style: TextStyle(
-                                      color: Color.fromRGBO(0, 0, 0, 1),
-                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 14,
                                     ),
                                     maxLines: 2,
                                     // overflow: TextOverflow.ellipsis, // ...
@@ -1846,6 +1861,7 @@ class _SearchPageState extends State<SearchPage> {
                     labelText: 'What are you looking for',
                     prefixIcon: Icon(Icons.search),
                   ),
+                   style: TextStyle(color: Theme.of(context).colorScheme.primary),
                 ),
               ],
             )),
@@ -1872,18 +1888,18 @@ class _FavoritePageState extends State<FavoritePage> {
           child: Container(
             width: double.infinity,
             height: 70,
-            decoration: BoxDecoration(color: Color.fromARGB(15, 0, 0, 0)),
+            decoration: BoxDecoration(color: Theme.of(context).colorScheme.onSurface),
             padding: EdgeInsets.all(10),
             child: Row(mainAxisAlignment: MainAxisAlignment.start, children: [
               Text(
                 "0 list",
-                style: TextStyle(fontSize: 18),
+                style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.primary),
               )
             ]),
           ),
         ),
         Container(
-          color: const Color.fromARGB(0, 0, 0, 0),
+          //color: const Color.fromARGB(0, 0, 0, 0),
           width: double.infinity,
           height: 600,
           child: Column(
@@ -1894,12 +1910,12 @@ class _FavoritePageState extends State<FavoritePage> {
               SizedBox(height: 20),
               Text(
                 "0 items in your favorites",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold , color: Theme.of(context).colorScheme.primary),
               ),
               SizedBox(height: 5),
               Text(
                 "Add products to your favorites list to check prices and stock availability.",
-                style: TextStyle(fontSize: 12, color: Colors.black54),
+                style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface),
               ),
             ],
           ),
@@ -2045,8 +2061,8 @@ class _HomePageState extends State<HomePage> {
                         fontWeight: FontWeight.bold,
                         shadows: [
                           Shadow(
-                            blurRadius: 5,
-                            color: Colors.black38,
+                            blurRadius: 20,
+                            color: Theme.of(context).colorScheme.onSurface,
                             offset: Offset(2, 2),
                           ),
                         ],
@@ -2060,13 +2076,13 @@ class _HomePageState extends State<HomePage> {
                     child: Text(
                       item['description']!,
                       style: TextStyle(
-                        color: Color.fromRGBO(255, 255, 255, 1),
+                        color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         shadows: [
                           Shadow(
-                            blurRadius: 5,
-                            color: Colors.black87,
+                            blurRadius: 20,
+                            color: Theme.of(context).colorScheme.onSurface,
                             offset: Offset(2, 2),
                           ),
                         ],
@@ -2088,8 +2104,8 @@ class _HomePageState extends State<HomePage> {
                           fontWeight: FontWeight.bold,
                           shadows: [
                             Shadow(
-                              blurRadius: 5,
-                              color: Colors.black38,
+                              blurRadius: 20,
+                              color: Theme.of(context).colorScheme.onSurface,
                               offset: Offset(2, 2),
                             )
                           ]),
@@ -2102,12 +2118,15 @@ class _HomePageState extends State<HomePage> {
                       onPressed: () {
                         Navigator();
                       },
-                      child: Icon(
-                        Icons.shopping_cart_outlined,
-                        size: 30,
-                        color: Colors.black,
+                      child: GestureDetector(
+                        onTap: () {},
+                        child: Icon(
+                          Icons.shopping_cart_outlined,
+                          size: 30,
+                          color: Theme.of(context).floatingActionButtonTheme.foregroundColor,
+                        ),
                       ),
-                      backgroundColor: Color.fromARGB(194, 255, 250, 250),
+                      backgroundColor: Theme.of(context).floatingActionButtonTheme.backgroundColor,
                     ),
                   )
                 ],
@@ -2303,7 +2322,8 @@ class _NotificationPageState extends State<NotificationPage> {
                 return Stack(
                   children: [
                     Container(
-                      color: Colors.white,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                      
                       child: Center(
                         child: Text(
                           item1['TextNoti']!,
@@ -2312,8 +2332,8 @@ class _NotificationPageState extends State<NotificationPage> {
                               fontWeight: FontWeight.bold,
                               shadows: [
                                 Shadow(
-                                  blurRadius: 5,
-                                  color: Colors.black45,
+                                  blurRadius: 20,
+                                  //color: Colors.black45,
                                   offset: Offset(2, 2),
                                 ),
                               ]),
@@ -2404,7 +2424,7 @@ class _NotificationPageState extends State<NotificationPage> {
                   decoration: BoxDecoration(
                       border: Border(
                           bottom: actionPageTwo == 0
-                              ? BorderSide(color: Colors.black, width: 2.0)
+                              ? BorderSide(color: Theme.of(context).colorScheme.surface, width: 2.0)
                               : BorderSide(
                                   color: Color.fromARGB(0, 0, 0, 0),
                                   width: 2.0))),
@@ -2413,8 +2433,8 @@ class _NotificationPageState extends State<NotificationPage> {
                       "Message",
                       style: TextStyle(
                           color: actionPageTwo == 0
-                              ? Colors.black
-                              : Colors.black38,
+                              ? Theme.of(context).colorScheme.surface
+                              : Theme.of(context).colorScheme.onSurface,
                           fontSize: actionPageTwo == 0 ? 18 : 15),
                     ),
                   ),
@@ -2433,7 +2453,7 @@ class _NotificationPageState extends State<NotificationPage> {
                   decoration: BoxDecoration(
                       border: Border(
                           bottom: actionPageTwo == 1
-                              ? BorderSide(color: Colors.black, width: 2.0)
+                              ? BorderSide(color: Theme.of(context).colorScheme.surface, width: 2.0)
                               : BorderSide(
                                   color: Color.fromARGB(0, 0, 0, 0),
                                   width: 2.0))),
@@ -2442,8 +2462,8 @@ class _NotificationPageState extends State<NotificationPage> {
                       "News",
                       style: TextStyle(
                           color: actionPageTwo == 1
-                              ? Colors.black
-                              : Colors.black38,
+                              ? Theme.of(context).colorScheme.surface
+                              : Theme.of(context).colorScheme.onSurface,
                           fontSize: actionPageTwo == 1 ? 18 : 15),
                     ),
                   ),
@@ -2451,7 +2471,7 @@ class _NotificationPageState extends State<NotificationPage> {
               )
             ],
           ),
-          Divider(color: Colors.black12, height: 2),
+          Divider(color: Theme.of(context).colorScheme.onSurface, height: 2),
           SizedBox(
             height: 450,
             child: PageView(
@@ -2511,7 +2531,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                       Text(
                                         item2["messageText1"]!,
                                         style: TextStyle(
-                                          color: Colors.black,
+                                          color: Theme.of(context).colorScheme.primary,
                                           fontSize: 20,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -2521,7 +2541,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                       Text(
                                         item2["messageText2"]!,
                                         style: TextStyle(
-                                          color: Colors.black87,
+                                          color: Theme.of(context).colorScheme.secondary,
                                           fontSize: 16,
                                           fontWeight: FontWeight.normal,
                                         ),
@@ -2531,7 +2551,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                       Text(
                                         item2["messageText3"]!,
                                         style: TextStyle(
-                                          color: Colors.black54,
+                                          color: Theme.of(context).colorScheme.onSurface,
                                           fontSize: 12,
                                           fontWeight: FontWeight.normal,
                                         ),
@@ -2542,7 +2562,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                   ),
                                 ),
                               ),
-
+                              
                               //Divider(color: Colors.black12, height: 1),
                             ],
                           ),
@@ -2552,7 +2572,7 @@ class _NotificationPageState extends State<NotificationPage> {
                   ),
                 ),
                 Container(
-                  decoration: BoxDecoration(color: Color.fromARGB(0, 0, 0, 0)),
+                  //decoration: BoxDecoration(color: Color.fromARGB(0, 0, 0, 0)),
                   child: SizedBox(
                     child: PageView.builder(
                       controller: _pageControlPageNew,
@@ -2589,8 +2609,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                 child: Container(
                                   padding: EdgeInsets.all(5),
                                   height: 200,
-                                  decoration: BoxDecoration(
-                                      color: Color.fromARGB(0, 28, 22, 22)),
+                                  //decoration: BoxDecoration(color: Color.fromARGB(0, 28, 22, 22)),
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.start,
                                     crossAxisAlignment:
@@ -2599,7 +2618,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                       Text(
                                         item3["newsText1"]!,
                                         style: TextStyle(
-                                          color: Colors.black,
+                                          color: Theme.of(context).colorScheme.primary,
                                           fontSize: 20,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -2609,7 +2628,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                       Text(
                                         item3["newsText2"]!,
                                         style: TextStyle(
-                                          color: Colors.black87,
+                                          color: Theme.of(context).colorScheme.secondary,
                                           fontSize: 16,
                                           fontWeight: FontWeight.normal,
                                         ),
@@ -2619,7 +2638,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                       Text(
                                         item3["newsText3"]!,
                                         style: TextStyle(
-                                          color: Colors.black54,
+                                          color: Theme.of(context).colorScheme.onSurface,
                                           fontSize: 12,
                                           fontWeight: FontWeight.normal,
                                         ),
@@ -2630,7 +2649,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                   ),
                                 ),
                               ),
-
+                              
                               //Divider(color: Colors.black12, height: 1),
                             ],
                           ),
@@ -2971,7 +2990,7 @@ class _ProfilePageState extends State<MenuPage> {
                       ],
                     ),
                   ),
-                  Divider( height: 1),
+                  Divider(height: 1),
                   Container(
                     width: double.infinity,
                     height: 70,
@@ -3005,12 +3024,12 @@ class _ProfilePageState extends State<MenuPage> {
                       ],
                     ),
                   ),
-                  Divider( height: 1),
+                  Divider(height: 1),
                 ],
               ),
-              SizedBox(height: 10),
+              SizedBox(height: 15),
               Center(
-                  child: Text("Version: 2.0 | By 1DEV",
+                  child: Text("Version: 3.0 | By 1DEV",
                       style: TextStyle(fontSize: 15)))
             ],
           ),
@@ -3108,7 +3127,7 @@ class _ShopPageState extends State<ShopPage> {
               children: [
                 CachedNetworkImage(
                   imageUrl:
-                      "https://res.cloudinary.com/dag73dhpl/image/upload/v1740759438/animalshelter_ncqile.png",
+                      "https://res.cloudinary.com/dag73dhpl/image/upload/v1741695217/cat3_xvd0mu.png",
                   width: 50,
                   height: 50,
                   placeholder: (context, url) =>
@@ -3142,10 +3161,7 @@ class _ShopPageState extends State<ShopPage> {
               ],
             ),
           ),
-          Divider(
-            color: Colors.black26,
-            thickness: 1,
-          ),
+          Divider(color: Theme.of(context).colorScheme.onSurface, height: 1),
           SizedBox(
             height: 10,
           ),
@@ -3156,14 +3172,14 @@ class _ShopPageState extends State<ShopPage> {
               children: [
                 Text(
                   "Basket",
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize:  28, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
                 ),
                 SizedBox(
                   height: 30,
                 ),
                 Text(
                   "Your basket is Emty.",
-                  style: TextStyle(fontSize: 15),
+                  style: TextStyle(fontSize: 15, color: Theme.of(context).colorScheme.secondary),
                 ),
                 SizedBox(
                   height: 30,
@@ -3175,7 +3191,7 @@ class _ShopPageState extends State<ShopPage> {
                     },
                     child: Text(
                       "Continue shopping",
-                      style: TextStyle(color: Colors.black),
+                      //style: TextStyle(color: Colors.black),
                     )),
               ],
             ),
@@ -3189,7 +3205,7 @@ class _ShopPageState extends State<ShopPage> {
                 Center(
                   child: Text(
                     "You might like this",
-                    style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
                   ),
                 ),
                 SizedBox(
@@ -3205,7 +3221,7 @@ class _ShopPageState extends State<ShopPage> {
                       return Stack(
                         children: [
                           Container(
-                            color: Colors.white,
+                            //color: Colors.white,
                             child: Container(
                                 padding: EdgeInsets.symmetric(
                                     horizontal: 10, vertical: 10),
@@ -3235,7 +3251,7 @@ class _ShopPageState extends State<ShopPage> {
                                           style: TextStyle(
                                               fontSize: 15,
                                               fontWeight: FontWeight.bold,
-                                              color: Colors.black38
+                                              color: Theme.of(context).colorScheme.onSurface
                                               /*
                                           shadows: [
                                             
@@ -3253,7 +3269,7 @@ class _ShopPageState extends State<ShopPage> {
                                           style: TextStyle(
                                               fontSize: 15,
                                               fontWeight: FontWeight.bold,
-                                              color: Colors.black38
+                                              color: Theme.of(context).colorScheme.onSurface
                                               /*
                                           shadows: [
                                             
@@ -3274,7 +3290,7 @@ class _ShopPageState extends State<ShopPage> {
                                     Text(
                                       itemS1['ProductD']!,
                                       style: TextStyle(
-                                          fontSize: 15, color: Colors.black
+                                          fontSize: 15, color: Theme.of(context).colorScheme.primary
                                           /*
                                           shadows: [
                                             
@@ -3298,7 +3314,7 @@ class _ShopPageState extends State<ShopPage> {
                                           itemS1['ProductPr']!,
                                           style: TextStyle(
                                             fontSize: 20,
-                                            color: Colors.black,
+                                            color: Theme.of(context).colorScheme.primary,
                                             fontWeight: FontWeight.bold,
 
                                             /*
@@ -3320,7 +3336,7 @@ class _ShopPageState extends State<ShopPage> {
                                           itemS1['ProductP']!,
                                           style: TextStyle(
                                               fontSize: 15,
-                                              color: Colors.black38
+                                              color: Theme.of(context).colorScheme.onSurface
                                               /*
                                           shadows: [
                                             
@@ -3352,7 +3368,7 @@ class _ShopPageState extends State<ShopPage> {
                 Center(
                   child: Text(
                     "Best Seller",
-                    style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
                   ),
                 ),
                 SizedBox(
@@ -3368,7 +3384,7 @@ class _ShopPageState extends State<ShopPage> {
                       return Stack(
                         children: [
                           Container(
-                            color: Colors.white,
+                            //color: Colors.white,
                             child: Container(
                                 padding: EdgeInsets.symmetric(
                                     horizontal: 10, vertical: 10),
@@ -3398,7 +3414,7 @@ class _ShopPageState extends State<ShopPage> {
                                           style: TextStyle(
                                               fontSize: 15,
                                               fontWeight: FontWeight.bold,
-                                              color: Colors.black38
+                                              color: Theme.of(context).colorScheme.onSurface
                                               /*
                                           shadows: [
                                             
@@ -3416,7 +3432,7 @@ class _ShopPageState extends State<ShopPage> {
                                           style: TextStyle(
                                               fontSize: 15,
                                               fontWeight: FontWeight.bold,
-                                              color: Colors.black38
+                                              color: Theme.of(context).colorScheme.onSurface
                                               /*
                                           shadows: [
                                             
@@ -3437,7 +3453,7 @@ class _ShopPageState extends State<ShopPage> {
                                     Text(
                                       itemS2['ProductD']!,
                                       style: TextStyle(
-                                          fontSize: 15, color: Colors.black
+                                          fontSize: 15, color: Theme.of(context).colorScheme.primary
                                           /*
                                           shadows: [
                                             
@@ -3461,7 +3477,7 @@ class _ShopPageState extends State<ShopPage> {
                                           itemS2['ProductPr']!,
                                           style: TextStyle(
                                             fontSize: 20,
-                                            color: Colors.black,
+                                            color: Theme.of(context).colorScheme.primary,
                                             fontWeight: FontWeight.bold,
 
                                             /*
@@ -3483,7 +3499,7 @@ class _ShopPageState extends State<ShopPage> {
                                           itemS2['ProductP']!,
                                           style: TextStyle(
                                               fontSize: 15,
-                                              color: Colors.black38
+                                              color: Theme.of(context).colorScheme.onSurface
                                               /*
                                           shadows: [
                                             

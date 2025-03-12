@@ -19,10 +19,10 @@ class _addFormState extends State<addForm> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("New Post"),
+        title: Text("Feedback", style: TextStyle(fontWeight: FontWeight.bold),),
         centerTitle: true,
       ),
-      backgroundColor: Color.fromRGBO(255, 255, 255, 0.937),
+      backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
       body: SingleChildScrollView(
         child: Center(
           child: Form(

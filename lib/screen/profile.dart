@@ -33,8 +33,8 @@ class _ProfileState extends State<Profile> {
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: const Text("Message"),
-            content: const Text("Are you sure you want to log out?"),
+            title: const Text("Are you sure you want to log out?"),
+            
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
@@ -55,7 +55,6 @@ class _ProfileState extends State<Profile> {
                 },
                 child: const Text(
                   "Confirm",
-                
                 ),
               ),
             ],
@@ -164,12 +163,12 @@ class _ProfileState extends State<Profile> {
                     child: user?.photoURL == null
                         ? CachedNetworkImage(
                             imageUrl:
-                                "https://res.cloudinary.com/dag73dhpl/image/upload/v1741228008/cat2_y5dbkd.png",
+                                "https://res.cloudinary.com/dag73dhpl/image/upload/v1741695217/cat3_xvd0mu.png",
                             width: 180,
                             height: 180,
                             placeholder: (context, url) =>
                                 CircularProgressIndicator.adaptive(
-                              backgroundColor: Colors.white,
+                              backgroundColor: Colors.transparent,
                               valueColor: AlwaysStoppedAnimation<Color>(
                                   Color.fromARGB(75, 50, 50, 50)),
                             ),

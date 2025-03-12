@@ -38,17 +38,20 @@ class MyApp extends StatelessWidget {
       theme: AppThemes.lightTheme,
       darkTheme: AppThemes.darkTheme,
       home: Scaffold(
+        backgroundColor: themeProvider.themeMode == ThemeMode.dark
+            ? Colors.black
+            : Colors.white,
         body: Center(
             child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             CachedNetworkImage(
               imageUrl:
-                  "https://res.cloudinary.com/dag73dhpl/image/upload/v1740759438/animalshelter_ncqile.png",
+                  "https://res.cloudinary.com/dag73dhpl/image/upload/v1741695217/cat3_xvd0mu.png",
               width: 200,
               height: 200,
               placeholder: (context, url) => CircularProgressIndicator.adaptive(
-                backgroundColor: Colors.white,
+                backgroundColor: Colors.transparent,
                 valueColor: AlwaysStoppedAnimation<Color>(
                     Color.fromARGB(75, 50, 50, 50)),
               ),
@@ -57,12 +60,17 @@ class MyApp extends StatelessWidget {
             SizedBox(height: 30),
             Text(
               'ABC_SHOP',
-              style: TextStyle(fontSize: 50, fontFamily: 'Catfont',),
+              style: TextStyle(
+                fontSize: 50,
+                fontFamily: 'Catfont',
+              ),
             ),
             SizedBox(height: 10),
             Text(
               'Welcome!',
-              style: TextStyle(fontSize: 15 , ),
+              style: TextStyle(
+                fontSize: 15,
+              ),
             ),
             SizedBox(height: 20),
             ElevatedButton(
