@@ -2,8 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_1/provider/theme.dart';
-import 'package:flutter_application_1/provider/theme_provider.dart';
-import 'package:flutter_application_1/screen/authPage.dart';
+import 'package:flutter_application_1/provider/Theme_Provider.dart';
+import 'package:flutter_application_1/screen/Auth_Page.dart';
 import 'package:provider/provider.dart';
 
 class regisUser extends StatefulWidget {

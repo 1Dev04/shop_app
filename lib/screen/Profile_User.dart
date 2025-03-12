@@ -2,8 +2,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_application_1/screen/editProfile.dart';
-import 'package:flutter_application_1/screen/login.dart';
+import 'package:flutter_application_1/screen/Edit_Profile.dart';
+import 'package:flutter_application_1/screen/SignIn_User.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
 

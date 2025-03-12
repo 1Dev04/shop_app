@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 
-import 'package:flutter_application_1/provider/theme_provider.dart';
+import 'package:flutter_application_1/provider/Theme_Provider.dart';
 import 'package:provider/provider.dart';
 
 class Settingpage extends StatefulWidget {

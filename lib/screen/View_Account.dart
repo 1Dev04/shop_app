@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/data/database.dart';
 import 'package:flutter_application_1/models/model.dart';
-import 'package:flutter_application_1/screen/UpdateForm.dart';
+import 'package:flutter_application_1/screen/Update_Form.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 
 class ViewAccount extends StatefulWidget {

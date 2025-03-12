@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/provider/theme.dart';
-import 'package:flutter_application_1/provider/theme_provider.dart';
-import 'package:flutter_application_1/screen/ViewAccount.dart';
-import 'package:flutter_application_1/screen/authPage.dart';
-import 'package:flutter_application_1/screen/profile.dart';
-import 'package:flutter_application_1/screen/settingPage.dart';
+import 'package:flutter_application_1/provider/Theme_Provider.dart';
+import 'package:flutter_application_1/screen/View_Account.dart';
+import 'package:flutter_application_1/screen/Auth_Page.dart';
+import 'package:flutter_application_1/screen/Profile_User.dart';
+import 'package:flutter_application_1/screen/Setting_Page.dart';
 
 // import 'package:flutter_application_1/login.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 
 import 'dart:async';
-import 'addForm.dart';
+import 'Add_Form.dart';
 
 class MyHome extends StatefulWidget {
   const MyHome({super.key});

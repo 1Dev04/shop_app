@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_application_1/provider/theme.dart';
-import 'package:flutter_application_1/provider/theme_provider.dart';
-import 'package:flutter_application_1/screen/authPage.dart';
+import 'package:flutter_application_1/provider/Theme_Provider.dart';
+import 'package:flutter_application_1/screen/Auth_Page.dart';
 import 'package:provider/provider.dart';
 
 void main() async {

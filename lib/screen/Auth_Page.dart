@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 //ติดตั้งแพคเกจ firebase_auth จาก http://pub.dev
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_application_1/screen/home.dart';
-import 'package:flutter_application_1/screen/login.dart';
+import 'package:flutter_application_1/screen/Home_Page.dart';
+import 'package:flutter_application_1/screen/SignIn_User.dart';
 
 class authPage extends StatelessWidget {
   const authPage({super.key});

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/provider/theme.dart';
-import 'package:flutter_application_1/provider/theme_provider.dart';
-import 'package:flutter_application_1/screen/authPage.dart';
+import 'package:flutter_application_1/provider/Theme_Provider.dart';
+import 'package:flutter_application_1/screen/SignUp_User.dart';
+import 'package:flutter_application_1/screen/Auth_Page.dart';
 import 'package:provider/provider.dart';
 
-import 'regisUser.dart';
+
 import 'package:firebase_auth/firebase_auth.dart';
  import 'package:google_sign_in/google_sign_in.dart';
 
