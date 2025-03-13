@@ -243,7 +243,7 @@ class _regisUserState extends State<regisUser> {
                           ),
                           validator: (value) {
                             final RegExp emailRegExp1 = RegExp(
-                                r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&*!])[A-Za-z\d@#$%^&*!\.]{8,20}$');
+                                r'^(?=.*[a-zA-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&*!])[A-Za-z\d@#$%^&*!\.]{8,20}$');
                             final RegExp emailRegExp2 = RegExp(r'^\S+$');
 
                             if (value == null || value.isEmpty) {
@@ -251,7 +251,7 @@ class _regisUserState extends State<regisUser> {
                             } else if (value.length < 15 || value.length > 50) {
                               return '''The email should be between 15-50 characters.''';
                             } else if (!emailRegExp1.hasMatch(value)) {
-                              return 'Invalid email format: \nUser1@example.com, Person1@example.co.th';
+                              return 'Invalid email format: \nUser1@example.com, person1@example.co.th';
                             } else if (!emailRegExp2.hasMatch(value)) {
                               return 'The email format ${value} is invalid.';
                             }

@@ -209,7 +209,7 @@ class _LoginState extends State<Login> {
                           ),
                           validator: (value) {
                             final RegExp emailLoginRegex1 = RegExp(
-                                r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&*!])[A-Za-z\d@#$%^&*!\.]{8,20}$');
+                                r'^(?=.*[a-zA-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&*!])[A-Za-z\d@#$%^&*!\.]{8,20}$');
                             final RegExp emailLoginRegex2 = RegExp(r'^\S+$');
       
                             if (value!.isEmpty) {
@@ -219,7 +219,7 @@ class _LoginState extends State<Login> {
                             } else if (value.length > 50) {
                               return "Password more than 50 characters";
                             } else if (!emailLoginRegex1.hasMatch(value)) {
-                              return 'Invalid email format: \nUser1@example.com, Person1@example.co.th';
+                              return 'Invalid email format: \nUser1@example.com, person1@example.co.th';
                             } else if (!emailLoginRegex2.hasMatch(value)) {
                               return 'The email format ${value} is invalid.';
                             }

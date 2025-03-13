@@ -200,7 +200,7 @@ class _editProfilePageState extends State<editProfilePage> {
                             : Colors.black),
                     validator: (value) {
                       final RegExp editEmailLoginRegex1 = RegExp(
-                          r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&*!])[A-Za-z\d@#$%^&*!\.]{8,20}$');
+                          r'^(?=.*[a-zA-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&*!])[A-Za-z\d@#$%^&*!\.]{8,20}$');
                       final RegExp editEmailLoginRegex2 = RegExp(r'^\S+$');
 
                       if (value!.isEmpty) {
@@ -210,7 +210,7 @@ class _editProfilePageState extends State<editProfilePage> {
                       } else if (value.length > 50) {
                         return "Password more than 50 characters";
                       } else if (!editEmailLoginRegex1.hasMatch(value)) {
-                        return 'Invalid email format: \nUser1@example.com, Person1@example.co.th';
+                        return 'Invalid email format: \nUser1@example.com, person1@example.co.th';
                       } else if (!editEmailLoginRegex2.hasMatch(value)) {
                         return 'The email format ${value} is invalid.';
                       }
@@ -231,7 +231,7 @@ class _editProfilePageState extends State<editProfilePage> {
                             : Colors.black),
                     validator: (value) {
                       final RegExp editNewEmailLoginRegex1 = RegExp(
-                          r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&*!])[A-Za-z\d@#$%^&*!\.]{8,20}$');
+                          r'^(?=.*[a-zA-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&*!])[A-Za-z\d@#$%^&*!\.]{8,20}$');
                       final RegExp editNewEmailLoginRegex2 = RegExp(r'^\S+$');
 
                       if (value!.isEmpty) {
@@ -241,7 +241,7 @@ class _editProfilePageState extends State<editProfilePage> {
                       } else if (value.length > 50) {
                         return "Password more than 50 characters";
                       } else if (!editNewEmailLoginRegex1.hasMatch(value)) {
-                        return 'Invalid new email format: \nUser1@example.com, Person1@example.co.th';
+                        return 'Invalid new email format: \nUser1@example.com, person1@example.co.th';
                       } else if (!editNewEmailLoginRegex2.hasMatch(value)) {
                         return 'The new email format ${value} is invalid.';
                       }
