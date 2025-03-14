@@ -18,7 +18,7 @@ class _SettingpageState extends State<Settingpage> {
 
     return Scaffold(
         appBar: AppBar(
-        title: const Text("Profile",
+        title: const Text("Setting",
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 28)),
         centerTitle: true,
 

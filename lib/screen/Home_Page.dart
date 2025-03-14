@@ -70,9 +70,17 @@ class _MyHomeState extends State<MyHome> {
         appBar: AppBar(
           title: Text(
             setTitle(),
-            style: TextStyle(fontFamily: 'Catfont', fontSize: 40, color: Theme.of(context).appBarTheme.backgroundColor),
+            style: TextStyle(
+              fontFamily: 'Catfont',
+              fontSize: 40,
+              color: themeProvider.themeMode == ThemeMode.dark
+                  ? Colors.white
+                  : Colors.black,
+            ),
           ),
-          backgroundColor: themeProvider.themeMode == ThemeMode.dark ? Colors.black : Colors.white,
+          backgroundColor: themeProvider.themeMode == ThemeMode.dark
+              ? Colors.black
+              : Colors.white,
           actions: [
             GestureDetector(
               onTap: () {
@@ -312,12 +320,17 @@ class _SearchPageState extends State<SearchPage> {
                         ? Text(
                             "FEMALE",
                             style: TextStyle(
-                              color: Theme.of(context).snackBarTheme.contentTextStyle?.color,
+                              color: Theme.of(context)
+                                  .snackBarTheme
+                                  .contentTextStyle
+                                  ?.color,
                               fontWeight: FontWeight.bold,
                               decoration: TextDecoration.underline,
                               decorationThickness: 1, // ความหนาของเส้นใต้
-                              decorationColor:
-                                  Theme.of(context).snackBarTheme.contentTextStyle?.color, 
+                              decorationColor: Theme.of(context)
+                                  .snackBarTheme
+                                  .contentTextStyle
+                                  ?.color,
                               fontSize: 18,
                               height: 3,
                             ),
@@ -340,12 +353,17 @@ class _SearchPageState extends State<SearchPage> {
                         ? Text(
                             "MALE",
                             style: TextStyle(
-                              color: Theme.of(context).snackBarTheme.contentTextStyle?.color,
+                              color: Theme.of(context)
+                                  .snackBarTheme
+                                  .contentTextStyle
+                                  ?.color,
                               fontWeight: FontWeight.bold,
                               decoration: TextDecoration.underline,
                               decorationThickness: 1, // ความหนาของเส้นใต้
-                              decorationColor:
-                                  Theme.of(context).snackBarTheme.contentTextStyle?.color, // สีของเส้นใต้
+                              decorationColor: Theme.of(context)
+                                  .snackBarTheme
+                                  .contentTextStyle
+                                  ?.color, // สีของเส้นใต้
                               fontSize: 18,
                               height: 3,
                             ),
@@ -368,12 +386,17 @@ class _SearchPageState extends State<SearchPage> {
                         ? Text(
                             "KITTEN",
                             style: TextStyle(
-                              color: Theme.of(context).snackBarTheme.contentTextStyle?.color,
+                              color: Theme.of(context)
+                                  .snackBarTheme
+                                  .contentTextStyle
+                                  ?.color,
                               fontWeight: FontWeight.bold,
                               decoration: TextDecoration.underline,
                               decorationThickness: 1, // ความหนาของเส้นใต้
-                              decorationColor:
-                                  Theme.of(context).snackBarTheme.contentTextStyle?.color, // สีของเส้นใต้
+                              decorationColor: Theme.of(context)
+                                  .snackBarTheme
+                                  .contentTextStyle
+                                  ?.color, // สีของเส้นใต้
                               fontSize: 18,
                               height: 3,
                             ),
@@ -390,7 +413,9 @@ class _SearchPageState extends State<SearchPage> {
             ),
           ),
 
-          SizedBox(height: 20,),
+          SizedBox(
+            height: 20,
+          ),
           Expanded(
               child: PageView(
             controller: _pageControlSearch,
@@ -439,7 +464,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Princess Paws',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       fontSize: 14,
                                     ),
                                     maxLines: 2,
@@ -482,7 +508,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Floral Feline',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       fontSize: 14,
                                     ),
                                     maxLines: 2,
@@ -533,7 +560,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Elegant Diva',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       fontSize: 14,
                                     ),
                                     maxLines: 2,
@@ -577,7 +605,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Pastel Kitty',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       fontSize: 14,
                                     ),
                                     maxLines: 2,
@@ -628,7 +657,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Royal Queen',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       fontSize: 14,
                                     ),
                                     maxLines: 2,
@@ -672,7 +702,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Fairy Tale Cat',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       fontSize: 14,
                                     ),
                                     maxLines: 2,
@@ -723,7 +754,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Sweet Lolita',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       fontSize: 14,
                                     ),
                                     maxLines: 2,
@@ -767,7 +799,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Chic & Trendy',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       fontSize: 14,
                                     ),
                                     maxLines: 2,
@@ -818,7 +851,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Romantic Lace',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       fontSize: 14,
                                     ),
                                     maxLines: 2,
@@ -862,7 +896,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Tutu & Frills',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       fontSize: 14,
                                     ),
                                     maxLines: 2,
@@ -919,7 +954,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Gentleman Paws',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       fontSize: 14,
                                     ),
                                     maxLines: 2,
@@ -963,7 +999,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Sporty Cat',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       fontSize: 14,
                                     ),
                                     maxLines: 2,
@@ -1014,7 +1051,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Cool Street Style',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       fontSize: 14,
                                     ),
                                     maxLines: 2,
@@ -1058,7 +1096,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Dapper Kitty',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       fontSize: 14,
                                     ),
                                     maxLines: 2,
@@ -1109,7 +1148,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Retro Vibes',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       fontSize: 14,
                                     ),
                                     maxLines: 2,
@@ -1153,7 +1193,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Rockstar Meow',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       fontSize: 14,
                                     ),
                                     maxLines: 2,
@@ -1204,7 +1245,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Minimalist Chic',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       fontSize: 14,
                                     ),
                                     maxLines: 2,
@@ -1248,7 +1290,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Bad Boy Cat',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       fontSize: 14,
                                     ),
                                     maxLines: 2,
@@ -1299,7 +1342,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Sailor & Navy',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       fontSize: 14,
                                     ),
                                     maxLines: 2,
@@ -1343,7 +1387,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Adventure Outfit',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       fontSize: 14,
                                     ),
                                     maxLines: 2,
@@ -1400,7 +1445,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Baby Meow',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       fontSize: 14,
                                     ),
                                     maxLines: 2,
@@ -1444,7 +1490,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Fluffy Bunny',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       fontSize: 14,
                                     ),
                                     maxLines: 2,
@@ -1495,7 +1542,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Candy Cutie',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       fontSize: 14,
                                     ),
                                     maxLines: 2,
@@ -1539,7 +1587,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Little Sailor',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       fontSize: 14,
                                     ),
                                     maxLines: 2,
@@ -1590,7 +1639,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Tiny Teddy',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       fontSize: 14,
                                     ),
                                     maxLines: 2,
@@ -1634,7 +1684,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Playful Paws',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       fontSize: 14,
                                     ),
                                     maxLines: 2,
@@ -1685,7 +1736,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Rainbow Kitten',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       fontSize: 14,
                                     ),
                                     maxLines: 2,
@@ -1729,7 +1781,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Mini Prince & Princess',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       fontSize: 14,
                                     ),
                                     maxLines: 2,
@@ -1780,7 +1833,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Dreamy Cloud',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       fontSize: 14,
                                     ),
                                     maxLines: 2,
@@ -1824,7 +1878,8 @@ class _SearchPageState extends State<SearchPage> {
                                   child: Text(
                                     'Cozy Pajamas',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       fontSize: 14,
                                     ),
                                     maxLines: 2,
@@ -1861,7 +1916,8 @@ class _SearchPageState extends State<SearchPage> {
                     labelText: 'What are you looking for',
                     prefixIcon: Icon(Icons.search),
                   ),
-                   style: TextStyle(color: Theme.of(context).colorScheme.primary),
+                  style:
+                      TextStyle(color: Theme.of(context).colorScheme.primary),
                 ),
               ],
             )),
@@ -1888,12 +1944,14 @@ class _FavoritePageState extends State<FavoritePage> {
           child: Container(
             width: double.infinity,
             height: 70,
-            decoration: BoxDecoration(color: Theme.of(context).colorScheme.onSurface),
+            decoration:
+                BoxDecoration(color: Theme.of(context).colorScheme.onSurface),
             padding: EdgeInsets.all(10),
             child: Row(mainAxisAlignment: MainAxisAlignment.start, children: [
               Text(
                 "0 list",
-                style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.primary),
+                style: TextStyle(
+                    fontSize: 18, color: Theme.of(context).colorScheme.primary),
               )
             ]),
           ),
@@ -1910,12 +1968,17 @@ class _FavoritePageState extends State<FavoritePage> {
               SizedBox(height: 20),
               Text(
                 "0 items in your favorites",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold , color: Theme.of(context).colorScheme.primary),
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.primary),
               ),
               SizedBox(height: 5),
               Text(
                 "Add products to your favorites list to check prices and stock availability.",
-                style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface),
+                style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurface),
               ),
             ],
           ),
@@ -2123,10 +2186,14 @@ class _HomePageState extends State<HomePage> {
                         child: Icon(
                           Icons.shopping_cart_outlined,
                           size: 30,
-                          color: Theme.of(context).floatingActionButtonTheme.foregroundColor,
+                          color: Theme.of(context)
+                              .floatingActionButtonTheme
+                              .foregroundColor,
                         ),
                       ),
-                      backgroundColor: Theme.of(context).floatingActionButtonTheme.backgroundColor,
+                      backgroundColor: Theme.of(context)
+                          .floatingActionButtonTheme
+                          .backgroundColor,
                     ),
                   )
                 ],
@@ -2323,7 +2390,6 @@ class _NotificationPageState extends State<NotificationPage> {
                   children: [
                     Container(
                       color: Theme.of(context).textTheme.bodyLarge?.color,
-                      
                       child: Center(
                         child: Text(
                           item1['TextNoti']!,
@@ -2424,7 +2490,9 @@ class _NotificationPageState extends State<NotificationPage> {
                   decoration: BoxDecoration(
                       border: Border(
                           bottom: actionPageTwo == 0
-                              ? BorderSide(color: Theme.of(context).colorScheme.surface, width: 2.0)
+                              ? BorderSide(
+                                  color: Theme.of(context).colorScheme.surface,
+                                  width: 2.0)
                               : BorderSide(
                                   color: Color.fromARGB(0, 0, 0, 0),
                                   width: 2.0))),
@@ -2453,7 +2521,9 @@ class _NotificationPageState extends State<NotificationPage> {
                   decoration: BoxDecoration(
                       border: Border(
                           bottom: actionPageTwo == 1
-                              ? BorderSide(color: Theme.of(context).colorScheme.surface, width: 2.0)
+                              ? BorderSide(
+                                  color: Theme.of(context).colorScheme.surface,
+                                  width: 2.0)
                               : BorderSide(
                                   color: Color.fromARGB(0, 0, 0, 0),
                                   width: 2.0))),
@@ -2531,7 +2601,9 @@ class _NotificationPageState extends State<NotificationPage> {
                                       Text(
                                         item2["messageText1"]!,
                                         style: TextStyle(
-                                          color: Theme.of(context).colorScheme.primary,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary,
                                           fontSize: 20,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -2541,7 +2613,9 @@ class _NotificationPageState extends State<NotificationPage> {
                                       Text(
                                         item2["messageText2"]!,
                                         style: TextStyle(
-                                          color: Theme.of(context).colorScheme.secondary,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .secondary,
                                           fontSize: 16,
                                           fontWeight: FontWeight.normal,
                                         ),
@@ -2551,7 +2625,9 @@ class _NotificationPageState extends State<NotificationPage> {
                                       Text(
                                         item2["messageText3"]!,
                                         style: TextStyle(
-                                          color: Theme.of(context).colorScheme.onSurface,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface,
                                           fontSize: 12,
                                           fontWeight: FontWeight.normal,
                                         ),
@@ -2562,7 +2638,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                   ),
                                 ),
                               ),
-                              
+
                               //Divider(color: Colors.black12, height: 1),
                             ],
                           ),
@@ -2618,7 +2694,9 @@ class _NotificationPageState extends State<NotificationPage> {
                                       Text(
                                         item3["newsText1"]!,
                                         style: TextStyle(
-                                          color: Theme.of(context).colorScheme.primary,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary,
                                           fontSize: 20,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -2628,7 +2706,9 @@ class _NotificationPageState extends State<NotificationPage> {
                                       Text(
                                         item3["newsText2"]!,
                                         style: TextStyle(
-                                          color: Theme.of(context).colorScheme.secondary,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .secondary,
                                           fontSize: 16,
                                           fontWeight: FontWeight.normal,
                                         ),
@@ -2638,7 +2718,9 @@ class _NotificationPageState extends State<NotificationPage> {
                                       Text(
                                         item3["newsText3"]!,
                                         style: TextStyle(
-                                          color: Theme.of(context).colorScheme.onSurface,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface,
                                           fontSize: 12,
                                           fontWeight: FontWeight.normal,
                                         ),
@@ -2649,7 +2731,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                   ),
                                 ),
                               ),
-                              
+
                               //Divider(color: Colors.black12, height: 1),
                             ],
                           ),
@@ -3172,14 +3254,19 @@ class _ShopPageState extends State<ShopPage> {
               children: [
                 Text(
                   "Basket",
-                  style: TextStyle(fontSize:  28, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
+                  style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary),
                 ),
                 SizedBox(
                   height: 30,
                 ),
                 Text(
                   "Your basket is Emty.",
-                  style: TextStyle(fontSize: 15, color: Theme.of(context).colorScheme.secondary),
+                  style: TextStyle(
+                      fontSize: 15,
+                      color: Theme.of(context).colorScheme.secondary),
                 ),
                 SizedBox(
                   height: 30,
@@ -3205,7 +3292,10 @@ class _ShopPageState extends State<ShopPage> {
                 Center(
                   child: Text(
                     "You might like this",
-                    style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
+                    style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary),
                   ),
                 ),
                 SizedBox(
@@ -3251,7 +3341,9 @@ class _ShopPageState extends State<ShopPage> {
                                           style: TextStyle(
                                               fontSize: 15,
                                               fontWeight: FontWeight.bold,
-                                              color: Theme.of(context).colorScheme.onSurface
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface
                                               /*
                                           shadows: [
                                             
@@ -3269,7 +3361,9 @@ class _ShopPageState extends State<ShopPage> {
                                           style: TextStyle(
                                               fontSize: 15,
                                               fontWeight: FontWeight.bold,
-                                              color: Theme.of(context).colorScheme.onSurface
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface
                                               /*
                                           shadows: [
                                             
@@ -3290,7 +3384,10 @@ class _ShopPageState extends State<ShopPage> {
                                     Text(
                                       itemS1['ProductD']!,
                                       style: TextStyle(
-                                          fontSize: 15, color: Theme.of(context).colorScheme.primary
+                                          fontSize: 15,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary
                                           /*
                                           shadows: [
                                             
@@ -3314,7 +3411,9 @@ class _ShopPageState extends State<ShopPage> {
                                           itemS1['ProductPr']!,
                                           style: TextStyle(
                                             fontSize: 20,
-                                            color: Theme.of(context).colorScheme.primary,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary,
                                             fontWeight: FontWeight.bold,
 
                                             /*
@@ -3336,7 +3435,9 @@ class _ShopPageState extends State<ShopPage> {
                                           itemS1['ProductP']!,
                                           style: TextStyle(
                                               fontSize: 15,
-                                              color: Theme.of(context).colorScheme.onSurface
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface
                                               /*
                                           shadows: [
                                             
@@ -3368,7 +3469,10 @@ class _ShopPageState extends State<ShopPage> {
                 Center(
                   child: Text(
                     "Best Seller",
-                    style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
+                    style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary),
                   ),
                 ),
                 SizedBox(
@@ -3414,7 +3518,9 @@ class _ShopPageState extends State<ShopPage> {
                                           style: TextStyle(
                                               fontSize: 15,
                                               fontWeight: FontWeight.bold,
-                                              color: Theme.of(context).colorScheme.onSurface
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface
                                               /*
                                           shadows: [
                                             
@@ -3432,7 +3538,9 @@ class _ShopPageState extends State<ShopPage> {
                                           style: TextStyle(
                                               fontSize: 15,
                                               fontWeight: FontWeight.bold,
-                                              color: Theme.of(context).colorScheme.onSurface
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface
                                               /*
                                           shadows: [
                                             
@@ -3453,7 +3561,10 @@ class _ShopPageState extends State<ShopPage> {
                                     Text(
                                       itemS2['ProductD']!,
                                       style: TextStyle(
-                                          fontSize: 15, color: Theme.of(context).colorScheme.primary
+                                          fontSize: 15,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary
                                           /*
                                           shadows: [
                                             
@@ -3477,7 +3588,9 @@ class _ShopPageState extends State<ShopPage> {
                                           itemS2['ProductPr']!,
                                           style: TextStyle(
                                             fontSize: 20,
-                                            color: Theme.of(context).colorScheme.primary,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary,
                                             fontWeight: FontWeight.bold,
 
                                             /*
@@ -3499,7 +3612,9 @@ class _ShopPageState extends State<ShopPage> {
                                           itemS2['ProductP']!,
                                           style: TextStyle(
                                               fontSize: 15,
-                                              color: Theme.of(context).colorScheme.onSurface
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface
                                               /*
                                           shadows: [
                                             

@@ -18,13 +18,16 @@ class _editProfilePageState extends State<editProfilePage> {
 
   bool visiblePassCon = false;
   bool visiblePassCon1 = false;
+  bool visiblePassCon2 = false;
 
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController newEmailController = TextEditingController();
+
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController newPasswordController = TextEditingController();
-
+  final TextEditingController conNewPasswordController =
+      TextEditingController();
   final TextEditingController postalController = TextEditingController();
   String? selectedGender;
   bool subscribeNewsletter = false;
@@ -48,7 +51,8 @@ class _editProfilePageState extends State<editProfilePage> {
         setState(() {
           nameController.text = userDoc['name'];
           emailController.text = userDoc['email'];
-          passwordController.text = ''; // Do not load the password field
+          passwordController.text = '';
+          conNewPasswordController.text = '';
           postalController.text = userDoc['postal'];
           selectedGender = userDoc['gender'];
           subscribeNewsletter = userDoc['subscribeNewsletter'];
@@ -58,7 +62,7 @@ class _editProfilePageState extends State<editProfilePage> {
   }
 
 // ✅ ฟังก์ชันแก้ไขโปรไฟล์
-  Future<void> editUserProfile({
+Future<void> editUserProfile({
     required String name,
     required String postal,
     required String? selectedGender,
@@ -66,6 +70,7 @@ class _editProfilePageState extends State<editProfilePage> {
     String? newEmail,
     String? currentPassword,
     String? newPassword,
+    String? conNewPassword,
   }) async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user == null) throw Exception("User not logged in");
@@ -94,6 +99,9 @@ class _editProfilePageState extends State<editProfilePage> {
       if (newPassword?.isNotEmpty ?? false) {
         await user.updatePassword(newPassword!);
       }
+      if (conNewPassword?.isNotEmpty ?? false) {
+        await user.updatePassword(conNewPassword!);
+      }
 
       // ✅ อัปเดตข้อมูลโปรไฟล์ใน Firestore
       await FirebaseFirestore.instance.collection('users').doc(uid).update({
@@ -103,10 +111,12 @@ class _editProfilePageState extends State<editProfilePage> {
         'subscribeNewsletter': subscribeNewsletter,
         'updatedAt': FieldValue.serverTimestamp(),
         if (newPassword?.isNotEmpty ?? false) 'password': newPassword,
+        if (conNewPassword?.isNotEmpty ?? false)
+          'confirmPassword': conNewPassword,
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Update profile successful! 🎉")));
+          SnackBar(content: Text("Update firebase profile successful! 🎉")));
     } on FirebaseAuthException catch (e) {
       throw ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Error from Firebase Auth: ${e.message} ❌")));
@@ -117,16 +127,34 @@ class _editProfilePageState extends State<editProfilePage> {
 
 // ฟังก์ชันยืนยันตัวตนใหม่ด้วยอีเมลและรหัสผ่าน
   Future<void> reauthenticateUser(String email, String password) async {
-    AuthCredential credential =
-        EmailAuthProvider.credential(email: email, password: password);
-    await FirebaseAuth.instance.currentUser
-        ?.reauthenticateWithCredential(credential);
+  try {
+    // ตรวจสอบว่า currentUser ไม่เป็น null
+    if (FirebaseAuth.instance.currentUser != null) {
+      AuthCredential credential =
+          EmailAuthProvider.credential(email: email, password: password);
+
+      // เรียกใช้ reauthenticate
+      await FirebaseAuth.instance.currentUser!
+          .reauthenticateWithCredential(credential);
+    } else {
+      throw FirebaseAuthException(code: 'no-user', message: 'No user is logged in');
+    }
+  } on FirebaseAuthException catch (e) {
+    // จัดการข้อผิดพลาดจาก Firebase
+    print('Reauthentication failed: ${e.message}');
+    // แสดงข้อผิดพลาดให้ผู้ใช้
+  } catch (e) {
+    // จัดการข้อผิดพลาดทั่วไป
+    print('Error: $e');
   }
+}
 
 // ฟังก์ชันส่งข้อมูลที่แก้ไขแล้วไปยัง Firebase
   void submitEdit() async {
     
     try {
+
+      
       await editUserProfile(
         name: nameController.text,
         postal: postalController.text,
@@ -139,9 +167,17 @@ class _editProfilePageState extends State<editProfilePage> {
         newPassword: newPasswordController.text.isNotEmpty
             ? newPasswordController.text
             : null,
+        conNewPassword: conNewPasswordController.text.isNotEmpty
+            ? conNewPasswordController.text
+            : null,
       );
-      Navigator.push(context, MaterialPageRoute(builder: (context) => authPage()));
+
+
+     
+      Navigator.push(
+          context, MaterialPageRoute(builder: (context) => authPage()));
       ScaffoldMessenger.of(context).showSnackBar(
+        
         SnackBar(content: Text("Update Profile Successful! 🎉")),
       );
     } catch (e) {
@@ -150,6 +186,7 @@ class _editProfilePageState extends State<editProfilePage> {
       );
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -313,13 +350,50 @@ class _editProfilePageState extends State<editProfilePage> {
                           r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&*])[A-Za-z\d@#$%^&*]{8,20}$');
                       final RegExp editConPasswordRegex2 = RegExp(r'^\S+$');
                       if (value == null || value.isEmpty) {
-                        return "Please input confirm password.";
+                        return "Please input new password.";
                       } else if (value.length < 5 || value.length > 20) {
-                        return '''The confirm password should be between 5-20 characters \n and must contain both letters and numbers. \n Symbols allowed: !"#%'()*+,-./:;<=>?@[]^_`{}|~''';
+                        return '''The new password should be between 5-20 characters \n and must contain both letters and numbers. \n Symbols allowed: !"#%'()*+,-./:;<=>?@[]^_`{}|~''';
                       } else if (!editConPasswordRegex1.hasMatch(value)) {
-                        return "Invalid confirm password format: \nP@ssw0rd, P@ssw0rd";
+                        return "Invalid new confirm password format: \nP@ssw0rd, P@ssw0rd";
                       } else if (!editConPasswordRegex2.hasMatch(value)) {
-                        return "The confirm password format ${value} is invalid.";
+                        return "The new confirm password format ${value} is invalid.";
+                      }
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: 15),
+                  TextFormField(
+                    controller: conNewPasswordController,
+                    obscureText: !visiblePassCon2,
+                    maxLength: 10,
+                    decoration: InputDecoration(
+                        labelText: 'Confirm New Password',
+                        suffixIcon: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              visiblePassCon2 = !visiblePassCon2;
+                            });
+                          },
+                          child: visiblePassCon2
+                              ? Icon(Icons.visibility)
+                              : Icon(Icons.visibility_off),
+                        )),
+                    style: TextStyle(
+                        color: themeProvider.themeMode == ThemeMode.dark
+                            ? Colors.white
+                            : Colors.black),
+                    validator: (value) {
+                      final RegExp editConPasswordRegex1 = RegExp(
+                          r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&*])[A-Za-z\d@#$%^&*]{8,20}$');
+                      final RegExp editConPasswordRegex2 = RegExp(r'^\S+$');
+                      if (value == null || value.isEmpty) {
+                        return "Please input confirm new password.";
+                      } else if (value.length < 5 || value.length > 20) {
+                        return '''The confirm new password should be between 5-20 characters \n and must contain both letters and numbers. \n Symbols allowed: !"#%'()*+,-./:;<=>?@[]^_`{}|~''';
+                      } else if (!editConPasswordRegex1.hasMatch(value)) {
+                        return "Invalid confirm new password format: \nP@ssw0rd, P@ssw0rd";
+                      } else if (!editConPasswordRegex2.hasMatch(value)) {
+                        return "The confirm new password format ${value} is invalid.";
                       }
                       return null;
                     },

@@ -61,28 +61,48 @@ class _regisUserState extends State<regisUser> {
 
   void signUserUp() async {
     showDialog(
-        context: context,
-        barrierDismissible: false, // barrier close
-        builder: (context) {
-          return const Center(
-            child: CircularProgressIndicator.adaptive(
-              backgroundColor: Colors.white,
-              valueColor:
-                  AlwaysStoppedAnimation<Color>(Color.fromARGB(75, 50, 50, 50)),
-            ),
-          );
-        });
+      context: context,
+      barrierDismissible: false, // barrier close
+      builder: (context) {
+        return const Center(
+          child: CircularProgressIndicator.adaptive(
+            backgroundColor: Colors.white,
+            valueColor:
+                AlwaysStoppedAnimation<Color>(Color.fromARGB(75, 50, 50, 50)),
+          ),
+        );
+      },
+    );
 
     try {
       // Check if the passwords match
       if (passwordController.text.trim() !=
           confirmPasswordController.text.trim()) {
         Navigator.pop(context); // ปิด Dialog
-        print('Password do not match');
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Password do not match")),
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Password do not match')),
+        );
         return;
       }
 
-      // Register
+      // Check if email already exists
+      var querySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: emailController.text.trim())
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        Navigator.pop(context); // ปิด Dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("This email is already registered")),
+        );
+        return;
+      }
+      // Register the user in Firebase Authentication
       UserCredential userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(
               email: emailController.text.trim(),
@@ -91,6 +111,7 @@ class _regisUserState extends State<regisUser> {
       // Get user id
       String uid = userCredential.user!.uid;
 
+      // Store user details in Firestore
       await FirebaseFirestore.instance.collection('users').doc(uid).set({
         'uid': uid,
         'name': nameController.text.trim(),
@@ -106,14 +127,22 @@ class _regisUserState extends State<regisUser> {
         'createdAt': FieldValue.serverTimestamp()
       });
 
+      Navigator.pop(context); // ปิด Dialog
       Navigator.pushReplacement(
           context, MaterialPageRoute(builder: (context) => authPage()));
       print("Successfully Registered");
     } on FirebaseAuthException catch (e) {
+      Navigator.pop(context); // ปิด Dialog
       print("An error occurred ${e.message}");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.message}')),
+      );
     } catch (e) {
-      Navigator.pop(context);
+      Navigator.pop(context); // ปิด Dialog
       print("Error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
     }
   }
 
@@ -132,17 +161,17 @@ class _regisUserState extends State<regisUser> {
               children: [
                 SizedBox(height: 50),
                 Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          IconButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
-                            icon: Icon(Icons.arrow_back),
-                            iconSize: 30,
-                          )
-                        ],
-                      ),
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      icon: Icon(Icons.arrow_back),
+                      iconSize: 30,
+                    )
+                  ],
+                ),
                 Container(
                     width: double.infinity,
                     height: 80,
@@ -208,8 +237,9 @@ class _regisUserState extends State<regisUser> {
                             labelText: 'Username',
                           ),
                           style: TextStyle(
-                            color: themeProvider.themeMode == ThemeMode.dark ? Colors.white : Colors.black
-                          ),
+                              color: themeProvider.themeMode == ThemeMode.dark
+                                  ? Colors.white
+                                  : Colors.black),
                           validator: (value) {
                             final RegExp nameRegex1 = RegExp(
                                 r'^(Mr|Ms)\. [A-Z][a-z]+(?: [A-Z][a-z]+)*(\.?)$');
@@ -236,11 +266,11 @@ class _regisUserState extends State<regisUser> {
                           maxLength: 50,
                           decoration: const InputDecoration(
                             labelText: 'Email',
-                            
                           ),
                           style: TextStyle(
-                            color: themeProvider.themeMode == ThemeMode.dark ? Colors.white : Colors.black
-                          ),
+                              color: themeProvider.themeMode == ThemeMode.dark
+                                  ? Colors.white
+                                  : Colors.black),
                           validator: (value) {
                             final RegExp emailRegExp1 = RegExp(
                                 r'^(?=.*[a-zA-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&*!])[A-Za-z\d@#$%^&*!\.]{8,20}$');
@@ -276,8 +306,9 @@ class _regisUserState extends State<regisUser> {
                                     : Icon(Icons.visibility_off),
                               )),
                           style: TextStyle(
-                            color: themeProvider.themeMode == ThemeMode.dark ? Colors.white : Colors.black
-                          ),
+                              color: themeProvider.themeMode == ThemeMode.dark
+                                  ? Colors.white
+                                  : Colors.black),
                           validator: (value) {
                             final RegExp passwordRegex1 = RegExp(
                                 r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&*])[A-Za-z\d@#$%^&*]{8,20}$');
@@ -312,8 +343,9 @@ class _regisUserState extends State<regisUser> {
                                     : Icon(Icons.visibility_off),
                               )),
                           style: TextStyle(
-                            color: themeProvider.themeMode == ThemeMode.dark ? Colors.white : Colors.black
-                          ),
+                              color: themeProvider.themeMode == ThemeMode.dark
+                                  ? Colors.white
+                                  : Colors.black),
                           validator: (value) {
                             final RegExp conpasswordRegex1 = RegExp(
                                 r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&*])[A-Za-z\d@#$%^&*]{8,20}$');
@@ -341,8 +373,9 @@ class _regisUserState extends State<regisUser> {
                             labelText: "Phone Number",
                           ),
                           style: TextStyle(
-                            color: themeProvider.themeMode == ThemeMode.dark ? Colors.white : Colors.black
-                          ),
+                              color: themeProvider.themeMode == ThemeMode.dark
+                                  ? Colors.white
+                                  : Colors.black),
                           validator: (value) {
                             final RegExp phoneRegex1 = RegExp(r'^[0-9]{10}$');
                             final RegExp phoneRegex2 =
@@ -368,8 +401,9 @@ class _regisUserState extends State<regisUser> {
                           maxLength: 5,
                           decoration: InputDecoration(labelText: "Postal Code"),
                           style: TextStyle(
-                            color: themeProvider.themeMode == ThemeMode.dark ? Colors.white : Colors.black
-                          ),
+                              color: themeProvider.themeMode == ThemeMode.dark
+                                  ? Colors.white
+                                  : Colors.black),
                           validator: (value) {
                             final RegExp postalRegex1 = RegExp(r'^[0-9]{5}$');
                             final RegExp postalRegex2 = RegExp(r'^\d{5}$');
@@ -394,7 +428,6 @@ class _regisUserState extends State<regisUser> {
                                 ? "Select Brithday"
                                 : "Date: ${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
                           ),
-                          
                           trailing: Icon(Icons.calendar_today),
                           onTap: () => selectDate(context),
                         ),
