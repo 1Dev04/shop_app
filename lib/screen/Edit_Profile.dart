@@ -152,8 +152,6 @@ Future<void> editUserProfile({
   void submitEdit() async {
     
     try {
-
-      
       await editUserProfile(
         name: nameController.text,
         postal: postalController.text,
