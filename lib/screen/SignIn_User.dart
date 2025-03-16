@@ -234,10 +234,8 @@ class _LoginState extends State<Login> {
 
                             if (value!.isEmpty) {
                               return "Please input email.";
-                            } else if (value.length < 15) {
+                            } else if (value.length < 15 || value.length > 50) {
                               return '''The email should be between 15-50 characters''';
-                            } else if (value.length > 50) {
-                              return "Password more than 50 characters";
                             } else if (!emailLoginRegex1.hasMatch(value)) {
                               return 'Invalid email format: \nUser1@example.com, person1@example.co.th';
                             } else if (!emailLoginRegex2.hasMatch(value)) {
