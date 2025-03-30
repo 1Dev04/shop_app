@@ -287,7 +287,7 @@ Future<void> editUserProfile({
                   TextFormField(
                     controller: passwordController,
                     obscureText: !visiblePassCon,
-                    maxLength: 10,
+                    maxLength: 20,
                     decoration: InputDecoration(
                         labelText: 'Current Password',
                         suffixIcon: GestureDetector(
@@ -325,7 +325,7 @@ Future<void> editUserProfile({
                   TextFormField(
                     controller: newPasswordController,
                     obscureText: !visiblePassCon1,
-                    maxLength: 10,
+                    maxLength: 20,
                     decoration: InputDecoration(
                         labelText: 'New Password',
                         suffixIcon: GestureDetector(
@@ -362,7 +362,7 @@ Future<void> editUserProfile({
                   TextFormField(
                     controller: conNewPasswordController,
                     obscureText: !visiblePassCon2,
-                    maxLength: 10,
+                    maxLength: 20,
                     decoration: InputDecoration(
                         labelText: 'Confirm New Password',
                         suffixIcon: GestureDetector(
