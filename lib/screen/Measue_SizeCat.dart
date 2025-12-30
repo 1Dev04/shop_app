@@ -123,28 +123,32 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
           id: '1',
           name: 'Cat Clothing Set A',
           price: '\$25',
-          imageUrl: 'https://via.placeholder.com/150/FF6347/FFFFFF?text=Product+1',
+          imageUrl:
+              'https://via.placeholder.com/150/FF6347/FFFFFF?text=Product+1',
           detailUrl: 'https://example.com/product1',
         ),
         ProductRecommendation(
           id: '2',
           name: 'Cute Cat Sweater',
           price: '\$30',
-          imageUrl: 'https://via.placeholder.com/150/4682B4/FFFFFF?text=Product+2',
+          imageUrl:
+              'https://via.placeholder.com/150/4682B4/FFFFFF?text=Product+2',
           detailUrl: 'https://example.com/product2',
         ),
         ProductRecommendation(
           id: '3',
           name: 'Winter Cat Outfit',
           price: '\$28',
-          imageUrl: 'https://via.placeholder.com/150/32CD32/FFFFFF?text=Product+3',
+          imageUrl:
+              'https://via.placeholder.com/150/32CD32/FFFFFF?text=Product+3',
           detailUrl: 'https://example.com/product3',
         ),
         ProductRecommendation(
           id: '4',
           name: 'Premium Cat Dress',
           price: '\$35',
-          imageUrl: 'https://via.placeholder.com/150/FFD700/FFFFFF?text=Product+4',
+          imageUrl:
+              'https://via.placeholder.com/150/FFD700/FFFFFF?text=Product+4',
           detailUrl: 'https://example.com/product4',
         ),
       ];
@@ -153,7 +157,8 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
 
   void _toggleFavorite(int index) {
     setState(() {
-      _recommendedProducts[index].isFavorite = !_recommendedProducts[index].isFavorite;
+      _recommendedProducts[index].isFavorite =
+          !_recommendedProducts[index].isFavorite;
     });
   }
 
@@ -259,7 +264,8 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
 
         return CatData.fromJson(jsonData);
       } else {
-        final errorMessage = jsonDecode(response.body)['error'] ?? 'Unknown error';
+        final errorMessage =
+            jsonDecode(response.body)['error'] ?? 'Unknown error';
         throw Exception('Detection failed: $errorMessage');
       }
     } catch (e) {
@@ -384,8 +390,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                     _buildImageWithAnalyzeSection(isDark),
 
                   // เงื่อนไข: ถ้าวิเคราะห์เสร็จแล้ว แสดงข้อมูล + สินค้า
-                  if (_detectedCat != null)
-                    _buildResultSection(isDark),
+                  if (_detectedCat != null) _buildResultSection(isDark),
                 ],
               ),
             ),
@@ -522,8 +527,6 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                     ],
                   ),
                 ),
-
-                
               ],
             ),
           ),
@@ -572,7 +575,8 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
                       : Icon(Icons.analytics),
@@ -651,11 +655,15 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
                               return Container(
-                                color: isDark ? Colors.grey[800] : Colors.grey[200],
+                                color: isDark
+                                    ? Colors.grey[800]
+                                    : Colors.grey[200],
                                 child: Icon(
                                   Icons.broken_image,
                                   size: 40,
-                                  color: isDark ? Colors.grey[600] : Colors.grey[400],
+                                  color: isDark
+                                      ? Colors.grey[600]
+                                      : Colors.grey[400],
                                 ),
                               );
                             },
@@ -665,7 +673,8 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                             child: Icon(
                               Icons.pets,
                               size: 40,
-                              color: isDark ? Colors.grey[600] : Colors.grey[400],
+                              color:
+                                  isDark ? Colors.grey[600] : Colors.grey[400],
                             ),
                           ),
                   ),
@@ -678,26 +687,119 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildInfoRow('Name:', _detectedCat?.name ?? 'N/A', isDark),
+                      _buildInfoRow(
+                          'Name:', _detectedCat?.name ?? 'N/A', isDark),
                       SizedBox(height: 10),
                       _buildInfoRow(
                         'Age:',
-                        _detectedCat?.age != null ? '${_detectedCat!.age} years' : 'N/A',
+                        _detectedCat?.age != null
+                            ? '${_detectedCat!.age} years'
+                            : 'N/A',
                         isDark,
                       ),
                       SizedBox(height: 10),
-                      _buildInfoRow('Breed:', _detectedCat?.breed ?? 'N/A', isDark),
+                      _buildInfoRow(
+                          'Breed:', _detectedCat?.breed ?? 'N/A', isDark),
                       SizedBox(height: 10),
-                      _buildInfoRow('Size:', _detectedCat?.sizeCategory ?? 'N/A', isDark),
+                      _buildInfoRow(
+                          'Size:', _detectedCat?.sizeCategory ?? 'N/A', isDark),
                     ],
                   ),
                 ),
 
-                // ปุ่มลบ
+                // ปุ่มแก้ไข
                 IconButton(
-                  onPressed: _clearData,
-                  icon: Icon(Icons.delete_outline, color: Colors.red, size: 28),
-                  tooltip: 'ลบข้อมูล',
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true, // สำคัญมาก
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(20),
+                        ),
+                      ),
+                      builder: (context) {
+                        return Container(
+                          height: MediaQuery.of(context).size.height *
+                              0.5, // ครึ่งจอ
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // ขีดเล็ก ๆ ด้านบน (สาย UX)
+                              Center(
+                                child: Container(
+                                  width: 40,
+                                  height: 4,
+                                  margin: EdgeInsets.only(bottom: 12),
+                                  decoration: BoxDecoration(
+                                    color:  Colors.grey.shade400,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                              ),
+
+                              Text(
+                                'แก้ไขข้อมูล',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+
+                              SizedBox(height: 16),
+
+                              // เนื้อหาด้านใน
+                              TextField(
+                                decoration: InputDecoration(
+                                  labelText: 'Name',
+                                  border: OutlineInputBorder(),
+                                ),
+                      
+                              ),
+                              SizedBox(height: 8),
+                              TextField(
+                                decoration: InputDecoration(
+                                  labelText: 'Age',
+                                  border: OutlineInputBorder(),
+                                ),
+                              ),
+                              SizedBox(height: 8),
+                              TextField(
+                                decoration: InputDecoration(
+                                  labelText: 'Breed',
+                                  border: OutlineInputBorder(),
+                                ),
+                              ),
+                              SizedBox(height: 8),
+                              TextField(
+                                decoration: InputDecoration(
+                                  labelText: 'Size',
+                                  border: OutlineInputBorder(),
+                                ),
+                              ),
+                              Spacer(),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  child: Text('บันทึก'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                  },
+                  icon: Icon(
+                    Icons.mode_edit_outline_outlined,
+                    color: Colors.blue.shade700,
+                    size: 28,
+                  ),
+                  tooltip: 'แก้ไขข้อมูล',
                 ),
               ],
             ),
@@ -720,21 +822,24 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
           // รายการสินค้า (Horizontal Scroll)
           Container(
             height: 450,
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: GridView.builder(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2, // colume
-                crossAxisSpacing: 5, // แนวนอน
-                mainAxisSpacing: 12, // แนวตั้ง
-                childAspectRatio: 0.79 // อัตราส่วน กว้าง:สูง
+            padding: EdgeInsets.symmetric(horizontal: 1),
+            child: Center(
+              child: GridView.builder(
+                shrinkWrap: true, // สำคัญมาก
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 5,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 0.86,
                 ),
-              itemCount: _recommendedProducts.length,
-              itemBuilder: (context, index) {
-                final product = _recommendedProducts[index];
-                return _buildProductCard(product, index, isDark);
-              },
+                itemCount: _recommendedProducts.length,
+                itemBuilder: (context, index) {
+                  final product = _recommendedProducts[index];
+                  return _buildProductCard(product, index, isDark);
+                },
+              ),
             ),
-          ),
+          )
         ],
       ),
     );
@@ -768,7 +873,8 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
   }
 
   /// Card สินค้า
-  Widget _buildProductCard(ProductRecommendation product, int index, bool isDark) {
+  Widget _buildProductCard(
+      ProductRecommendation product, int index, bool isDark) {
     return Container(
       width: 160,
       margin: EdgeInsets.only(right: 12),
@@ -822,7 +928,9 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-                      product.isFavorite ? Icons.favorite : Icons.favorite_border,
+                      product.isFavorite
+                          ? Icons.favorite
+                          : Icons.favorite_border,
                       color: product.isFavorite ? Colors.red : Colors.white,
                       size: 18,
                     ),
@@ -879,8 +987,10 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                     ElevatedButton(
                       onPressed: () => _showInfoMessage('Opening details...'),
                       style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                        backgroundColor: isDark ? Colors.grey[700] : Colors.grey[300],
+                        padding:
+                            EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                        backgroundColor:
+                            isDark ? Colors.grey[700] : Colors.grey[300],
                         foregroundColor: isDark ? Colors.white : Colors.black87,
                         minimumSize: Size(0, 28),
                         shape: RoundedRectangleBorder(
@@ -935,7 +1045,8 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                     icon: Icon(Icons.camera_alt),
                     label: Text(
                       'ถ่ายรูป',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     style: ElevatedButton.styleFrom(
                       padding: EdgeInsets.symmetric(vertical: 14),
@@ -955,7 +1066,8 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                     icon: Icon(Icons.photo_library),
                     label: Text(
                       'เลือกรูป',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     style: ElevatedButton.styleFrom(
                       padding: EdgeInsets.symmetric(vertical: 14),
