@@ -4,6 +4,8 @@ import 'package:flutter_application_1/provider/Theme_Provider.dart';
 import 'package:flutter_application_1/screen/SignUp_User.dart';
 import 'package:flutter_application_1/screen/Auth_Page.dart';
 import 'package:provider/provider.dart';
+import 'package:top_snackbar_flutter/custom_snack_bar.dart';
+import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -34,9 +36,13 @@ class _LoginState extends State<Login> {
 
       // Close Dialog before changing page
       if (mounted) Navigator.pop(context);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("Login successful! 🎉")));
 
+      showTopSnackBar(
+        Overlay.of(context),
+        CustomSnackBar.success(
+          message: "Login successful!",
+        ),
+      );
       // Navigate to Home page
       Navigator.pushReplacement(
           context, MaterialPageRoute(builder: (context) => authPage()));

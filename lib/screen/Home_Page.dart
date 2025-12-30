@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/provider/theme.dart';
 import 'package:flutter_application_1/provider/Theme_Provider.dart';
-import 'package:flutter_application_1/screen/View_Account.dart';
+// import 'package:flutter_application_1/screen/View_Account.dart';
 import 'package:flutter_application_1/screen/Auth_Page.dart';
 import 'package:flutter_application_1/screen/Profile_User.dart';
 import 'package:flutter_application_1/screen/Setting_Page.dart';
@@ -11,7 +11,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 
 import 'dart:async';
-import 'Add_Form.dart';
+import 'Measue_SizeCat.dart';
 
 class MyHome extends StatefulWidget {
   const MyHome({super.key});
@@ -72,7 +72,7 @@ class _MyHomeState extends State<MyHome> {
             setTitle(),
             style: TextStyle(
               fontFamily: 'Catfont',
-              fontSize: 40,
+              fontSize: 30,
               color: themeProvider.themeMode == ThemeMode.dark
                   ? Colors.white
                   : Colors.black,
@@ -122,15 +122,17 @@ class _MyHomeState extends State<MyHome> {
             ),
             IconButton(
                 onPressed: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => ViewAccount()));
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => MeasureSizeCat()));
                 },
                 icon: Icon(
-                  Icons.add_chart_outlined,
+                  Icons.add_shopping_cart_sharp,
                   color: AppBarTheme.of(context).iconTheme?.color,
                   size: 30,
                 )),
-            SizedBox(width: 15)
+            SizedBox(width: 10)
           ],
         ),
 
@@ -211,8 +213,8 @@ Navigator.push(
                 },
                 child: Icon(
                   screenIndex == 3
-                      ? Icons.shopping_cart_rounded
-                      : Icons.shopping_cart_outlined,
+                      ? Icons.shopping_bag
+                      : Icons.shopping_bag_outlined,
                   size: 30,
                   color: activeButton == 3
                       ? AppBarTheme.of(context).iconTheme?.color
@@ -220,23 +222,29 @@ Navigator.push(
                 ),
               ),
               GestureDetector(
-                onTap: () {
-                  setState(() {
-                    screenPushIndex = 2;
-                  });
-
-                  Navigator.push(context,
-                          MaterialPageRoute(builder: (context) => addForm()))
-                      .then((_) {
+                  onTap: () {
                     setState(() {
-                      screenIndex = 2;
-                      activeButton = 2;
+                      screenPushIndex = 2;
                     });
-                  });
-                },
-                child: Icon(Icons.add,
-                    color: AppBarTheme.of(context).iconTheme?.color, size: 30),
-              ),
+
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => MeasureSizeCat())).then((_) {
+                      setState(() {
+                        screenIndex = 2;
+                        activeButton = 2;
+                      });
+                    });
+                  },
+                  child: Image.asset(
+                    'assets/icons/sizeCat.png',
+                    width: 40,
+                    height: 40,
+                    color: AppBarTheme.of(context)
+                        .iconTheme
+                        ?.color, // ถ้าเป็นรูปสีเดียว
+                  )),
               GestureDetector(
                 onTap: () {
                   setState(() {
@@ -2781,8 +2789,8 @@ class _ProfilePageState extends State<MenuPage> {
                           child: Container(
                             padding: EdgeInsets.symmetric(
                                 horizontal: 5, vertical: 5),
-                            width: 120,
-                            height: 120,
+                            width: 100,
+                            height: 100,
                             decoration: BoxDecoration(
                               color: Theme.of(context).primaryColor,
                               borderRadius: BorderRadius.circular(5),
@@ -2796,7 +2804,7 @@ class _ProfilePageState extends State<MenuPage> {
                                   size: 30,
                                 ),
                                 Text(
-                                  'Profile',
+                                  'Profiles',
                                   style: TextStyle(fontSize: 16),
                                 ),
                               ],
@@ -2808,8 +2816,8 @@ class _ProfilePageState extends State<MenuPage> {
                           child: Container(
                             padding: EdgeInsets.symmetric(
                                 horizontal: 5, vertical: 5),
-                            width: 120,
-                            height: 120,
+                            width: 100,
+                            height: 100,
                             decoration: BoxDecoration(
                               color: Theme.of(context).primaryColor,
                               borderRadius: BorderRadius.circular(5),
@@ -2832,8 +2840,8 @@ class _ProfilePageState extends State<MenuPage> {
                           child: Container(
                             padding: EdgeInsets.symmetric(
                                 horizontal: 5, vertical: 5),
-                            width: 120,
-                            height: 120,
+                            width: 100,
+                            height: 100,
                             decoration: BoxDecoration(
                               color: Theme.of(context).primaryColor,
                               borderRadius: BorderRadius.circular(5),
@@ -2864,8 +2872,8 @@ class _ProfilePageState extends State<MenuPage> {
                           child: Container(
                             padding: EdgeInsets.symmetric(
                                 horizontal: 5, vertical: 5),
-                            width: 120,
-                            height: 120,
+                            width: 100,
+                            height: 100,
                             decoration: BoxDecoration(
                               color: Theme.of(context).primaryColor,
                               borderRadius: BorderRadius.circular(5),
@@ -2888,8 +2896,8 @@ class _ProfilePageState extends State<MenuPage> {
                           child: Container(
                             padding: EdgeInsets.symmetric(
                                 horizontal: 5, vertical: 5),
-                            width: 120,
-                            height: 120,
+                            width: 100,
+                            height: 100,
                             decoration: BoxDecoration(
                               color: Theme.of(context).primaryColor,
                               borderRadius: BorderRadius.circular(5),
@@ -2917,8 +2925,8 @@ class _ProfilePageState extends State<MenuPage> {
                           child: Container(
                             padding: EdgeInsets.symmetric(
                                 horizontal: 5, vertical: 5),
-                            width: 120,
-                            height: 120,
+                            width: 100,
+                            height: 100,
                             decoration: BoxDecoration(
                               color: Theme.of(context).primaryColor,
                               borderRadius: BorderRadius.circular(5),

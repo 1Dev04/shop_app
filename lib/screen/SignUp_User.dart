@@ -5,6 +5,8 @@ import 'package:flutter_application_1/provider/theme.dart';
 import 'package:flutter_application_1/provider/Theme_Provider.dart';
 import 'package:flutter_application_1/screen/Auth_Page.dart';
 import 'package:provider/provider.dart';
+import 'package:top_snackbar_flutter/custom_snack_bar.dart';
+import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
 class regisUser extends StatefulWidget {
   const regisUser({super.key});
@@ -50,12 +52,21 @@ class _regisUserState extends State<regisUser> {
       print("Gender: ${selectedGender}");
       print("Subscribe to the newsletter: ${subscribeNewsletter}");
       print("Accepts Terms: ${acceptTerms}");
-
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Membership registration successful! 🎉")));
+      showTopSnackBar(
+        Overlay.of(context),
+        CustomSnackBar.success(
+          message: "Membership registration successful!",
+        ),
+      );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text("Please>> Fill in the information completely.")));
+  showTopSnackBar(
+        Overlay.of(context),
+        CustomSnackBar.error(
+          message: "Please>> Fill in the information completely.",
+        ),
+      );
+
+      
     }
   }
 

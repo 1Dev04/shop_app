@@ -48,7 +48,7 @@ class _SettingpageState extends State<Settingpage> {
                         onChanged: (value) {
                           themeProvider.toggleTheme(value);
                         },
-                        activeColor: Color.fromRGBO(18, 195, 9, 1), // ON
+                        activeThumbColor: Color.fromRGBO(18, 195, 9, 1), // ON
                         activeTrackColor: Color.fromRGBO(
                             18, 195, 9, 0.5), // background color toggle (ON)
                         inactiveThumbColor: Colors.grey, // OFF
