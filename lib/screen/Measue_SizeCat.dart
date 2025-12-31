@@ -733,7 +733,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                                   height: 4,
                                   margin: EdgeInsets.only(bottom: 12),
                                   decoration: BoxDecoration(
-                                    color:  Colors.grey.shade400,
+                                    color: Colors.grey.shade400,
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                 ),
@@ -779,6 +779,8 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                                 ),
                               ),
                               Spacer(),
+
+
                               SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton(
