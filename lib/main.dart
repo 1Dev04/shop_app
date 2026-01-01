@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 //ติดตั้งแพคเกจ firebase_core จาก pub.dev
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_application_1/provider/Favorite_Provider.dart';
 import 'package:flutter_application_1/provider/theme.dart';
 import 'package:flutter_application_1/provider/Theme_Provider.dart';
 import 'package:flutter_application_1/screen/Auth_Page.dart';
@@ -17,7 +18,8 @@ void main() async {
       providers: [
         ChangeNotifierProvider(
           create: (_) => ThemeProvider(),
-        ), // เพิ่ม Provider
+        ),
+        ChangeNotifierProvider(create: (_) => FavoriteProvider()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
