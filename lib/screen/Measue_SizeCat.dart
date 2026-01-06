@@ -15,10 +15,7 @@ class CatData {
   final String name;
   final String? breed;
   final int? age;
-  final double? weight;
   final String sizeCategory;
-  final double? widthCm;
-  final double? heightCm;
   final double? confidence;
   final String? imagePath;
   final DateTime? detectedAt;
@@ -28,10 +25,7 @@ class CatData {
     required this.name,
     this.breed,
     this.age,
-    this.weight,
     required this.sizeCategory,
-    this.widthCm,
-    this.heightCm,
     this.confidence,
     this.imagePath,
     this.detectedAt,
@@ -43,10 +37,7 @@ class CatData {
       name: json['name'],
       breed: json['breed'],
       age: json['age'],
-      weight: json['weight']?.toDouble(),
       sizeCategory: json['size_category'],
-      widthCm: json['width_cm']?.toDouble(),
-      heightCm: json['height_cm']?.toDouble(),
       confidence: json['confidence']?.toDouble(),
       imagePath: json['image_path'],
       detectedAt: json['detected_at'] != null
@@ -61,10 +52,7 @@ class CatData {
       'name': name,
       'breed': breed,
       'age': age,
-      'weight': weight,
       'size_category': sizeCategory,
-      'width_cm': widthCm,
-      'height_cm': heightCm,
       'confidence': confidence,
       'image_path': imagePath,
       'detected_at': detectedAt?.toIso8601String(),
@@ -92,7 +80,9 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
   static const String cloudinaryCloudName = 'dag73dhpl';
   static const String cloudinaryUploadPreset = 'cat_img_detect';
   static const String cloudinaryFolder = 'Fetch_Img_SizeCat';
-  static const String pythonBackendUrl = 'http://YOUR_PYTHON_API_URL/detect';
+
+
+  static const String pythonBackendUrl = 'http://localhost:8000/detect';
 
   @override
   void initState() {
@@ -454,10 +444,7 @@ void _showProductDialog(BuildContext context, ProductRecommendation product, boo
         name: 'Cat_Orange',
         breed: 'Persian',
         age: 2,
-        weight: 3.5,
         sizeCategory: 'Small',
-        widthCm: 25.0,
-        heightCm: 30.0,
         confidence: 0.95,
         imagePath: imageUrl,
         detectedAt: DateTime.now(),
@@ -558,9 +545,7 @@ void _showProductDialog(BuildContext context, ProductRecommendation product, boo
     );
   }
 
-  // จะทำต่อในส่วนที่ 2
-  // ส่วนนี้ต่อจาก Part 1
-// วางไว้ใน class _MeasureSizeCatState
+  // ส่วนที่ 2
 
   /// 1️⃣ หน้าจอเปล่า (Default - ยังไม่มีรูป)
   Widget _buildEmptyState(bool isDark) {
