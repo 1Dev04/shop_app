@@ -11,56 +11,62 @@ import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 
 // Model สำหรับข้อมูลแมว
 class CatData {
-  final int? id;
   final String name;
   final String? breed;
   final int? age;
+
+  final double weight;
   final String sizeCategory;
-  final double? confidence;
-  final String? imagePath;
-  final DateTime? detectedAt;
+
+  final double chestCm;
+  final double? neckCm;
+  final double? bodyLengthCm;
+
+  final double confidence;
+  final List<double> boundingBox;
+
+  final String imageUrl;
+  final String? thumbnailUrl;
+  final DateTime detectedAt;
 
   CatData({
-    this.id,
     required this.name,
     this.breed,
     this.age,
+    required this.weight,
     required this.sizeCategory,
-    this.confidence,
-    this.imagePath,
-    this.detectedAt,
+    required this.chestCm,
+    this.neckCm,
+    this.bodyLengthCm,
+    required this.confidence,
+    required this.boundingBox,
+    required this.imageUrl,
+    this.thumbnailUrl,
+    required this.detectedAt,
   });
 
   factory CatData.fromJson(Map<String, dynamic> json) {
     return CatData(
-      id: json['id'],
       name: json['name'],
       breed: json['breed'],
       age: json['age'],
+      weight: (json['weight'] as num).toDouble(),
       sizeCategory: json['size_category'],
-      confidence: json['confidence']?.toDouble(),
-      imagePath: json['image_path'],
-      detectedAt: json['detected_at'] != null
-          ? DateTime.parse(json['detected_at'])
+      chestCm: (json['chest_cm'] as num).toDouble(),
+      neckCm:
+          json['neck_cm'] != null ? (json['neck_cm'] as num).toDouble() : null,
+      bodyLengthCm: json['body_length_cm'] != null
+          ? (json['body_length_cm'] as num).toDouble()
           : null,
+      confidence: (json['confidence'] as num).toDouble(),
+      boundingBox: List<double>.from(
+          json['bounding_box'].map((e) => (e as num).toDouble())),
+      imageUrl: json['image_url'],
+      thumbnailUrl: json['thumbnail_url'],
+      detectedAt: DateTime.parse(json['detected_at']),
     );
   }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'breed': breed,
-      'age': age,
-      'size_category': sizeCategory,
-      'confidence': confidence,
-      'image_path': imagePath,
-      'detected_at': detectedAt?.toIso8601String(),
-    };
-  }
 }
-
-
 
 class MeasureSizeCat extends StatefulWidget {
   const MeasureSizeCat({super.key});
@@ -81,8 +87,8 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
   static const String cloudinaryUploadPreset = 'cat_img_detect';
   static const String cloudinaryFolder = 'Fetch_Img_SizeCat';
 
-
-  static const String pythonBackendUrl = 'http://localhost:8000/detect';
+  static const String pythonBackendUrl =
+    'http://localhost:8000/api/cat/detect';
 
   @override
   void initState() {
@@ -130,182 +136,193 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
   }
 
 // เพิ่ม method แสดง Dialog
-void _showProductDialog(BuildContext context, ProductRecommendation product, bool isDark) {
-  showDialog(
-    context: context,
-    barrierDismissible: true,
-    builder: (BuildContext context) {
-      return Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.9,
-          constraints: BoxConstraints(maxWidth: 400, minWidth: 320),
-          padding: EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: isDark ? Colors.grey[900] : Colors.white,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  SizedBox(width: 32),
-                  Text(
-                    'Added to Favorites',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black87,
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.close, 
-                      color: isDark ? Colors.white70 : Colors.black54, size: 24),
-                    onPressed: () => Navigator.pop(context),
-                    padding: EdgeInsets.zero,
-                    constraints: BoxConstraints(),
-                  ),
-                ],
-              ),
-              SizedBox(height: 20),
-
-              // รูปภาพ
-              Container(
-                height: 220,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  color: isDark ? Colors.grey[800] : Colors.grey[200],
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Stack(
+  void _showProductDialog(
+      BuildContext context, ProductRecommendation product, bool isDark) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.9,
+            constraints: BoxConstraints(maxWidth: 400, minWidth: 320),
+            padding: EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.grey[900] : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Image.network(
-                        product.imageUrl,
-                        width: double.infinity,
-                        height: double.infinity,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Center(
-                            child: Icon(Icons.shopping_bag, size: 60,
-                              color: isDark ? Colors.grey[600] : Colors.grey[400]),
-                          );
-                        },
+                    SizedBox(width: 32),
+                    Text(
+                      'Added to Favorites',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87,
                       ),
                     ),
-                    Positioned(
-                      top: 12,
-                      right: 12,
-                      child: Container(
-                        padding: EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.1),
-                          shape: BoxShape.circle,
+                    IconButton(
+                      icon: Icon(Icons.close,
+                          color: isDark ? Colors.white70 : Colors.black54,
+                          size: 24),
+                      onPressed: () => Navigator.pop(context),
+                      padding: EdgeInsets.zero,
+                      constraints: BoxConstraints(),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 20),
+
+                // รูปภาพ
+                Container(
+                  height: 220,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    color: isDark ? Colors.grey[800] : Colors.grey[200],
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Image.network(
+                          product.imageUrl,
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Center(
+                              child: Icon(Icons.shopping_bag,
+                                  size: 60,
+                                  color: isDark
+                                      ? Colors.grey[600]
+                                      : Colors.grey[400]),
+                            );
+                          },
                         ),
-                        child: Icon(Icons.favorite, color: Colors.red, size: 26),
+                      ),
+                      Positioned(
+                        top: 12,
+                        right: 12,
+                        child: Container(
+                          padding: EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child:
+                              Icon(Icons.favorite, color: Colors.red, size: 26),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 20),
+
+                // ชื่อสินค้า
+                Text(
+                  product.name,
+                  style: TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 10),
+
+                // ราคา
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'Price: ${product.price}',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.orange,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 24),
+
+                // ปุ่ม
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _showInfoMessage('Coming Soon!');
+                        },
+                        style: ElevatedButton.styleFrom(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text('Buy',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      flex: 1,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _showInfoMessage('Opening details...');
+                        },
+                        style: ElevatedButton.styleFrom(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          backgroundColor:
+                              isDark ? Colors.grey[700] : Colors.grey[300],
+                          foregroundColor:
+                              isDark ? Colors.white : Colors.black87,
+                          elevation: 1,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text('More',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold)),
                       ),
                     ),
                   ],
                 ),
-              ),
-              SizedBox(height: 20),
-
-              // ชื่อสินค้า
-              Text(
-                product.name,
-                style: TextStyle(
-                  fontSize: 19,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : Colors.black87,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              SizedBox(height: 10),
-
-              // ราคา
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  'Price: ${product.price}',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.orange,
-                  ),
-                ),
-              ),
-              SizedBox(height: 24),
-
-              // ปุ่ม
-              Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _showInfoMessage('Coming Soon!');
-                      },
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text('Buy',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    flex: 1,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _showInfoMessage('Opening details...');
-                      },
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: isDark ? Colors.grey[700] : Colors.grey[300],
-                        foregroundColor: isDark ? Colors.white : Colors.black87,
-                        elevation: 1,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text('More',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      );
-    },
-  );
-}
+        );
+      },
+    );
+  }
 
   Future<void> _takePicture() async {
     try {
@@ -434,21 +451,11 @@ void _showProductDialog(BuildContext context, ProductRecommendation product, boo
 
       _showSuccessMessage('อัปโหลดรูปภาพสำเร็จ!');
       _showInfoMessage('กำลังวิเคราะห์ขนาดแมว...');
+      final detectedCat = await detectCatFromBackend(imageUrl);
 
-      CatData? detectedCat;
-
-      // Mock data
-      await Future.delayed(Duration(seconds: 2));
-      detectedCat = CatData(
-        id: DateTime.now().millisecondsSinceEpoch,
-        name: 'Cat_Orange',
-        breed: 'Persian',
-        age: 2,
-        sizeCategory: 'Small',
-        confidence: 0.95,
-        imagePath: imageUrl,
-        detectedAt: DateTime.now(),
-      );
+      if (detectedCat == null) {
+        throw Exception('ไม่พบแมวในภาพ');
+      }
 
       setState(() {
         _detectedCat = detectedCat;
@@ -789,9 +796,9 @@ void _showProductDialog(BuildContext context, ProductRecommendation product, boo
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(10),
-                    child: _detectedCat?.imagePath != null
+                    child: _detectedCat?.imageUrl != null
                         ? Image.network(
-                            _detectedCat!.imagePath!,
+                            _detectedCat!.imageUrl,
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
                               return Container(
@@ -895,7 +902,6 @@ void _showProductDialog(BuildContext context, ProductRecommendation product, boo
                                   labelText: 'Name',
                                   border: OutlineInputBorder(),
                                 ),
-                      
                               ),
                               SizedBox(height: 8),
                               TextField(
@@ -919,7 +925,6 @@ void _showProductDialog(BuildContext context, ProductRecommendation product, boo
                                 ),
                               ),
                               Spacer(),
-
 
                               SizedBox(
                                 width: double.infinity,
@@ -1015,147 +1020,157 @@ void _showProductDialog(BuildContext context, ProductRecommendation product, boo
   }
 
   /// Card สินค้า
-Widget _buildProductCard(ProductRecommendation product, int index, bool isDark) {
-  return Consumer<FavoriteProvider>(
-    builder: (context, favoriteProvider, child) {
-      final isFav = favoriteProvider.isFavorite(product.id);
+  Widget _buildProductCard(
+      ProductRecommendation product, int index, bool isDark) {
+    return Consumer<FavoriteProvider>(
+      builder: (context, favoriteProvider, child) {
+        final isFav = favoriteProvider.isFavorite(product.id);
 
-      return Container(
-        width: 160,
-        margin: EdgeInsets.only(right: 12),
-        decoration: BoxDecoration(
-          color: isDark ? Colors.grey[850] : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
-            width: 1.5,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Stack(
-              children: [
-                Container(
-                  height: 100,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
-                    color: isDark ? Colors.grey[800] : Colors.grey[200],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
-                    child: Image.network(
-                      product.imageUrl,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Center(
-                          child: Icon(Icons.shopping_bag, size: 40,
-                            color: isDark ? Colors.grey[600] : Colors.grey[400]),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                Positioned(
-                  top: 6,
-                  right: 6,
-                  child: GestureDetector(
-                    onTap: () {
-                      favoriteProvider.toggleFavorite(product);
-                      
-                      // ⭐ แสดง Dialog เมื่อเพิ่มเข้า Favorite
-                      if (!isFav) {
-                        _showProductDialog(context, product, isDark);
-                      } else {
-                        _showSuccessMessage('ลบออกจากรายการโปรด');
-                      }
-                    },
-                    child: Container(
-                      padding: EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        isFav ? Icons.favorite : Icons.favorite_border,
-                        color: isFav ? Colors.red : Colors.white,
-                        size: 18,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+        return Container(
+          width: 160,
+          margin: EdgeInsets.only(right: 12),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.grey[850] : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
+              width: 1.5,
             ),
-
-            // ข้อมูลสินค้า
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Stack(
                 children: [
-                  Text(
-                    product.name,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.white : Colors.black87,
+                  Container(
+                    height: 100,
+                    decoration: BoxDecoration(
+                      borderRadius:
+                          BorderRadius.vertical(top: Radius.circular(14)),
+                      color: isDark ? Colors.grey[800] : Colors.grey[200],
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Price: ${product.price}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDark ? Colors.orange[300] : Colors.orange[700],
-                      fontWeight: FontWeight.bold,
+                    child: ClipRRect(
+                      borderRadius:
+                          BorderRadius.vertical(top: Radius.circular(14)),
+                      child: Image.network(
+                        product.imageUrl,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Center(
+                            child: Icon(Icons.shopping_bag,
+                                size: 40,
+                                color: isDark
+                                    ? Colors.grey[600]
+                                    : Colors.grey[400]),
+                          );
+                        },
+                      ),
                     ),
                   ),
-                  SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () => _showInfoMessage('Coming Soon!'),
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: GestureDetector(
+                      onTap: () {
+                        favoriteProvider.toggleFavorite(product);
+
+                        // ⭐ แสดง Dialog เมื่อเพิ่มเข้า Favorite
+                        if (!isFav) {
+                          _showProductDialog(context, product, isDark);
+                        } else {
+                          _showSuccessMessage('ลบออกจากรายการโปรด');
+                        }
+                      },
+                      child: Container(
+                        padding: EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          isFav ? Icons.favorite : Icons.favorite_border,
+                          color: isFav ? Colors.red : Colors.white,
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              // ข้อมูลสินค้า
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      product.name,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Price: ${product.price}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? Colors.orange[300] : Colors.orange[700],
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () => _showInfoMessage('Coming Soon!'),
+                            style: ElevatedButton.styleFrom(
+                              padding: EdgeInsets.symmetric(vertical: 6),
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                              minimumSize: Size(0, 28),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: Text('Buy', style: TextStyle(fontSize: 11)),
+                          ),
+                        ),
+                        SizedBox(width: 4),
+                        ElevatedButton(
+                          onPressed: () =>
+                              _showInfoMessage('Opening details...'),
                           style: ElevatedButton.styleFrom(
-                            padding: EdgeInsets.symmetric(vertical: 6),
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(
+                                vertical: 6, horizontal: 8),
+                            backgroundColor:
+                                isDark ? Colors.grey[700] : Colors.grey[300],
+                            foregroundColor:
+                                isDark ? Colors.white : Colors.black87,
                             minimumSize: Size(0, 28),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          child: Text('Buy', style: TextStyle(fontSize: 11)),
+                          child: Text('More', style: TextStyle(fontSize: 11)),
                         ),
-                      ),
-                      SizedBox(width: 4),
-                      ElevatedButton(
-                        onPressed: () => _showInfoMessage('Opening details...'),
-                        style: ElevatedButton.styleFrom(
-                          padding: EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                          backgroundColor: isDark ? Colors.grey[700] : Colors.grey[300],
-                          foregroundColor: isDark ? Colors.white : Colors.black87,
-                          minimumSize: Size(0, 28),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: Text('More', style: TextStyle(fontSize: 11)),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
-      );
-    },
-  );
-}
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   /// 4️⃣ ปุ่มด้านล่าง (ถ่ายรูป/เลือกรูป)
   Widget _buildBottomButtons(bool isDark) {
