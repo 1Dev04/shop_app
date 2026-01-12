@@ -451,41 +451,16 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
 
       _showSuccessMessage('อัปโหลดรูปภาพสำเร็จ!');
       _showInfoMessage('กำลังวิเคราะห์ขนาดแมว...');
+      final detectedCat = await detectCatFromBackend(imageUrl);
 
-        await Future.delayed(Duration(seconds: 2)); // จำลองการประมวลผล
-    
-    final mockCatData = CatData(
-      name: 'Fluffy',
-      breed: 'Persian',
-      age: 3,
-      weight: 4.5,
-      sizeCategory: 'Medium',
-      chestCm: 35.0,
-      neckCm: 22.0,
-      bodyLengthCm: 45.0,
-      confidence: 0.95,
-      boundingBox: [100, 150, 300, 400],
-      imageUrl: _selectedImage!.path, // ใช้รูปที่เลือก
-      thumbnailUrl: null,
-      detectedAt: DateTime.now(),
-    );
+      if (detectedCat == null) {
+        throw Exception('ไม่พบแมวในภาพ');
+      }
 
-    setState(() {
-      _detectedCat = mockCatData;
-      _isProcessing = false;
-    });
-
- 
-      // final detectedCat = await detectCatFromBackend(imageUrl);
-
-      // if (detectedCat == null) {
-      //   throw Exception('ไม่พบแมวในภาพ');
-      // }
-
-      // setState(() {
-      //   _detectedCat = detectedCat;
-      //   _isProcessing = false;
-      // });
+      setState(() {
+        _detectedCat = detectedCat;
+        _isProcessing = false;
+      });
 
       _showSuccessMessage('วิเคราะห์ขนาดแมวสำเร็จ!');
     } catch (e) {
