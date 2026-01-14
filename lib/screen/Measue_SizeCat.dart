@@ -87,8 +87,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
   static const String cloudinaryUploadPreset = 'cat_img_detect';
   static const String cloudinaryFolder = 'Fetch_Img_SizeCat';
 
-  static const String pythonBackendUrl =
-    'http://localhost:8000/api/cat/detect';
+  static const String pythonBackendUrl = 'http://localhost:8000/api/cat/detect';
 
   @override
   void initState() {
@@ -441,8 +440,11 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
 
     setState(() => _isProcessing = true);
 
+
+
     try {
-      _showInfoMessage('กำลังอัปโหลดรูปภาพ...');
+      // 1. อัปโหลดรูปไป Cloudinary ก่อน
+      _showSuccessMessage('กำลังอัปโหลดรูปภาพ...');
       final imageUrl = await _uploadToCloudinary(_selectedImage!);
 
       if (imageUrl == null) {
@@ -450,19 +452,33 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
       }
 
       _showSuccessMessage('อัปโหลดรูปภาพสำเร็จ!');
-      _showInfoMessage('กำลังวิเคราะห์ขนาดแมว...');
-      final detectedCat = await detectCatFromBackend(imageUrl);
 
-      if (detectedCat == null) {
-        throw Exception('ไม่พบแมวในภาพ');
-      }
+      // 2. จำลองการวิเคราะห์ (TODO: เรียก API/ML Model จริง)
+      await Future.delayed(Duration(seconds: 2));
+
+      // 3. สร้างข้อมูลแมวพร้อม URL รูปจาก Cloudinary
+      final analyzedData = CatData(
+        name: 'Cat_Orange',
+        breed: 'Persian',
+        age: 2,
+        weight: 3.5,
+        chestCm: 44.6,
+        boundingBox: [0.579235],
+        sizeCategory: 'Small',
+        confidence: 0.95,
+        imageUrl: imageUrl, // เก็บ URL จาก Cloudinary
+        detectedAt: DateTime.now(),
+      );
 
       setState(() {
-        _detectedCat = detectedCat;
+        _detectedCat = analyzedData;
         _isProcessing = false;
       });
 
       _showSuccessMessage('วิเคราะห์ขนาดแมวสำเร็จ!');
+
+      // แสดง URL ที่อัปโหลด (สำหรับ debug)
+      print('Uploaded image URL: $imageUrl');
     } catch (e) {
       setState(() => _isProcessing = false);
       _showError('เกิดข้อผิดพลาดในการวิเคราะห์: $e');

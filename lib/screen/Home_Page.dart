@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/provider/Favorite_Provider.dart';
 import 'package:flutter_application_1/provider/theme.dart';
 import 'package:flutter_application_1/provider/Theme_Provider.dart';
+import 'package:flutter_application_1/screen/%E0%B8%BABasket.dart';
 // import 'package:flutter_application_1/screen/View_Account.dart';
 import 'package:flutter_application_1/screen/Auth_Page.dart';
 import 'package:flutter_application_1/screen/Profile_User.dart';
@@ -126,7 +127,7 @@ class _MyHomeState extends State<MyHome> {
                   Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => MeasureSizeCat()));
+                          builder: (context) => Basket()));
                 },
                 icon: Icon(
                   Icons.add_shopping_cart_sharp,

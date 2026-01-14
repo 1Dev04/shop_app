@@ -45,39 +45,38 @@ class _editProfilePageState extends State<editProfilePage> {
   }
 
   // ✅ โหลดข้อมูลโปรไฟล์ผู้ใช้จาก Firestore
-  void loadUserProfile() async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
+void loadUserProfile() async {
+  User? user = FirebaseAuth.instance.currentUser;
+  if (user != null) {
+    DocumentSnapshot userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
 
-      if (userDoc.exists) {
-        setState(() {
-          nameController.text = userDoc['name'] ?? '';
-          emailController.text = userDoc['email'] ?? '';
-          postalController.text = userDoc['postal'] ?? '';
-          phoneController.text = userDoc['phone'] ?? '';
-          selectedGender = userDoc['gender'] ?? '';
-          subscribeNewsletter = userDoc['subscribeNewsletter'] ?? false;
-          acceptTerms = userDoc['acceptTerms'] ?? false;
+    if (userDoc.exists) {
+      setState(() {
+        nameController.text = userDoc['name'] ?? '';
+        emailController.text = user.email ?? ''; // ✅ ดึงจาก Authentication
+        postalController.text = userDoc['postal'] ?? '';
+        phoneController.text = userDoc['phone'] ?? '';
+        selectedGender = userDoc['gender'] ?? '';
+        subscribeNewsletter = userDoc['subscribeNewsletter'] ?? false;
+        acceptTerms = userDoc['acceptTerms'] ?? false;
 
-          // จัดการ birthdate
-          if (userDoc['birthdate'] != null) {
-            if (userDoc['birthdate'] is Timestamp) {
-              selectedBirthdate = (userDoc['birthdate'] as Timestamp).toDate();
-            } else if (userDoc['birthdate'] is String) {
-              selectedBirthdate = DateTime.parse(userDoc['birthdate']);
-            }
-            birthdateController.text = selectedBirthdate != null
-                ? "${selectedBirthdate!.year}-${selectedBirthdate!.month.toString().padLeft(2, '0')}-${selectedBirthdate!.day.toString().padLeft(2, '0')}"
-                : '';
+        // ✅ จัดการ birthdate ให้ถูกต้อง
+        if (userDoc['birthdate'] != null) {
+          if (userDoc['birthdate'] is Timestamp) {
+            selectedBirthdate = (userDoc['birthdate'] as Timestamp).toDate();
+            birthdateController.text = selectedBirthdate!.toIso8601String();
+          } else if (userDoc['birthdate'] is String) {
+            selectedBirthdate = DateTime.parse(userDoc['birthdate']);
+            birthdateController.text = selectedBirthdate!.toIso8601String();
           }
-        });
-      }
+        }
+      });
     }
   }
+}
 
   void _showSuccessMessage(String message) {
     showTopSnackBar(
@@ -114,67 +113,72 @@ class _editProfilePageState extends State<editProfilePage> {
     if (picked != null && picked != selectedBirthdate) {
       setState(() {
         selectedBirthdate = picked;
+        // ✅ แก้ให้แสดง format ที่ถูกต้องพร้อม timestamp
         birthdateController.text =
-            "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+            picked.toIso8601String(); // "2025-03-03T00:00:00.000"
       });
     }
   }
 
   // ✅ ฟังก์ชันแก้ไขโปรไฟล์ (ลบข้อมูลเก่าแล้วเพิ่มข้อมูลใหม่)
   Future<void> editUserProfile({
-    required String name,
-    required String email,
-    required String postal,
-    required String phone,
-    required String birthdate,
-    required String? selectedGender,
-    required bool subscribeNewsletter,
-    required bool acceptTerms,
-    String? newEmail,
-    String? currentPassword,
-    String? newPassword,
-  }) async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user == null) throw Exception("User not logged in");
+  required String name,
+  required String email,
+  required String postal,
+  required String phone,
+  required String birthdate,
+  required String? selectedGender,
+  required bool subscribeNewsletter,
+  required bool acceptTerms,
+  String? newEmail,
+  String? currentPassword,
+  String? newPassword,
+}) async {
+  User? user = FirebaseAuth.instance.currentUser;
+  if (user == null) throw Exception("User not logged in");
 
-    String uid = user.uid;
+  String uid = user.uid;
+  String finalEmail = user.email ?? email; // ✅ ดึงอีเมลจาก Authentication
 
-    try {
-      // ✅ 1. ดึงข้อมูลเก่าจาก Firestore
-      DocumentSnapshot oldData =
-          await FirebaseFirestore.instance.collection('users').doc(uid).get();
+  try {
+    // ✅ 1. ดึงข้อมูลเก่าจาก Firestore
+    DocumentSnapshot oldData =
+        await FirebaseFirestore.instance.collection('users').doc(uid).get();
 
-      if (!oldData.exists) {
-        throw Exception("User data not found in Firestore");
+    if (!oldData.exists) {
+      throw Exception("User data not found in Firestore");
+    }
+
+    print("✅ Old data found: ${oldData.data()}");
+
+    // ✅ 2. หากมีการเปลี่ยนอีเมล ต้องยืนยันตัวตนก่อน
+    if (newEmail != null && newEmail.isNotEmpty && newEmail != user.email) {
+      if (currentPassword == null || currentPassword.isEmpty) {
+        throw Exception(
+            "Please enter your current password to verify your identity.");
       }
+      await reauthenticateUser(user.email!, currentPassword);
+      
+      // ✅ อัพเดทอีเมลใน Firebase Authentication
+      await user.verifyBeforeUpdateEmail(newEmail);
+      finalEmail = newEmail; // ✅ เก็บอีเมลใหม่
+      
+      _showInfoMessage("Please check your new email to verify the change.");
+    }
 
-      print("✅ Old data found: ${oldData.data()}");
-
-      // ✅ 2. หากมีการเปลี่ยนอีเมล ต้องยืนยันตัวตนก่อน
-      if (newEmail != null && newEmail.isNotEmpty && newEmail != user.email) {
-        if (currentPassword == null || currentPassword.isEmpty) {
-          throw Exception(
-              "Please enter your current password to verify your identity.");
-        }
-        await reauthenticateUser(user.email!, currentPassword);
-        await user.verifyBeforeUpdateEmail(newEmail);
+    // ✅ 3. หากมีการเปลี่ยนรหัสผ่าน
+    if (newPassword != null && newPassword.isNotEmpty) {
+      if (currentPassword == null || currentPassword.isEmpty) {
+        throw Exception(
+            "Please enter your current password to change password.");
       }
+      await reauthenticateUser(user.email!, currentPassword);
+      
+      // ✅ อัพเดทรหัสผ่านใน Firebase Authentication
+      await user.updatePassword(newPassword);
+    }
 
-      // ✅ 3. หากมีการเปลี่ยนรหัสผ่าน
-      if (newPassword != null && newPassword.isNotEmpty) {
-        if (currentPassword == null || currentPassword.isEmpty) {
-          throw Exception(
-              "Please enter your current password to change password.");
-        }
-        await reauthenticateUser(user.email!, currentPassword);
-        await user.updatePassword(newPassword);
-      }
-
-      // ✅ 4. ลบข้อมูลเก่าทั้งหมดใน Firestore
-      await FirebaseFirestore.instance.collection('users').doc(uid).delete();
-      print("✅ Old data deleted from Firestore");
-
-      // ✅ 5. สร้างข้อมูลใหม่ทั้งหมดตามโครงสร้างที่กำหนด
+    // ✅ 4. อัพเดทข้อมูลใน Firestore (ใช้ update แทน delete + set)
       await FirebaseFirestore.instance.collection('users').doc(uid).set({
         'acceptTerms': acceptTerms,
         'birthdate': birthdate,
@@ -190,17 +194,19 @@ class _editProfilePageState extends State<editProfilePage> {
         'uid': uid,
       });
 
-      print("✅ New data created in Firestore");
+    print("✅ Data updated in Firestore");
+    print("✅ Email in Firestore: $finalEmail");
+    print("✅ Email in Authentication: ${user.email}");
 
-      _showSuccessMessage("Profile updated successfully 🎉");
-    } on FirebaseAuthException catch (e) {
-      _showError("Firebase Auth Error: ${e.message} ❌");
-      rethrow;
-    } catch (e) {
-      _showError("Error: $e ❌");
-      rethrow;
-    }
+    _showSuccessMessage("Profile updated successfully 🎉");
+  } on FirebaseAuthException catch (e) {
+    _showError("Firebase Auth Error: ${e.message} ❌");
+    rethrow;
+  } catch (e) {
+    _showError("Error: $e ❌");
+    rethrow;
   }
+}
 
   // ✅ ฟังก์ชันยืนยันตัวตนใหม่ด้วยอีเมลและรหัสผ่าน
   Future<void> reauthenticateUser(String email, String password) async {
@@ -602,7 +608,8 @@ class _editProfilePageState extends State<editProfilePage> {
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
                         if (!acceptTerms) {
-                          _showInfoMessage("Please accept terms and conditions");
+                          _showInfoMessage(
+                              "Please accept terms and conditions");
 
                           return;
                         }
