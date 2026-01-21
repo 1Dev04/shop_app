@@ -1,13 +1,57 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/provider/Favorite_Provider.dart';
-import 'package:flutter_application_1/provider/Theme_Provider.dart';
-import 'package:provider/provider.dart';
-import 'package:image_picker/image_picker.dart';
+
 import 'dart:io';
+import 'dart:async';
+import 'package:image/image.dart' as img;
+import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_application_1/provider/Favorite_Provider.dart';
+import 'package:flutter_application_1/provider/Theme_Provider.dart';
+
+import 'package:image_picker/image_picker.dart';
+import 'package:camera/camera.dart';
+
+// 🎨 Custom Painter สำหรับวงกลมตรงกล้อง
+class _CircleHolePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = Colors.black.withOpacity(0.6);
+
+    final fullPath = Path()
+      ..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
+
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width * 0.35;
+
+    final holePath = Path()
+      ..addOval(Rect.fromCircle(center: center, radius: radius));
+
+    final finalPath = Path.combine(
+      PathOperation.difference,
+      fullPath,
+      holePath,
+    );
+
+    canvas.drawPath(finalPath, paint);
+
+    // วาดเส้นขอบวงกลม
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 4
+        ..color = Colors.white,
+    );
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
+}
 
 // Model สำหรับข้อมูลแมว
 class CatData {
@@ -79,8 +123,15 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
   final ImagePicker _picker = ImagePicker();
   File? _selectedImage;
   bool _isProcessing = false;
+  double _progress = 0.0;
+  String _progressLabel = 'Please wait...';
+
   CatData? _detectedCat;
   List<ProductRecommendation> _recommendedProducts = [];
+
+  // 🎥 Camera Live Detection Variables
+  CameraController? _cameraController;
+  Timer? _detectTimer;
 
   // Cloudinary Config
   static const String cloudinaryCloudName = 'dag73dhpl';
@@ -93,6 +144,39 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
   void initState() {
     super.initState();
     _loadRecommendedProducts();
+    _initCamera();
+  }
+
+  @override
+  void dispose() {
+    _detectTimer?.cancel();
+    _cameraController?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _initCamera() async {
+    try {
+      final cameras = await availableCameras();
+      final backCamera = cameras.firstWhere(
+        (c) => c.lensDirection == CameraLensDirection.back,
+      );
+
+      _cameraController = CameraController(
+        backCamera,
+        ResolutionPreset.medium,
+        enableAudio: false,
+      );
+
+      await _cameraController!.initialize();
+
+      if (mounted) {
+        setState(() {});
+        _startLiveDetect();
+      }
+    } catch (e) {
+      print('❌ Error initializing camera: $e');
+      _showError('เปิดกล้องไม่สำเร็จ: $e');
+    }
   }
 
   void _loadRecommendedProducts() {
@@ -132,6 +216,19 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
         ),
       ];
     });
+  }
+
+  // 🎥 Live Detection (mock ตอนนี้)
+  void _startLiveDetect() {
+    _detectTimer = Timer.periodic(
+      Duration(milliseconds: 400),
+      (_) async {
+        if (!mounted || _cameraController == null) return;
+        if (!_cameraController!.value.isInitialized) return;
+        // TODO: Replace with actual backend detection
+        // final catDetected = await detectCatFromLiveCamera();
+      },
+    );
   }
 
 // เพิ่ม method แสดง Dialog
@@ -323,45 +420,78 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     );
   }
 
-  Future<void> _takePicture() async {
+  Future<void> _pickImage() async {
     try {
-      final XFile? photo = await _picker.pickImage(
-        source: ImageSource.camera,
-        imageQuality: 85,
-        maxWidth: 1920,
-        maxHeight: 1080,
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 70, // ✅ เปลี่ยนจาก 85 → 70
+        maxWidth: 1024, // ✅ เปลี่ยนจาก 1920 → 1024
+        maxHeight: 1024, // ✅ เปลี่ยนจาก 1080 → 1024
       );
 
-      if (photo != null) {
-        setState(() {
-          _selectedImage = File(photo.path);
-          _detectedCat = null;
-        });
-        _showSuccessMessage('ถ่ายรูปสำเร็จ');
+      if (image != null) {
+        File imageFile = File(image.path);
+
+        final processedImage =
+            await _validateAndCompressGalleryImage(imageFile);
+
+        if (processedImage != null) {
+          setState(() {
+            _selectedImage = processedImage;
+            _detectedCat = null;
+          });
+          _showSuccessMessage('เลือกรูปภาพสำเร็จ');
+        }
       }
     } catch (e) {
       _showError('เกิดข้อผิดพลาด: $e');
     }
   }
 
-  Future<void> _pickImage() async {
+  Future<File?> _validateAndCompressGalleryImage(File imageFile) async {
     try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 85,
-        maxWidth: 1920,
-        maxHeight: 1080,
-      );
+      final bytes = await imageFile.readAsBytes();
+      img.Image? image = img.decodeImage(bytes);
 
-      if (image != null) {
-        setState(() {
-          _selectedImage = File(image.path);
-          _detectedCat = null;
-        });
-        _showSuccessMessage('เลือกรูปภาพสำเร็จ');
+      if (image == null) {
+        _showError('รูปภาพไม่ถูกต้อง');
+        return null;
       }
+
+      // Resize to 1024x1024
+      final maxSize = 1024;
+      if (image.width > maxSize || image.height > maxSize) {
+        image = img.copyResize(
+          image,
+          width: image.width > image.height ? maxSize : null,
+          height: image.height > image.width ? maxSize : null,
+        );
+      }
+
+      // Compress to JPEG (quality 70)
+      final compressedBytes = img.encodeJpg(image, quality: 70);
+
+      // Check Size (<500KB)
+      if (compressedBytes.length > 500 * 1024) {
+        _showError(
+            'รูปใหญ่เกินไป (${(compressedBytes.length / 1024).toStringAsFixed(0)} KB)');
+        return null;
+      }
+
+      // Save to Temp
+      final tempDir = await getTemporaryDirectory();
+      final tempFile = File(
+        '${tempDir.path}/cat_gallery_${DateTime.now().millisecondsSinceEpoch}.jpg',
+      );
+      await tempFile.writeAsBytes(compressedBytes);
+
+      print(
+          '✅ Gallery Image: ${(compressedBytes.length / 1024).toStringAsFixed(2)} KB');
+
+      return tempFile;
     } catch (e) {
-      _showError('เกิดข้อผิดพลาด: $e');
+      _showError('ไม่สามารถประมวลผลรูปได้: $e');
+      return null;
     }
   }
 
@@ -438,25 +568,24 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
   Future<void> _analyzeCat() async {
     if (_selectedImage == null) return;
 
-    setState(() => _isProcessing = true);
-
-
+    setState(() {
+      _isProcessing = true;
+      _progress = 0.1;
+      _progressLabel = 'Uploading image...';
+    });
 
     try {
-      // 1. อัปโหลดรูปไป Cloudinary ก่อน
-      _showSuccessMessage('กำลังอัปโหลดรูปภาพ...');
+      // 1️⃣ Upload
       final imageUrl = await _uploadToCloudinary(_selectedImage!);
+      if (imageUrl == null) throw Exception('Upload failed');
 
-      if (imageUrl == null) {
-        throw Exception('ไม่สามารถอัปโหลดรูปภาพได้');
-      }
+      setState(() {
+        _progress = 0.4;
+        _progressLabel = 'Detecting cat...';
+      });
 
-      _showSuccessMessage('อัปโหลดรูปภาพสำเร็จ!');
-
-      // 2. จำลองการวิเคราะห์ (TODO: เรียก API/ML Model จริง)
-      await Future.delayed(Duration(seconds: 2));
-
-      // 3. สร้างข้อมูลแมวพร้อม URL รูปจาก Cloudinary
+      // 2️⃣ Detect จาก backend จริง
+      // final catData = await detectCatFromBackend(imageUrl);
       final analyzedData = CatData(
         name: 'Cat_Orange',
         breed: 'Persian',
@@ -469,19 +598,23 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
         imageUrl: imageUrl, // เก็บ URL จาก Cloudinary
         detectedAt: DateTime.now(),
       );
-
       setState(() {
-        _detectedCat = analyzedData;
-        _isProcessing = false;
+        _progress = 0.8;
+        _progressLabel = 'Analyzing size...';
       });
 
-      _showSuccessMessage('วิเคราะห์ขนาดแมวสำเร็จ!');
+      await Future.delayed(const Duration(milliseconds: 500));
 
-      // แสดง URL ที่อัปโหลด (สำหรับ debug)
-      print('Uploaded image URL: $imageUrl');
+      setState(() {
+        _progress = 1.0;
+        _isProcessing = false;
+        _detectedCat = analyzedData;
+      });
+
+      _showSuccessMessage('วิเคราะห์สำเร็จ 🐱');
     } catch (e) {
       setState(() => _isProcessing = false);
-      _showError('เกิดข้อผิดพลาดในการวิเคราะห์: $e');
+      _showError('วิเคราะห์ไม่สำเร็จ: $e');
     }
   }
 
@@ -517,6 +650,101 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     );
   }
 
+  // 🎥 Build Circular Overlay สำหรับ Live Detection
+  Widget _buildCircularOverlay() {
+    return CustomPaint(
+      painter: _CircleHolePainter(),
+      size: Size.infinite,
+    );
+  }
+
+  Widget _buildCameraPreview() {
+    if (_cameraController == null || !_cameraController!.value.isInitialized) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        CameraPreview(_cameraController!), // กล้อง
+        _buildCircularOverlay(), // วงกลมกลางจอ
+      ],
+    );
+  }
+
+  Widget _buildProcessingOverlay() {
+    return Container(
+      color: Colors.white.withOpacity(0.85),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 190,
+                  height: 190,
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0, end: _progress),
+                    duration: const Duration(milliseconds: 400),
+                    builder: (context, value, _) {
+                      return CircularProgressIndicator(
+                        value: value,
+                        strokeWidth: 6,
+                        backgroundColor: Colors.grey.shade300,
+                        valueColor: const AlwaysStoppedAnimation(
+                          Colors.orange,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+                // 🔥 รูปแมวจริง
+                Container(
+                  width: 145,
+                  height: 145,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 4),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 10,
+                      )
+                    ],
+                  ),
+                  child: ClipOval(
+                    child: _selectedImage != null
+                        ? Image.file(_selectedImage!, fit: BoxFit.cover)
+                        : const Icon(Icons.pets, size: 60),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Text(
+              '${(_progress * 100).toInt()}%',
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              _progressLabel,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = context.watch<ThemeProvider>();
@@ -539,79 +767,47 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
           color: isDark ? Colors.white : Colors.black,
         ),
       ),
-      body: Column(
-        children: [
-          // ส่วนเนื้อหาหลัก (Scrollable)
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  // เงื่อนไข: ถ้ายังไม่มีรูป แสดง Placeholder
-                  if (_selectedImage == null && _detectedCat == null)
-                    _buildEmptyState(isDark),
+      body: Stack(
+  children: [
+    Column(
+      children: [
+        // 🔑 ใช้ Expanded ครอบ content
+        Expanded(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.only(
+              bottom: 140, // 👈 กันชนปุ่มล่าง
+            ),
+            child: Column(
+              children: [
+                if (_selectedImage == null && _detectedCat == null)
+                  SizedBox(
+                    height: 678,
+                    child: _buildCameraPreview(),
+                  ),
 
-                  // เงื่อนไข: ถ้ามีรูปแต่ยังไม่ได้วิเคราะห์
-                  if (_selectedImage != null && _detectedCat == null)
-                    _buildImageWithAnalyzeSection(isDark),
+                if (_selectedImage != null && _detectedCat == null)
+                  _buildImageWithAnalyzeSection(isDark),
 
-                  // เงื่อนไข: ถ้าวิเคราะห์เสร็จแล้ว แสดงข้อมูล + สินค้า
-                  if (_detectedCat != null) _buildResultSection(isDark),
-                ],
-              ),
+                if (_detectedCat != null)
+                  _buildResultSection(isDark),
+              ],
             ),
           ),
+        ),
 
-          // ส่วนล่าง: ปุ่มถ่ายรูป/เลือกรูป (Fixed)
-          _buildBottomButtons(isDark),
-        ],
-      ),
+        // ✅ ปุ่มล่าง fixed
+        _buildBottomButtons(isDark),
+      ],
+    ),
+
+    if (_isProcessing) _buildProcessingOverlay(),
+  ],
+),
+
     );
   }
 
   // ส่วนที่ 2
-
-  /// 1️⃣ หน้าจอเปล่า (Default - ยังไม่มีรูป)
-  Widget _buildEmptyState(bool isDark) {
-    return Padding(
-      padding: EdgeInsets.all(16),
-      child: Column(
-        children: [
-          SizedBox(height: 150),
-          Container(
-            height: 250,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.pets,
-                  size: 80,
-                  color: isDark ? Colors.grey[600] : Colors.grey[400],
-                ),
-                SizedBox(height: 16),
-                Text(
-                  'ไม่พบข้อมูล',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.grey[400] : Colors.grey[600],
-                  ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'ขนาดรูป 1280×720 ขนาดไฟล์ 200-500 KB',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: isDark ? Colors.grey[500] : Colors.grey[500],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   /// 2️⃣ แสดงรูปที่เลือก + ปุ่มวิเคราะห์และยกเลิก
   Widget _buildImageWithAnalyzeSection(bool isDark) {
     return Padding(
@@ -1208,7 +1404,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'โปรดถ่ายรูปแมวของคุณโดยให้เห็นลักษณะร่างกายชัดเจน เพื่อการวิเคราะห์ขนาดที่แม่นยำ',
+              'ถ่ายรูป: ถ่ายตรงที่เห็นแมวชัดเจน\nเลือกรูป: รองรับไฟล์ <500KB',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 12,
@@ -1220,7 +1416,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: _isProcessing ? null : _takePicture,
+                   onPressed: _isProcessing ? null : _captureFromLiveCamera,
                     icon: Icon(Icons.camera_alt),
                     label: Text(
                       'ถ่ายรูป',
@@ -1265,5 +1461,33 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
         ),
       ),
     );
+  }
+
+  /// ถ่ายรูปตรง โดยไม่เข้าหน้า Camera Preview
+  Future<void> _captureFromLiveCamera() async {
+    try {
+      if (_cameraController == null ||
+          !_cameraController!.value.isInitialized) {
+        _showError('กล้องยังไม่พร้อม');
+        return;
+      }
+
+      final XFile photo = await _cameraController!.takePicture();
+      final File imageFile = File(photo.path);
+
+      final processedImage = await _validateAndCompressGalleryImage(imageFile);
+
+      if (processedImage != null) {
+        setState(() {
+          _selectedImage = processedImage;
+          _detectedCat = null;
+          _detectTimer?.cancel(); // หยุด live detect
+        });
+
+        _showSuccessMessage('ถ่ายรูปสำเร็จ 📸');
+      }
+    } catch (e) {
+      _showError('ถ่ายรูปไม่สำเร็จ: $e');
+    }
   }
 }

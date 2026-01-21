@@ -175,15 +175,24 @@ class _LoginState extends State<Login> {
                                                     );
                                                   })).then((_) {});
                                         },
+                                        style: TextButton.styleFrom(
+                                          backgroundColor: Colors.white,
+                                          minimumSize: const Size(180, 40),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                                12), // radius
+                                          ),
+                                        ),
                                         child: Text(
                                           "Create a new user account",
+                                          textAlign: TextAlign.center,
                                           style: TextStyle(
-                                              color: themeProvider.themeMode ==
-                                                      ThemeMode.dark
-                                                  ? Color.fromRGBO(0, 0, 0, 0)
-                                                  : Color.fromRGBO(
-                                                      255, 255, 255, 1),
-                                              fontWeight: FontWeight.bold),
+                                            color: themeProvider.themeMode ==
+                                                    ThemeMode.dark
+                                                ? Colors.white
+                                                : Colors.black,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ))),
                               ],
                             ),
