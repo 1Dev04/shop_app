@@ -424,22 +424,27 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
-        imageQuality: 70, // ✅ เปลี่ยนจาก 85 → 70
-        maxWidth: 1024, // ✅ เปลี่ยนจาก 1920 → 1024
-        maxHeight: 1024, // ✅ เปลี่ยนจาก 1080 → 1024
+        imageQuality: 70,
+        maxWidth: 1024,
+        maxHeight: 1024,
       );
 
       if (image != null) {
         File imageFile = File(image.path);
-
         final processedImage =
             await _validateAndCompressGalleryImage(imageFile);
 
         if (processedImage != null) {
+          // 🔥 ปิดกล้องทันทีหลังเลือกรูป
+          _detectTimer?.cancel();
+          await _cameraController?.dispose();
+          _cameraController = null;
+
           setState(() {
             _selectedImage = processedImage;
             _detectedCat = null;
           });
+
           _showSuccessMessage('เลือกรูปภาพสำเร็จ');
         }
       }
@@ -623,7 +628,11 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
       _selectedImage = null;
       _detectedCat = null;
     });
+
     _showSuccessMessage('ลบข้อมูลแล้ว');
+
+    // 🔥 เปิดกล้องใหม่
+    _initCamera();
   }
 
   void _showSuccessMessage(String message) {
@@ -768,42 +777,45 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
         ),
       ),
       body: Stack(
-  children: [
-    Column(
-      children: [
-        // 🔑 ใช้ Expanded ครอบ content
-        Expanded(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.only(
-              bottom: 140, // 👈 กันชนปุ่มล่าง
-            ),
-            child: Column(
-              children: [
-                if (_selectedImage == null && _detectedCat == null)
-                  SizedBox(
-                    height: 678,
-                    child: _buildCameraPreview(),
+        children: [
+          Column(
+            children: [
+              // 🔑 Content Area
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: (_selectedImage == null && _detectedCat == null)
+                      ? const NeverScrollableScrollPhysics() // 🔒 ล็อค
+                      : const BouncingScrollPhysics(), // 🔓 ปลด
+
+                  child: Column(
+                    children: [
+                      // หน้ากล้อง (แสดงเฉพาะตอนไม่มีรูป)
+                      if (_selectedImage == null && _detectedCat == null)
+                        SizedBox(
+                          height: 678,
+                          child: _buildCameraPreview(),
+                        ),
+
+                      // หน้าแสดงรูป + ปุ่มวิเคราะห์
+                      if (_selectedImage != null && _detectedCat == null)
+                        _buildImageWithAnalyzeSection(isDark),
+
+                      // หน้าผลลัพธ์
+                      if (_detectedCat != null) _buildResultSection(isDark),
+                    ],
                   ),
+                ),
+              ),
 
-                if (_selectedImage != null && _detectedCat == null)
-                  _buildImageWithAnalyzeSection(isDark),
-
-                if (_detectedCat != null)
-                  _buildResultSection(isDark),
-              ],
-            ),
+              // ✅ ปุ่มล่าง (แสดงเฉพาะหน้ากล้อง)
+              _buildBottomButtons(isDark),
+            ],
           ),
-        ),
 
-        // ✅ ปุ่มล่าง fixed
-        _buildBottomButtons(isDark),
-      ],
-    ),
-
-    if (_isProcessing) _buildProcessingOverlay(),
-  ],
-),
-
+          // Processing Overlay
+          if (_isProcessing) _buildProcessingOverlay(),
+        ],
+      ),
     );
   }
 
@@ -1047,7 +1059,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildInfoRow(
-                          'Name:', _detectedCat?.name ?? 'N/A', isDark),
+                          'Cat Color:', _detectedCat?.name ?? 'N/A', isDark),
                       SizedBox(height: 10),
                       _buildInfoRow(
                         'Age:',
@@ -1111,7 +1123,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                               // เนื้อหาด้านใน
                               TextField(
                                 decoration: InputDecoration(
-                                  labelText: 'Name',
+                                  labelText: 'Cat Color',
                                   border: OutlineInputBorder(),
                                 ),
                               ),
@@ -1386,6 +1398,12 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
 
   /// 4️⃣ ปุ่มด้านล่าง (ถ่ายรูป/เลือกรูป)
   Widget _buildBottomButtons(bool isDark) {
+    // 🔥 ซ่อนปุ่มถ่าย/เลือกรูป เมื่อมีรูปแล้ว
+    if (_selectedImage != null || _detectedCat != null) {
+      return SizedBox.shrink(); // ไม่แสดงอะไร
+    }
+
+    // แสดงปุ่มเฉพาะตอนแสดงกล้อง
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1404,9 +1422,10 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'ถ่ายรูป: ถ่ายตรงที่เห็นแมวชัดเจน\nเลือกรูป: รองรับไฟล์ <500KB',
+              'ถ่ายรูป: วางตัวแมวให้อยู่ กลางวงกลม และเห็นทั้งตัว \n เลือกรูป: ใช้ไฟล์ JPEG ขนาดไม่เกิน 500KB',
               textAlign: TextAlign.center,
               style: TextStyle(
+                fontWeight: FontWeight.bold,
                 fontSize: 12,
                 color: isDark ? Colors.white70 : Colors.black87,
               ),
@@ -1416,7 +1435,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
-                   onPressed: _isProcessing ? null : _captureFromLiveCamera,
+                    onPressed: _isProcessing ? null : _captureFromLiveCamera,
                     icon: Icon(Icons.camera_alt),
                     label: Text(
                       'ถ่ายรูป',
@@ -1474,17 +1493,23 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
 
       final XFile photo = await _cameraController!.takePicture();
       final File imageFile = File(photo.path);
-
       final processedImage = await _validateAndCompressGalleryImage(imageFile);
 
       if (processedImage != null) {
+        // 🔥 ปิดกล้องทันทีหลังถ่ายรูป
+        _detectTimer?.cancel();
+        await _cameraController?.dispose();
+        _cameraController = null;
+
         setState(() {
           _selectedImage = processedImage;
           _detectedCat = null;
-          _detectTimer?.cancel(); // หยุด live detect
         });
 
         _showSuccessMessage('ถ่ายรูปสำเร็จ 📸');
+
+        // 🚀 เข้าหน้าวิเคราะห์ทันที
+        await _analyzeCat();
       }
     } catch (e) {
       _showError('ถ่ายรูปไม่สำเร็จ: $e');
