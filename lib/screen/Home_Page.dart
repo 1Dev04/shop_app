@@ -1,3 +1,7 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/provider/Favorite_Provider.dart';
 import 'package:flutter_application_1/provider/Language_Provider.dart';
@@ -12,7 +16,7 @@ import 'package:flutter_application_1/screen/Setting_Page.dart';
 // import 'package:flutter_application_1/login.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
-
+import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'Measue_SizeCat.dart';
 
@@ -314,7 +318,6 @@ class SearchPage extends StatefulWidget {
   State<SearchPage> createState() => _SearchPageState();
 }
 
-
 class CatItem {
   final String imageUrl;
   final String name;
@@ -324,86 +327,106 @@ class CatItem {
 
 final List<CatItem> femaleCats = [
   CatItem(
-    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740288948/F1-removebg-preview_b0vnu5.png",
+    imageUrl:
+        "https://res.cloudinary.com/dag73dhpl/image/upload/v1740288948/F1-removebg-preview_b0vnu5.png",
     name: "Princess Paws",
   ),
   CatItem(
-    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740288947/F2-removebg-preview_upsxlj.png",
+    imageUrl:
+        "https://res.cloudinary.com/dag73dhpl/image/upload/v1740288947/F2-removebg-preview_upsxlj.png",
     name: "Floral Feline",
   ),
   CatItem(
-    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740288946/F3-removebg-preview_nl7eks.png",
+    imageUrl:
+        "https://res.cloudinary.com/dag73dhpl/image/upload/v1740288946/F3-removebg-preview_nl7eks.png",
     name: "Elegant Diva",
   ),
   CatItem(
-    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740289084/F4-removebg-preview_ncl6mt.png",
+    imageUrl:
+        "https://res.cloudinary.com/dag73dhpl/image/upload/v1740289084/F4-removebg-preview_ncl6mt.png",
     name: "Pastel Kitty",
   ),
   CatItem(
-    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740289084/F5-removebg-preview_mynzc3.png",
+    imageUrl:
+        "https://res.cloudinary.com/dag73dhpl/image/upload/v1740289084/F5-removebg-preview_mynzc3.png",
     name: "Royal Queen",
   ),
   CatItem(
-    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740289084/F6-removebg-preview_p0x3j4.png",
+    imageUrl:
+        "https://res.cloudinary.com/dag73dhpl/image/upload/v1740289084/F6-removebg-preview_p0x3j4.png",
     name: "Fairy Tale Cat",
   ),
   CatItem(
-    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740289083/F7-removebg-preview_hrobn2.png",
+    imageUrl:
+        "https://res.cloudinary.com/dag73dhpl/image/upload/v1740289083/F7-removebg-preview_hrobn2.png",
     name: "Sweet Lolita",
   ),
   CatItem(
-    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740289083/F8-removebg-preview_yipil7.png",
+    imageUrl:
+        "https://res.cloudinary.com/dag73dhpl/image/upload/v1740289083/F8-removebg-preview_yipil7.png",
     name: "Chic & Trendy",
   ),
   CatItem(
-    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740289082/F9-removebg-preview_glqkuw.png",
+    imageUrl:
+        "https://res.cloudinary.com/dag73dhpl/image/upload/v1740289082/F9-removebg-preview_glqkuw.png",
     name: "Romantic Lace",
   ),
   CatItem(
-    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740289082/F10-removebg-preview_ka2hjm.png",
+    imageUrl:
+        "https://res.cloudinary.com/dag73dhpl/image/upload/v1740289082/F10-removebg-preview_ka2hjm.png",
     name: "Tutu & Frills",
   ),
 ];
 
 final List<CatItem> maleCats = [
   CatItem(
-    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740290117/M1-removebg-preview_dy7jvt.png",
+    imageUrl:
+        "https://res.cloudinary.com/dag73dhpl/image/upload/v1740290117/M1-removebg-preview_dy7jvt.png",
     name: "Gentleman Paws",
   ),
   CatItem(
-    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740290116/M2-removebg-preview_fhbtuj.png",
+    imageUrl:
+        "https://res.cloudinary.com/dag73dhpl/image/upload/v1740290116/M2-removebg-preview_fhbtuj.png",
     name: "Sporty Cat",
   ),
   CatItem(
-    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740290116/M3-removebg-preview_w7onjr.png",
+    imageUrl:
+        "https://res.cloudinary.com/dag73dhpl/image/upload/v1740290116/M3-removebg-preview_w7onjr.png",
     name: "Cool Street Style",
   ),
   CatItem(
-    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740290116/M4-removebg-preview_eu2eum.png",
+    imageUrl:
+        "https://res.cloudinary.com/dag73dhpl/image/upload/v1740290116/M4-removebg-preview_eu2eum.png",
     name: "Dapper Kitty",
   ),
   CatItem(
-    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740290116/M5-removebg-preview_ptzi7o.png",
+    imageUrl:
+        "https://res.cloudinary.com/dag73dhpl/image/upload/v1740290116/M5-removebg-preview_ptzi7o.png",
     name: "Retro Vibes",
   ),
   CatItem(
-    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740290116/M6-removebg-preview_wwab4z.png",
+    imageUrl:
+        "https://res.cloudinary.com/dag73dhpl/image/upload/v1740290116/M6-removebg-preview_wwab4z.png",
     name: "Rockstar Meow",
   ),
   CatItem(
-    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740290116/M7-removebg-preview_kq2mpl.png",
+    imageUrl:
+        "https://res.cloudinary.com/dag73dhpl/image/upload/v1740290116/M7-removebg-preview_kq2mpl.png",
     name: "Minimalist Chic",
   ),
   CatItem(
-    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740290116/M8-removebg-preview_i94h7h.png",
+    imageUrl:
+        "https://res.cloudinary.com/dag73dhpl/image/upload/v1740290116/M8-removebg-preview_i94h7h.png",
     name: "Bad Boy Cat",
   ),
   CatItem(
-    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740290115/M9-removebg-preview_yulrpr.png",
+    imageUrl:
+        "https://res.cloudinary.com/dag73dhpl/image/upload/v1740290115/M9-removebg-preview_yulrpr.png",
     name: "Sailor & Navy",
   ),
   CatItem(
-    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740290115/M10-removebg-preview_zrc7cm.png",
+    imageUrl:
+        "https://res.cloudinary.com/dag73dhpl/image/upload/v1740290115/M10-removebg-preview_zrc7cm.png",
     name: "Adventure Outfit",
   ),
 ];
@@ -413,7 +436,6 @@ class _SearchPageState extends State<SearchPage> {
   final PageController _pageControlSearch = PageController(initialPage: 0);
 
   int actionPageSearch = 0;
-  
 
   void _goToPageSearch(int pageIndexSearch) {
     _pageControlSearch.animateToPage(
@@ -423,9 +445,8 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-@override
+  @override
   Widget build(BuildContext context) {
-
     final languageProvider = Provider.of<LanguageProvider>(context);
     return Scaffold(
       body: Column(
@@ -445,7 +466,8 @@ class _SearchPageState extends State<SearchPage> {
                     },
                     child: actionPageSearch == 0
                         ? Text(
-                            languageProvider.translate(en: "FEMALE", th: "ตัวเมีย"),
+                            languageProvider.translate(
+                                en: "FEMALE", th: "ตัวเมีย"),
                             style: TextStyle(
                               color: Theme.of(context)
                                   .snackBarTheme
@@ -462,7 +484,9 @@ class _SearchPageState extends State<SearchPage> {
                               height: 3,
                             ),
                           )
-                        : Text(languageProvider.translate(en: "FEMALE", th: "ตัวเมีย"),
+                        : Text(
+                            languageProvider.translate(
+                                en: "FEMALE", th: "ตัวเมีย"),
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.onSurface,
                               fontSize: 15,
@@ -478,7 +502,8 @@ class _SearchPageState extends State<SearchPage> {
                     },
                     child: actionPageSearch == 1
                         ? Text(
-                            languageProvider.translate(en: "MALE", th: "ตัวผู้"),
+                            languageProvider.translate(
+                                en: "MALE", th: "ตัวผู้"),
                             style: TextStyle(
                               color: Theme.of(context)
                                   .snackBarTheme
@@ -495,7 +520,9 @@ class _SearchPageState extends State<SearchPage> {
                               height: 3,
                             ),
                           )
-                        : Text(languageProvider.translate(en: "MALE", th: "ตัวผู้"),
+                        : Text(
+                            languageProvider.translate(
+                                en: "MALE", th: "ตัวผู้"),
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.onSurface,
                               fontSize: 15,
@@ -511,7 +538,8 @@ class _SearchPageState extends State<SearchPage> {
                     },
                     child: actionPageSearch == 2
                         ? Text(
-                            languageProvider.translate(en: "KITTEN", th: "ลูกแมว"),
+                            languageProvider.translate(
+                                en: "KITTEN", th: "ลูกแมว"),
                             style: TextStyle(
                               color: Theme.of(context)
                                   .snackBarTheme
@@ -528,7 +556,9 @@ class _SearchPageState extends State<SearchPage> {
                               height: 3,
                             ),
                           )
-                        : Text(languageProvider.translate(en: "KITTEN", th: "ลูกแมว"),
+                        : Text(
+                            languageProvider.translate(
+                                en: "KITTEN", th: "ลูกแมว"),
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.onSurface,
                               fontSize: 15,
@@ -942,7 +972,7 @@ class _SearchPageState extends State<SearchPage> {
                       ],
                     ),
                     SizedBox(height: 10),
-                    //Section 
+                    //Section
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
@@ -2041,8 +2071,7 @@ class _SearchPageState extends State<SearchPage> {
                       borderRadius: BorderRadius.circular(50),
                     ),
                     labelText: languageProvider.translate(
-                        en: 'Search for products',
-                        th: 'ค้นหาสินค้า'),
+                        en: 'Search for products', th: 'ค้นหาสินค้า'),
                     prefixIcon: Icon(Icons.search),
                   ),
                   style:
@@ -2054,12 +2083,13 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 }
+
 class FavoritePage extends StatelessWidget {
   const FavoritePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-     final languageProvider = Provider.of<LanguageProvider>(context);
+    final languageProvider = Provider.of<LanguageProvider>(context);
 
     return SafeArea(
       child: Consumer<FavoriteProvider>(
@@ -2083,7 +2113,9 @@ class FavoritePage extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Text(
-                      languageProvider.translate(en: "Item: ${favorites.length} List", th: "รายการ: ${favorites.length} รายการ"),
+                      languageProvider.translate(
+                          en: "Item: ${favorites.length} List",
+                          th: "รายการ: ${favorites.length} รายการ"),
                       style: TextStyle(
                         fontSize: 18,
                         color: Theme.of(context).colorScheme.primary,
@@ -2132,7 +2164,9 @@ class FavoritePage extends StatelessWidget {
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 40),
             child: Text(
-              languageProvider.translate(en: "Add products to your favorites list to check prices and stock availability.", th: "เพิ่มสินค้าลงในรายการโปรดของคุณเพื่อตรวจสอบราคาและสถานะสต็อก"),
+              languageProvider.translate(
+                  en: "Add products to your favorites list to check prices and stock availability.",
+                  th: "เพิ่มสินค้าลงในรายการโปรดของคุณเพื่อตรวจสอบราคาและสถานะสต็อก"),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
@@ -2313,46 +2347,29 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final PageController _pageController = PageController(initialPage: 1000);
-  final List<Map<String, String>> images = [
-    {
-      "image":
-          "https://res.cloudinary.com/dag73dhpl/image/upload/v1740303107/Gen1_myeyh2.jpg",
-      "title": "V-neck T-shirt",
-      "description": "เสื้อแมวยืด สีดำ คอวี ผ้าคอตตอน 100% นุ่มสบาย",
-      "price": "180THB",
-    },
-    {
-      "image":
-          "https://res.cloudinary.com/dag73dhpl/image/upload/v1740303106/Gen2_djp2gr.jpg",
-      "title": "Round neck T-shirt",
-      "description": "เสื้อแมวยืด สีขาว คอกลม ผ้าคอตตอน 100% นุ่มสบาย",
-      "price": "150THB",
-    },
-    {
-      "image":
-          "https://res.cloudinary.com/dag73dhpl/image/upload/v1740303107/Gen3_ixstbu.jpg",
-      "title": "Hoodie Jacket",
-      "description": "เสื้อแมวแจ็คเก็ตฮู้ดดี้ สีเทา ผ้าเนื้อหนา ทนทาน",
-      "price": "300THB",
-    },
-    {
-      "image":
-          "https://res.cloudinary.com/dag73dhpl/image/upload/v1740303107/Gen4_w7drxe.jpg",
-      "title": "Sleeveless Top",
-      "description": "เสื้อแมวแขนกุด ผ้าเนื้อบางเบา ระบายอากาศดี",
-      "price": "120THB",
-    },
-    {
-      "image":
-          "https://res.cloudinary.com/dag73dhpl/image/upload/v1740303107/Gen5_zr8dij.jpg",
-      "title": "Polo Shirt",
-      "description": "เสื้อแมวโปโล สีฟ้า ผ้าคอตตอน ระบายความร้อนได้ดี",
-      "price": "250THB",
-    },
-  ];
+  List<Map<String, dynamic>> images = [];
 
   Timer? timer;
   bool isUserInteracting = false;
+  bool isLoading = true;
+  String? errorMessage;
+
+  // ฟังก์ชันสำหรับหา Base URL ที่ถูกต้องตาม Platform
+  String getBaseUrl() {
+    if (kIsWeb) {
+      return 'http://localhost:8000';
+    } else if (Platform.isAndroid) {
+      return 'http://10.0.2.2:8000'; // สำหรับ Android Emulator
+    } else {
+      return 'http://localhost:8000';
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchAdvertisements();
+  }
 
   @override
   void dispose() {
@@ -2361,14 +2378,89 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+  // ดึงข้อมูลจาก API
+  Future<void> fetchAdvertisements() async {
+    try {
+      final baseUrl = getBaseUrl();
+      final url = '$baseUrl/api/home-advertiment';
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        List<Map<String, dynamic>> parsedImages = [];
+
+        if (data is List) {
+          parsedImages = data.map<Map<String, dynamic>>((item) {
+            final rawImages = item['images'];
+
+            return {
+              ...item,
+              // 🔥 แปลง images จาก String → Map
+              'images': rawImages is String ? jsonDecode(rawImages) : rawImages,
+            };
+          }).toList();
+        } else if (data is Map && data.containsKey('data')) {
+          parsedImages = List<Map<String, dynamic>>.from(
+            data['data'].map<Map<String, dynamic>>((item) {
+              final rawImages = item['images'];
+
+              return {
+                ...item,
+                'images':
+                    rawImages is String ? jsonDecode(rawImages) : rawImages,
+              };
+            }),
+          );
+        }
+
+        setState(() {
+          images = parsedImages;
+          isLoading = false;
+        });
+
+        if (images.isNotEmpty) {
+          startAutoScroll();
+        }
+      } else {
+        setState(() {
+          errorMessage = 'ไม่สามารถโหลดข้อมูลได้ (${response.statusCode})';
+          isLoading = false;
+        });
+      }
+    } on SocketException {
+      setState(() {
+        errorMessage = 'ไม่สามารถเชื่อมต่อได้\nกรุณาตรวจสอบ Backend';
+        isLoading = false;
+      });
+    } on TimeoutException {
+      setState(() {
+        errorMessage = 'หมดเวลาการเชื่อมต่อ';
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        errorMessage = 'เกิดข้อผิดพลาด: $e';
+        isLoading = false;
+      });
+    }
+  }
+
   void startAutoScroll() {
     timer?.cancel();
     timer = Timer.periodic(const Duration(seconds: 10), (_) {
-      if (!isUserInteracting) {
+      if (!isUserInteracting && images.isNotEmpty) {
         if (_pageController.hasClients) {
           final nextPage = (_pageController.page ?? 0) + 1;
           _pageController.animateToPage(
-            nextPage.toInt() % images.length,
+            nextPage.toInt(),
             duration: const Duration(milliseconds: 500),
             curve: Curves.easeInOut,
           );
@@ -2381,140 +2473,190 @@ class _HomePageState extends State<HomePage> {
     timer?.cancel();
   }
 
-  //List file "images"
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-
-    Future.wait(images.map((item) {
-      final imagePath = item["image"];
-      if (imagePath != null && imagePath.isNotEmpty) {
-        return precacheImage(AssetImage(imagePath), context);
-      } else {
-        // not imagePath return Future
-        return Future.value();
-      }
-    }).toList());
-  }
-
   @override
   Widget build(BuildContext context) {
+    // แสดง Loading
+    if (isLoading) {
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    // แสดง Error
+    if (errorMessage != null) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 60, color: Colors.red),
+              SizedBox(height: 16),
+              Text(
+                errorMessage!,
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    isLoading = true;
+                    errorMessage = null;
+                  });
+                  fetchAdvertisements();
+                },
+                child: Text('ลองใหม่'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // แสดงข้อมูลว่าง
+    if (images.isEmpty) {
+      return Scaffold(
+        body: Center(
+          child: Text('ไม่มีข้อมูลโฆษณา'),
+        ),
+      );
+    }
+
+    // แสดงข้อมูลปกติ
     return Scaffold(
       body: GestureDetector(
         onPanDown: (_) {
-          // user: action | auto: break
           isUserInteracting = true;
           stopAutoScroll();
         },
         onPanCancel: () {
-          // user: break | auto: action
           isUserInteracting = false;
           startAutoScroll();
         },
         onPanEnd: (_) {
-          // user: dont touch | auto: action
           isUserInteracting = false;
           startAutoScroll();
         },
         child: PageView.builder(
-            controller: _pageController,
-            scrollDirection: Axis.vertical,
-            itemBuilder: (context, index) {
-              final item = images[index % images.length];
-              return Stack(
-                children: [
-                  CachedNetworkImage(
-                    imageUrl: item['image']!,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: double.infinity,
+          controller: _pageController,
+          scrollDirection: Axis.vertical,
+          itemCount: images.length * 1000, // infinite scroll
+          itemBuilder: (context, index) {
+            final item = images[index % images.length];
+            return Stack(
+              children: [
+                CachedNetworkImage(
+                  imageUrl: item['image_url'] ?? '',
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
+                  placeholder: (context, url) => Center(
+                    child: CircularProgressIndicator(),
                   ),
-                  Positioned(
-                    bottom: 200,
-                    left: 20,
-                    child: Text(
-                      item['title']!,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold,
-                        shadows: [
-                          Shadow(
-                            blurRadius: 20,
-                            color: Theme.of(context).colorScheme.onSurface,
-                            offset: Offset(2, 2),
-                          ),
-                        ],
+                  errorWidget: (context, url, error) => Center(
+                    child: Icon(Icons.error),
+                  ),
+                ),
+                Positioned(
+                  bottom: 250,
+                  left: 20,
+                  child: Text(
+                    item['clothing_name'] ?? '',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold,
+                      shadows: [
+                        Shadow(
+                          blurRadius: 20,
+                          color: Colors.black.withOpacity(0.7),
+                          offset: Offset(2, 2),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 140,
+                  left: 20,
+                  right: 20,
+                  child: Text(
+                    item['description'] ?? '',
+                    style: TextStyle(
+                      color: const Color.fromARGB(238, 255, 255, 255),
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      shadows: [
+                        Shadow(
+                          blurRadius: 20,
+                          color: Colors.black.withOpacity(0.7),
+                          offset: Offset(2, 2),
+                        ),
+                      ],
+                    ),
+                    maxLines: 3,
+                    softWrap: true,
+                  ),
+                ),
+                Positioned(
+                  bottom: 90,
+                  left: 20,
+                  right: 20,
+                  child: Text(
+                    item['price']?.toString() ?? '',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold,
+                      shadows: [
+                        Shadow(
+                          blurRadius: 20,
+                          color: Colors.black.withOpacity(0.7),
+                          offset: Offset(2, 2),
+                        )
+                      ],
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: 20,
+                  right: 20,
+                  bottom: 10,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          // ตะกร้าสินค้า
+                        },
+                        icon: Icon(Icons.shopping_cart_outlined),
+                        label: Text('Buy Now'),
                       ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 140,
-                    left: 20,
-                    right: 20,
-                    child: Text(
-                      item['description']!,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        shadows: [
-                          Shadow(
-                            blurRadius: 20,
-                            color: Theme.of(context).colorScheme.onSurface,
-                            offset: Offset(2, 2),
-                          ),
-                        ],
-                      ),
-                      maxLines: 3,
-                      // overflow: TextOverflow.ellipsis, // ...
-                      softWrap: true, // new line
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 90,
-                    left: 20,
-                    right: 20,
-                    child: Text(
-                      item['price']!,
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 30,
-                          fontWeight: FontWeight.bold,
-                          shadows: [
-                            Shadow(
-                              blurRadius: 20,
-                              color: Theme.of(context).colorScheme.onSurface,
-                              offset: Offset(2, 2),
-                            )
-                          ]),
-                    ),
-                  ),
-                  Positioned(
-                    left: 20,
-                    bottom: 30,
-                    child: FloatingActionButton.small(
-                      onPressed: () {
-                        Navigator();
-                      },
-                      child: GestureDetector(
-                        onTap: () {},
-                        child: Icon(
-                          Icons.shopping_cart_outlined,
-                          size: 30,
-                          color: Theme.of(context)
-                              .floatingActionButtonTheme
-                              .foregroundColor,
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          item['images']['image_clothing'] ?? '',
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: 100,
+                              height: 100,
+                              color: Colors.grey[300],
+                              child: Icon(Icons.shopping_bag),
+                            );
+                          },
                         ),
                       ),
-                      backgroundColor: Theme.of(context)
-                          .floatingActionButtonTheme
-                          .backgroundColor,
-                    ),
-                  )
-                ],
-              );
-            }),
+                    ],
+                  ),
+                )
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -2533,7 +2675,6 @@ class _NotificationPageState extends State<NotificationPage> {
 
   final PageController _pageControlPageMess = PageController(initialPage: 0);
   final PageController _pageControlPageNew = PageController(initialPage: 0);
-  
 
   int actionPageNotificate1 = 0;
   int actionPageTwo = 0;
@@ -3116,7 +3257,8 @@ class _ProfilePageState extends State<MenuPage> {
                                   size: 30,
                                 ),
                                 Text(
-                                  languageProvider.translate(en: "Profiles", th: "โปรไฟล์"),
+                                  languageProvider.translate(
+                                      en: "Profiles", th: "โปรไฟล์"),
                                   style: TextStyle(fontSize: 16),
                                 ),
                               ],
@@ -3140,7 +3282,8 @@ class _ProfilePageState extends State<MenuPage> {
                               children: [
                                 Icon(Icons.archive_outlined, size: 30),
                                 Text(
-                                  languageProvider.translate(en: "My Orders", th: "ค้าของฉัน"),
+                                  languageProvider.translate(
+                                      en: "My Orders", th: "ค้าของฉัน"),
                                   style: TextStyle(fontSize: 16),
                                 ),
                               ],
@@ -3164,7 +3307,8 @@ class _ProfilePageState extends State<MenuPage> {
                               children: [
                                 Icon(Icons.shopping_bag_outlined, size: 30),
                                 Text(
-                                  languageProvider.translate(en: "Order List", th: "รายการค้า"),
+                                  languageProvider.translate(
+                                      en: "Order List", th: "รายการค้า"),
                                   style: TextStyle(fontSize: 16),
                                 ),
                               ],
@@ -3196,7 +3340,8 @@ class _ProfilePageState extends State<MenuPage> {
                               children: [
                                 Icon(Icons.confirmation_num_outlined, size: 30),
                                 Text(
-                                  languageProvider.translate(en: "Coupon", th: "คูปอง"),
+                                  languageProvider.translate(
+                                      en: "Coupon", th: "คูปอง"),
                                   style: TextStyle(fontSize: 16),
                                 ),
                               ],
@@ -3220,7 +3365,8 @@ class _ProfilePageState extends State<MenuPage> {
                               children: [
                                 Icon(Icons.list_alt_outlined, size: 30),
                                 Text(
-                                  languageProvider.translate(en: "Survey B.", th: "แบบสอบถาม"),
+                                  languageProvider.translate(
+                                      en: "Survey B.", th: "แบบสอบถาม"),
                                   style: TextStyle(fontSize: 16),
                                 ),
                               ],
@@ -3249,7 +3395,8 @@ class _ProfilePageState extends State<MenuPage> {
                               children: [
                                 Icon(Icons.settings_outlined, size: 30),
                                 Text(
-                                  languageProvider.translate(en: "Setting", th: "การตั้งค่า"),
+                                  languageProvider.translate(
+                                      en: "Setting", th: "การตั้งค่า"),
                                   style: TextStyle(fontSize: 16),
                                 ),
                               ],
@@ -3278,7 +3425,9 @@ class _ProfilePageState extends State<MenuPage> {
                       children: [
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 10),
-                          child: Text(languageProvider.translate(en: "Find branch locations", th: "ค้นหาสาขา"),
+                          child: Text(
+                              languageProvider.translate(
+                                  en: "Find branch locations", th: "ค้นหาสาขา"),
                               style: TextStyle(fontSize: 18)),
                         ),
                         Padding(
@@ -3311,7 +3460,10 @@ class _ProfilePageState extends State<MenuPage> {
                       children: [
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 10),
-                          child: Text(languageProvider.translate(en: "Learn how to use it", th: "เรียนรู้วิธีใช้งาน"),
+                          child: Text(
+                              languageProvider.translate(
+                                  en: "Learn how to use it",
+                                  th: "เรียนรู้วิธีใช้งาน"),
                               style: TextStyle(fontSize: 18)),
                         ),
                         Padding(
@@ -3343,7 +3495,10 @@ class _ProfilePageState extends State<MenuPage> {
                       children: [
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 10),
-                          child: Text(languageProvider.translate(en: "Frequently asked questions", th: "คำถามที่พบบ่อย"),
+                          child: Text(
+                              languageProvider.translate(
+                                  en: "Frequently asked questions",
+                                  th: "คำถามที่พบบ่อย"),
                               style: TextStyle(fontSize: 18)),
                         ),
                         Padding(
@@ -3375,7 +3530,9 @@ class _ProfilePageState extends State<MenuPage> {
                       children: [
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 10),
-                          child: Text(languageProvider.translate(en: "Terms of Use", th: "ข้อกำหนดการใช้งาน"),
+                          child: Text(
+                              languageProvider.translate(
+                                  en: "Terms of Use", th: "ข้อกำหนดการใช้งาน"),
                               style: TextStyle(fontSize: 18)),
                         ),
                         Padding(
@@ -3407,7 +3564,10 @@ class _ProfilePageState extends State<MenuPage> {
                       children: [
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 10),
-                          child: Text(languageProvider.translate(en: "Privacy Policy", th: "นโยบายความเป็นส่วนตัว"),
+                          child: Text(
+                              languageProvider.translate(
+                                  en: "Privacy Policy",
+                                  th: "นโยบายความเป็นส่วนตัว"),
                               style: TextStyle(fontSize: 18)),
                         ),
                         Padding(
@@ -3431,7 +3591,10 @@ class _ProfilePageState extends State<MenuPage> {
               ),
               SizedBox(height: 15),
               Center(
-                  child: Text(languageProvider.translate(en: "Version: 3.0 | By 1DEV", th: "เวอร์ชัน: 3.0 | โดย 1DEV"),
+                  child: Text(
+                      languageProvider.translate(
+                          en: "Version: 4.0 | By 1DEV",
+                          th: "เวอร์ชัน: 4.0 | โดย 1DEV"),
                       style: TextStyle(fontSize: 15)))
             ],
           ),
@@ -3518,7 +3681,7 @@ class _ShopPageState extends State<ShopPage> {
 
   @override
   Widget build(BuildContext context) {
-     final languageProvider = Provider.of<LanguageProvider>(context);
+    final languageProvider = Provider.of<LanguageProvider>(context);
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3555,7 +3718,8 @@ class _ShopPageState extends State<ShopPage> {
                         size: 30,
                       ),
                       Text(
-                        languageProvider.translate(en: "Profile", th: "โปรไฟล์"),
+                        languageProvider.translate(
+                            en: "Profile", th: "โปรไฟล์"),
                         style: TextStyle(fontSize: 16),
                       ),
                     ],
@@ -3568,13 +3732,13 @@ class _ShopPageState extends State<ShopPage> {
           SizedBox(
             height: 10,
           ),
-       
           Container(
             child: Column(
               children: [
                 Center(
                   child: Text(
-                    languageProvider.translate(en: "You might like this", th: "คุณอาจจะชอบสิ่งนี้"),
+                    languageProvider.translate(
+                        en: "You might like this", th: "คุณอาจจะชอบสิ่งนี้"),
                     style: TextStyle(
                         fontSize: 30,
                         fontWeight: FontWeight.bold,
@@ -3751,7 +3915,8 @@ class _ShopPageState extends State<ShopPage> {
               children: [
                 Center(
                   child: Text(
-                    languageProvider.translate(en: "Best Seller", th: "สินค้าขายดี"),
+                    languageProvider.translate(
+                        en: "Best Seller", th: "สินค้าขายดี"),
                     style: TextStyle(
                         fontSize: 30,
                         fontWeight: FontWeight.bold,
