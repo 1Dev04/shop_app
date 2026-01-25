@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/provider/Favorite_Provider.dart';
+import 'package:flutter_application_1/provider/Language_Provider.dart';
 import 'package:flutter_application_1/provider/theme.dart';
 import 'package:flutter_application_1/provider/Theme_Provider.dart';
 import 'package:flutter_application_1/screen/%E0%B8%BABasket.dart';
 // import 'package:flutter_application_1/screen/View_Account.dart';
-import 'package:flutter_application_1/screen/Auth_Page.dart';
+
 import 'package:flutter_application_1/screen/Profile_User.dart';
 import 'package:flutter_application_1/screen/Setting_Page.dart';
 
@@ -40,14 +41,14 @@ class _MyHomeState extends State<MyHome> {
     MenuPage(),
   ];
 
-  //Set Header Title
-  String setTitle() {
+  //Set Header Title EN
+  String setTitleEN() {
     if (screenIndex == 0) {
       return "Search";
     } else if (screenIndex == 1) {
       return "Favorites";
     } else if (screenIndex == 2) {
-      return "ABC_shop";
+      return "ABC shop";
     } else if (screenIndex == 3) {
       return "Shops";
     } else if (screenIndex == 4) {
@@ -56,12 +57,33 @@ class _MyHomeState extends State<MyHome> {
       return "Menu";
     }
 
-    return setTitle();
+    return setTitleEN();
+  }
+
+  //Set Header Title TH
+  String setTitleTH() {
+    if (screenIndex == 0) {
+      return "ค้นหา";
+    } else if (screenIndex == 1) {
+      return "รายการโปรด";
+    } else if (screenIndex == 2) {
+      return "ร้าน ABC";
+    } else if (screenIndex == 3) {
+      return "ร้านค้า";
+    } else if (screenIndex == 4) {
+      return "การแจ้งเตือน";
+    } else if (screenIndex == 5) {
+      return "เมนู";
+    }
+
+    return setTitleTH();
   }
 
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final languageProvider = Provider.of<LanguageProvider>(context);
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       themeMode: themeProvider.themeMode,
@@ -71,7 +93,7 @@ class _MyHomeState extends State<MyHome> {
         //------------------- AppBar -------------------
         appBar: AppBar(
           title: Text(
-            setTitle(),
+            languageProvider.translate(en: setTitleEN(), th: setTitleTH()),
             style: TextStyle(
               fontFamily: 'Catfont',
               fontSize: 30,
@@ -124,10 +146,8 @@ class _MyHomeState extends State<MyHome> {
             ),
             IconButton(
                 onPressed: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => Basket()));
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => Basket()));
                 },
                 icon: Icon(
                   Icons.add_shopping_cart_sharp,
@@ -294,11 +314,106 @@ class SearchPage extends StatefulWidget {
   State<SearchPage> createState() => _SearchPageState();
 }
 
+
+class CatItem {
+  final String imageUrl;
+  final String name;
+
+  CatItem({required this.imageUrl, required this.name});
+}
+
+final List<CatItem> femaleCats = [
+  CatItem(
+    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740288948/F1-removebg-preview_b0vnu5.png",
+    name: "Princess Paws",
+  ),
+  CatItem(
+    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740288947/F2-removebg-preview_upsxlj.png",
+    name: "Floral Feline",
+  ),
+  CatItem(
+    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740288946/F3-removebg-preview_nl7eks.png",
+    name: "Elegant Diva",
+  ),
+  CatItem(
+    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740289084/F4-removebg-preview_ncl6mt.png",
+    name: "Pastel Kitty",
+  ),
+  CatItem(
+    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740289084/F5-removebg-preview_mynzc3.png",
+    name: "Royal Queen",
+  ),
+  CatItem(
+    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740289084/F6-removebg-preview_p0x3j4.png",
+    name: "Fairy Tale Cat",
+  ),
+  CatItem(
+    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740289083/F7-removebg-preview_hrobn2.png",
+    name: "Sweet Lolita",
+  ),
+  CatItem(
+    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740289083/F8-removebg-preview_yipil7.png",
+    name: "Chic & Trendy",
+  ),
+  CatItem(
+    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740289082/F9-removebg-preview_glqkuw.png",
+    name: "Romantic Lace",
+  ),
+  CatItem(
+    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740289082/F10-removebg-preview_ka2hjm.png",
+    name: "Tutu & Frills",
+  ),
+];
+
+final List<CatItem> maleCats = [
+  CatItem(
+    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740290117/M1-removebg-preview_dy7jvt.png",
+    name: "Gentleman Paws",
+  ),
+  CatItem(
+    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740290116/M2-removebg-preview_fhbtuj.png",
+    name: "Sporty Cat",
+  ),
+  CatItem(
+    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740290116/M3-removebg-preview_w7onjr.png",
+    name: "Cool Street Style",
+  ),
+  CatItem(
+    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740290116/M4-removebg-preview_eu2eum.png",
+    name: "Dapper Kitty",
+  ),
+  CatItem(
+    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740290116/M5-removebg-preview_ptzi7o.png",
+    name: "Retro Vibes",
+  ),
+  CatItem(
+    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740290116/M6-removebg-preview_wwab4z.png",
+    name: "Rockstar Meow",
+  ),
+  CatItem(
+    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740290116/M7-removebg-preview_kq2mpl.png",
+    name: "Minimalist Chic",
+  ),
+  CatItem(
+    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740290116/M8-removebg-preview_i94h7h.png",
+    name: "Bad Boy Cat",
+  ),
+  CatItem(
+    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740290115/M9-removebg-preview_yulrpr.png",
+    name: "Sailor & Navy",
+  ),
+  CatItem(
+    imageUrl: "https://res.cloudinary.com/dag73dhpl/image/upload/v1740290115/M10-removebg-preview_zrc7cm.png",
+    name: "Adventure Outfit",
+  ),
+];
+
 class _SearchPageState extends State<SearchPage> {
   final fromKey = GlobalKey<FormState>();
   final PageController _pageControlSearch = PageController(initialPage: 0);
 
   int actionPageSearch = 0;
+  
 
   void _goToPageSearch(int pageIndexSearch) {
     _pageControlSearch.animateToPage(
@@ -308,8 +423,10 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
+
+    final languageProvider = Provider.of<LanguageProvider>(context);
     return Scaffold(
       body: Column(
         children: [
@@ -328,7 +445,7 @@ class _SearchPageState extends State<SearchPage> {
                     },
                     child: actionPageSearch == 0
                         ? Text(
-                            "FEMALE",
+                            languageProvider.translate(en: "FEMALE", th: "ตัวเมีย"),
                             style: TextStyle(
                               color: Theme.of(context)
                                   .snackBarTheme
@@ -345,7 +462,7 @@ class _SearchPageState extends State<SearchPage> {
                               height: 3,
                             ),
                           )
-                        : Text("FEMALE",
+                        : Text(languageProvider.translate(en: "FEMALE", th: "ตัวเมีย"),
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.onSurface,
                               fontSize: 15,
@@ -361,7 +478,7 @@ class _SearchPageState extends State<SearchPage> {
                     },
                     child: actionPageSearch == 1
                         ? Text(
-                            "MALE",
+                            languageProvider.translate(en: "MALE", th: "ตัวผู้"),
                             style: TextStyle(
                               color: Theme.of(context)
                                   .snackBarTheme
@@ -378,7 +495,7 @@ class _SearchPageState extends State<SearchPage> {
                               height: 3,
                             ),
                           )
-                        : Text("MALE",
+                        : Text(languageProvider.translate(en: "MALE", th: "ตัวผู้"),
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.onSurface,
                               fontSize: 15,
@@ -394,7 +511,7 @@ class _SearchPageState extends State<SearchPage> {
                     },
                     child: actionPageSearch == 2
                         ? Text(
-                            "KITTEN",
+                            languageProvider.translate(en: "KITTEN", th: "ลูกแมว"),
                             style: TextStyle(
                               color: Theme.of(context)
                                   .snackBarTheme
@@ -411,7 +528,7 @@ class _SearchPageState extends State<SearchPage> {
                               height: 3,
                             ),
                           )
-                        : Text("KITTEN",
+                        : Text(languageProvider.translate(en: "KITTEN", th: "ลูกแมว"),
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.onSurface,
                               fontSize: 15,
@@ -825,7 +942,7 @@ class _SearchPageState extends State<SearchPage> {
                       ],
                     ),
                     SizedBox(height: 10),
-                    //Section 9
+                    //Section 
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
@@ -1923,7 +2040,9 @@ class _SearchPageState extends State<SearchPage> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(50),
                     ),
-                    labelText: 'What are you looking for',
+                    labelText: languageProvider.translate(
+                        en: 'Search for products',
+                        th: 'ค้นหาสินค้า'),
                     prefixIcon: Icon(Icons.search),
                   ),
                   style:
@@ -1935,12 +2054,13 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 }
-
 class FavoritePage extends StatelessWidget {
   const FavoritePage({super.key});
 
   @override
   Widget build(BuildContext context) {
+     final languageProvider = Provider.of<LanguageProvider>(context);
+
     return SafeArea(
       child: Consumer<FavoriteProvider>(
         builder: (context, favoriteProvider, child) {
@@ -1963,7 +2083,7 @@ class FavoritePage extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Text(
-                      "Item: ${favorites.length} List",
+                      languageProvider.translate(en: "Item: ${favorites.length} List", th: "รายการ: ${favorites.length} รายการ"),
                       style: TextStyle(
                         fontSize: 18,
                         color: Theme.of(context).colorScheme.primary,
@@ -1988,15 +2108,20 @@ class FavoritePage extends StatelessWidget {
 
   Widget _buildEmptyState(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final languageProvider = Provider.of<LanguageProvider>(context);
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.pets_rounded,  size: 80,
-                  color: isDark ? Colors.grey[600] : Colors.grey[400],),
+          Icon(
+            Icons.pets_rounded,
+            size: 80,
+            color: isDark ? Colors.grey[600] : Colors.grey[400],
+          ),
           SizedBox(height: 20),
           Text(
-            "Data not Found",
+            languageProvider.translate(en: "Setting", th: "การตั้งค่า"),
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -2007,7 +2132,7 @@ class FavoritePage extends StatelessWidget {
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 40),
             child: Text(
-              "Add products to your favorites list to check prices and stock availability.",
+              languageProvider.translate(en: "Add products to your favorites list to check prices and stock availability.", th: "เพิ่มสินค้าลงในรายการโปรดของคุณเพื่อตรวจสอบราคาและสถานะสต็อก"),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
@@ -2021,160 +2146,162 @@ class FavoritePage extends StatelessWidget {
   }
 
   Widget _buildFavoriteList(
-  BuildContext context,
-  List<ProductRecommendation> favorites,
-  bool isDark,
-) {
-  return ListView.builder(
-    padding: EdgeInsets.all(16),
-    itemCount: favorites.length,
-    itemBuilder: (context, index) {
-      final product = favorites[index];
-      return Card(
-        elevation: 2,
-        color: isDark ? Colors.grey[900] : Colors.white,
-        margin: EdgeInsets.only(bottom: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Padding(
-          padding: EdgeInsets.all(12),
-          child: Column(
-            children: [
-              // ส่วนบน: รูป + ชื่อ + ราคา + ปุ่มลบ
-              Row(
-                children: [
-                  // รูปภาพ
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      product.imageUrl,
-                      width: 60,
-                      height: 60,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          width: 60,
-                          height: 60,
-                          color: Colors.grey[300],
-                          child: Icon(Icons.shopping_bag, size: 30),
-                        );
-                      },
-                    ),
-                  ),
-                  
-                  SizedBox(width: 12),
-                  
-                  // ชื่อสินค้า + ราคา
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          product.name,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                            color: isDark ? Colors.white : Colors.black,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Price: ${product.price}',
-                          style: TextStyle(
-                            color: Colors.orange,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  
-                  // ปุ่มลบ
-                  IconButton(
-                    icon: Icon(Icons.delete, color: Colors.red, size: 24),
-                    onPressed: () {
-                      context.read<FavoriteProvider>().removeFavorite(product.id);
-                    },
-                    tooltip: 'Remove from favorites',
-                  ),
-                ],
-              ),
-              
-              SizedBox(height: 12),
-              
-              // ส่วนล่าง: ปุ่ม Buy และ More
-              Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Coming Soon!'),
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(vertical: 4),
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: Text(
-                        'Buy',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  
-                  SizedBox(width: 8),
-                  
-                  Expanded(
-                    flex: 1,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Opening details...'),
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(vertical: 4),
-                        backgroundColor: isDark ? Colors.grey[700] : Colors.grey[400],
-                        foregroundColor: isDark ? Colors.white : Colors.black87,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: Text(
-                        'More',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+    BuildContext context,
+    List<ProductRecommendation> favorites,
+    bool isDark,
+  ) {
+    return ListView.builder(
+      padding: EdgeInsets.all(16),
+      itemCount: favorites.length,
+      itemBuilder: (context, index) {
+        final product = favorites[index];
+        return Card(
+          elevation: 2,
+          color: isDark ? Colors.grey[900] : Colors.white,
+          margin: EdgeInsets.only(bottom: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
-        ),
-      );
-    },
-  );
-}
+          child: Padding(
+            padding: EdgeInsets.all(12),
+            child: Column(
+              children: [
+                // ส่วนบน: รูป + ชื่อ + ราคา + ปุ่มลบ
+                Row(
+                  children: [
+                    // รูปภาพ
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        product.imageUrl,
+                        width: 60,
+                        height: 60,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: 60,
+                            height: 60,
+                            color: Colors.grey[300],
+                            child: Icon(Icons.shopping_bag, size: 30),
+                          );
+                        },
+                      ),
+                    ),
+
+                    SizedBox(width: 12),
+
+                    // ชื่อสินค้า + ราคา
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            product.name,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: isDark ? Colors.white : Colors.black,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Price: ${product.price}',
+                            style: TextStyle(
+                              color: Colors.orange,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // ปุ่มลบ
+                    IconButton(
+                      icon: Icon(Icons.delete, color: Colors.red, size: 24),
+                      onPressed: () {
+                        context
+                            .read<FavoriteProvider>()
+                            .removeFavorite(product.id);
+                      },
+                      tooltip: 'Remove from favorites',
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: 12),
+
+                // ส่วนล่าง: ปุ่ม Buy และ More
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Coming Soon!'),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          padding: EdgeInsets.symmetric(vertical: 4),
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: Text(
+                          'Buy',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      flex: 1,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Opening details...'),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          padding: EdgeInsets.symmetric(vertical: 4),
+                          backgroundColor:
+                              isDark ? Colors.grey[700] : Colors.grey[400],
+                          foregroundColor:
+                              isDark ? Colors.white : Colors.black87,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: Text(
+                          'More',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 class HomePage extends StatefulWidget {
@@ -2406,6 +2533,7 @@ class _NotificationPageState extends State<NotificationPage> {
 
   final PageController _pageControlPageMess = PageController(initialPage: 0);
   final PageController _pageControlPageNew = PageController(initialPage: 0);
+  
 
   int actionPageNotificate1 = 0;
   int actionPageTwo = 0;
@@ -2558,6 +2686,8 @@ class _NotificationPageState extends State<NotificationPage> {
 
   @override
   Widget build(BuildContext context) {
+    final languageProvider = Provider.of<LanguageProvider>(context);
+
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -2687,7 +2817,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                   width: 2.0))),
                   child: Center(
                     child: Text(
-                      "Message",
+                      languageProvider.translate(en: "Message", th: "ข้อความ"),
                       style: TextStyle(
                           color: actionPageTwo == 0
                               ? Theme.of(context).colorScheme.surface
@@ -2718,7 +2848,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                   width: 2.0))),
                   child: Center(
                     child: Text(
-                      "News",
+                      languageProvider.translate(en: "News", th: "ข่าว"),
                       style: TextStyle(
                           color: actionPageTwo == 1
                               ? Theme.of(context).colorScheme.surface
@@ -2948,6 +3078,7 @@ class MenuPage extends StatefulWidget {
 class _ProfilePageState extends State<MenuPage> {
   @override
   Widget build(BuildContext context) {
+    final languageProvider = Provider.of<LanguageProvider>(context);
     return Stack(
       children: [
         SingleChildScrollView(
@@ -2985,7 +3116,7 @@ class _ProfilePageState extends State<MenuPage> {
                                   size: 30,
                                 ),
                                 Text(
-                                  'Profiles',
+                                  languageProvider.translate(en: "Profiles", th: "โปรไฟล์"),
                                   style: TextStyle(fontSize: 16),
                                 ),
                               ],
@@ -3009,7 +3140,7 @@ class _ProfilePageState extends State<MenuPage> {
                               children: [
                                 Icon(Icons.archive_outlined, size: 30),
                                 Text(
-                                  'My Orders',
+                                  languageProvider.translate(en: "My Orders", th: "ค้าของฉัน"),
                                   style: TextStyle(fontSize: 16),
                                 ),
                               ],
@@ -3033,7 +3164,7 @@ class _ProfilePageState extends State<MenuPage> {
                               children: [
                                 Icon(Icons.shopping_bag_outlined, size: 30),
                                 Text(
-                                  'Order List',
+                                  languageProvider.translate(en: "Order List", th: "รายการค้า"),
                                   style: TextStyle(fontSize: 16),
                                 ),
                               ],
@@ -3065,7 +3196,7 @@ class _ProfilePageState extends State<MenuPage> {
                               children: [
                                 Icon(Icons.confirmation_num_outlined, size: 30),
                                 Text(
-                                  'Coupon',
+                                  languageProvider.translate(en: "Coupon", th: "คูปอง"),
                                   style: TextStyle(fontSize: 16),
                                 ),
                               ],
@@ -3089,7 +3220,7 @@ class _ProfilePageState extends State<MenuPage> {
                               children: [
                                 Icon(Icons.list_alt_outlined, size: 30),
                                 Text(
-                                  'Survey B.',
+                                  languageProvider.translate(en: "Survey B.", th: "แบบสอบถาม"),
                                   style: TextStyle(fontSize: 16),
                                 ),
                               ],
@@ -3118,7 +3249,7 @@ class _ProfilePageState extends State<MenuPage> {
                               children: [
                                 Icon(Icons.settings_outlined, size: 30),
                                 Text(
-                                  'Setting',
+                                  languageProvider.translate(en: "Setting", th: "การตั้งค่า"),
                                   style: TextStyle(fontSize: 16),
                                 ),
                               ],
@@ -3147,7 +3278,7 @@ class _ProfilePageState extends State<MenuPage> {
                       children: [
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 10),
-                          child: Text('Find branch locations',
+                          child: Text(languageProvider.translate(en: "Find branch locations", th: "ค้นหาสาขา"),
                               style: TextStyle(fontSize: 18)),
                         ),
                         Padding(
@@ -3180,7 +3311,7 @@ class _ProfilePageState extends State<MenuPage> {
                       children: [
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 10),
-                          child: Text('Learn how to use it',
+                          child: Text(languageProvider.translate(en: "Learn how to use it", th: "เรียนรู้วิธีใช้งาน"),
                               style: TextStyle(fontSize: 18)),
                         ),
                         Padding(
@@ -3212,7 +3343,7 @@ class _ProfilePageState extends State<MenuPage> {
                       children: [
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 10),
-                          child: Text('Frequently asked questions',
+                          child: Text(languageProvider.translate(en: "Frequently asked questions", th: "คำถามที่พบบ่อย"),
                               style: TextStyle(fontSize: 18)),
                         ),
                         Padding(
@@ -3244,7 +3375,7 @@ class _ProfilePageState extends State<MenuPage> {
                       children: [
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 10),
-                          child: Text('Terms of Use',
+                          child: Text(languageProvider.translate(en: "Terms of Use", th: "ข้อกำหนดการใช้งาน"),
                               style: TextStyle(fontSize: 18)),
                         ),
                         Padding(
@@ -3276,7 +3407,7 @@ class _ProfilePageState extends State<MenuPage> {
                       children: [
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 10),
-                          child: Text('Privacy Policy',
+                          child: Text(languageProvider.translate(en: "Privacy Policy", th: "นโยบายความเป็นส่วนตัว"),
                               style: TextStyle(fontSize: 18)),
                         ),
                         Padding(
@@ -3300,7 +3431,7 @@ class _ProfilePageState extends State<MenuPage> {
               ),
               SizedBox(height: 15),
               Center(
-                  child: Text("Version: 3.0 | By 1DEV",
+                  child: Text(languageProvider.translate(en: "Version: 3.0 | By 1DEV", th: "เวอร์ชัน: 3.0 | โดย 1DEV"),
                       style: TextStyle(fontSize: 15)))
             ],
           ),
@@ -3387,6 +3518,7 @@ class _ShopPageState extends State<ShopPage> {
 
   @override
   Widget build(BuildContext context) {
+     final languageProvider = Provider.of<LanguageProvider>(context);
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3423,7 +3555,7 @@ class _ShopPageState extends State<ShopPage> {
                         size: 30,
                       ),
                       Text(
-                        'Profile',
+                        languageProvider.translate(en: "Profile", th: "โปรไฟล์"),
                         style: TextStyle(fontSize: 16),
                       ),
                     ],
@@ -3436,51 +3568,13 @@ class _ShopPageState extends State<ShopPage> {
           SizedBox(
             height: 10,
           ),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 15),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Basket",
-                  style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary),
-                ),
-                SizedBox(
-                  height: 30,
-                ),
-                Text(
-                  "Your basket is Emty.",
-                  style: TextStyle(
-                      fontSize: 15,
-                      color: Theme.of(context).colorScheme.secondary),
-                ),
-                SizedBox(
-                  height: 30,
-                ),
-                ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (context) => authPage()));
-                    },
-                    child: Text(
-                      "Continue shopping",
-                      //style: TextStyle(color: Colors.black),
-                    )),
-              ],
-            ),
-          ),
-          SizedBox(
-            height: 20,
-          ),
+       
           Container(
             child: Column(
               children: [
                 Center(
                   child: Text(
-                    "You might like this",
+                    languageProvider.translate(en: "You might like this", th: "คุณอาจจะชอบสิ่งนี้"),
                     style: TextStyle(
                         fontSize: 30,
                         fontWeight: FontWeight.bold,
@@ -3657,7 +3751,7 @@ class _ShopPageState extends State<ShopPage> {
               children: [
                 Center(
                   child: Text(
-                    "Best Seller",
+                    languageProvider.translate(en: "Best Seller", th: "สินค้าขายดี"),
                     style: TextStyle(
                         fontSize: 30,
                         fontWeight: FontWeight.bold,

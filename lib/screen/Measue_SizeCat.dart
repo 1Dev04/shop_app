@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/provider/Language_Provider.dart';
 
 import 'dart:io';
 import 'dart:async';
@@ -121,6 +122,7 @@ class MeasureSizeCat extends StatefulWidget {
 
 class _MeasureSizeCatState extends State<MeasureSizeCat> {
   final ImagePicker _picker = ImagePicker();
+
   File? _selectedImage;
   bool _isProcessing = false;
   double _progress = 0.0;
@@ -238,6 +240,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
       context: context,
       barrierDismissible: true,
       builder: (BuildContext context) {
+        final languageProvider = Provider.of<LanguageProvider>(context);
         return Dialog(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -258,7 +261,8 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                   children: [
                     SizedBox(width: 32),
                     Text(
-                      'Added to Favorites',
+                      languageProvider.translate(
+                          en: 'Added to Favorites', th: 'เพิ่มในรายการโปรด'),
                       style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.bold,
@@ -352,7 +356,9 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    'Price: ${product.price}',
+                    languageProvider.translate(
+                        en: 'Price: ${product.price}',
+                        th: 'ราคา: ${product.price}'),
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -381,7 +387,8 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: Text('Buy',
+                        child: Text(
+                            languageProvider.translate(en: 'Buy', th: 'ซื้อ'),
                             style: TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.bold)),
                       ),
@@ -405,7 +412,9 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: Text('More',
+                        child: Text(
+                            languageProvider.translate(
+                                en: 'More', th: 'เพิ่มเติม'),
                             style: TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.bold)),
                       ),
@@ -589,8 +598,6 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
         _progressLabel = 'Detecting cat...';
       });
 
-      // 2️⃣ Detect จาก backend จริง
-      // final catData = await detectCatFromBackend(imageUrl);
       final analyzedData = CatData(
         name: 'Cat_Orange',
         breed: 'Persian',
@@ -603,12 +610,16 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
         imageUrl: imageUrl, // เก็บ URL จาก Cloudinary
         detectedAt: DateTime.now(),
       );
+
       setState(() {
         _progress = 0.8;
         _progressLabel = 'Analyzing size...';
       });
 
       await Future.delayed(const Duration(milliseconds: 500));
+
+      // 2️⃣ Detect จาก backend จริง
+      // final catData = await detectCatFromBackend(imageUrl);
 
       setState(() {
         _progress = 1.0;
@@ -757,13 +768,14 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
   @override
   Widget build(BuildContext context) {
     final themeProvider = context.watch<ThemeProvider>();
+    final languageProvider = Provider.of<LanguageProvider>(context);
     final isDark = themeProvider.themeMode == ThemeMode.dark;
 
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
         title: Text(
-          'MEOW SIZE',
+          languageProvider.translate(en: "MEOW SIZE", th: "วัดขนาดตัวแมว"),
           style: TextStyle(
             fontFamily: "catFont",
             fontSize: 30,
@@ -822,6 +834,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
   // ส่วนที่ 2
   /// 2️⃣ แสดงรูปที่เลือก + ปุ่มวิเคราะห์และยกเลิก
   Widget _buildImageWithAnalyzeSection(bool isDark) {
+    final languageProvider = Provider.of<LanguageProvider>(context);
     return Padding(
       padding: EdgeInsets.all(16),
       child: Column(
@@ -888,13 +901,26 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildInfoRow('Name:', 'N/A', isDark),
+                      _buildInfoRow(
+                          languageProvider.translate(en: 'Name:', th: 'ชื่อ:'),
+                          'N/A',
+                          isDark),
                       SizedBox(height: 10),
-                      _buildInfoRow('Age:', 'N/A', isDark),
+                      _buildInfoRow(
+                          languageProvider.translate(en: 'Age:', th: 'อายุ:'),
+                          'N/A',
+                          isDark),
                       SizedBox(height: 10),
-                      _buildInfoRow('Breed:', 'N/A', isDark),
+                      _buildInfoRow(
+                          languageProvider.translate(
+                              en: 'Breed:', th: 'พันธุ์:'),
+                          'N/A',
+                          isDark),
                       SizedBox(height: 10),
-                      _buildInfoRow('Size:', 'N/A', isDark),
+                      _buildInfoRow(
+                          languageProvider.translate(en: 'Size:', th: 'ขนาด:'),
+                          'N/A',
+                          isDark),
                     ],
                   ),
                 ),
@@ -921,7 +947,9 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'โปรดมั่นใจว่ามองเห็นรูปร่างของแมวชัดเจน เพื่อความแม่นยำในการวัดขนาด',
+                    languageProvider.translate(
+                        en: 'Please ensure that the cats shape is clearly visible for accurate measurement.',
+                        th: 'โปรดมั่นใจว่ามองเห็นรูปร่างของแมวชัดเจน เพื่อความแม่นยำในการวัดขนาด'),
                     style: TextStyle(
                       fontSize: 12,
                       color: isDark ? Colors.white70 : Colors.black87,
@@ -952,7 +980,11 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                         )
                       : Icon(Icons.analytics),
                   label: Text(
-                    _isProcessing ? 'กำลังวิเคราะห์...' : 'วิเคราะห์ข้อมูล',
+                    _isProcessing
+                        ? languageProvider.translate(
+                            en: 'Processing...', th: 'กำลังวิเคราะห์...')
+                        : languageProvider.translate(
+                            en: 'Analyze Data', th: 'วิเคราะห์ข้อมูล'),
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   style: ElevatedButton.styleFrom(
@@ -988,6 +1020,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
 
   /// 3️⃣ แสดงผลลัพธ์การวิเคราะห์ + สินค้าแนะนำ
   Widget _buildResultSection(bool isDark) {
+    final languageProvider = Provider.of<LanguageProvider>(context);
     return Padding(
       padding: EdgeInsets.all(16),
       child: Column(
@@ -1059,10 +1092,13 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildInfoRow(
-                          'Cat Color:', _detectedCat?.name ?? 'N/A', isDark),
+                          languageProvider.translate(
+                              en: 'Cat Color:', th: 'สีแมว:'),
+                          _detectedCat?.name ?? 'N/A',
+                          isDark),
                       SizedBox(height: 10),
                       _buildInfoRow(
-                        'Age:',
+                        languageProvider.translate(en: 'Age:', th: 'อายุ:'),
                         _detectedCat?.age != null
                             ? '${_detectedCat!.age} years'
                             : 'N/A',
@@ -1070,10 +1106,15 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                       ),
                       SizedBox(height: 10),
                       _buildInfoRow(
-                          'Breed:', _detectedCat?.breed ?? 'N/A', isDark),
+                          languageProvider.translate(
+                              en: 'Breed:', th: 'พันธุ์:'),
+                          _detectedCat?.breed ?? 'N/A',
+                          isDark),
                       SizedBox(height: 10),
                       _buildInfoRow(
-                          'Size:', _detectedCat?.sizeCategory ?? 'N/A', isDark),
+                          languageProvider.translate(en: 'Size:', th: 'ขนาด:'),
+                          _detectedCat?.sizeCategory ?? 'N/A',
+                          isDark),
                     ],
                   ),
                 ),
@@ -1111,7 +1152,8 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                               ),
 
                               Text(
-                                'แก้ไขข้อมูล',
+                                languageProvider.translate(
+                                    en: 'Edit Data', th: 'แก้ไขข้อมูล'),
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -1123,28 +1165,32 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                               // เนื้อหาด้านใน
                               TextField(
                                 decoration: InputDecoration(
-                                  labelText: 'Cat Color',
+                                  labelText: languageProvider.translate(
+                                      en: 'Cat Color', th: 'สีแมว'),
                                   border: OutlineInputBorder(),
                                 ),
                               ),
                               SizedBox(height: 8),
                               TextField(
                                 decoration: InputDecoration(
-                                  labelText: 'Age',
+                                  labelText: languageProvider.translate(
+                                      en: 'Age', th: 'อายุ'),
                                   border: OutlineInputBorder(),
                                 ),
                               ),
                               SizedBox(height: 8),
                               TextField(
                                 decoration: InputDecoration(
-                                  labelText: 'Breed',
+                                  labelText: languageProvider.translate(
+                                      en: 'Breed', th: 'พันธุ์'),
                                   border: OutlineInputBorder(),
                                 ),
                               ),
                               SizedBox(height: 8),
                               TextField(
                                 decoration: InputDecoration(
-                                  labelText: 'Size',
+                                  labelText: languageProvider.translate(
+                                      en: 'Size', th: 'ขนาด'),
                                   border: OutlineInputBorder(),
                                 ),
                               ),
@@ -1156,7 +1202,8 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                                   onPressed: () {
                                     Navigator.pop(context);
                                   },
-                                  child: Text('บันทึก'),
+                                  child: Text(languageProvider.translate(
+                                      en: 'Save', th: 'บันทึก')),
                                 ),
                               ),
                             ],
@@ -1170,7 +1217,62 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                     color: Colors.blue.shade700,
                     size: 28,
                   ),
-                  tooltip: 'แก้ไขข้อมูล',
+                  tooltip: languageProvider.translate(
+                      en: 'Edit Data', th: 'แก้ไขข้อมูล'),
+                ),
+
+                // Delete Data
+                // Delete Data
+                IconButton(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: Text(languageProvider.translate(
+                            en: 'Confirm Deletion', th: 'ยืนยันการลบ')),
+                        content: Text(languageProvider.translate(
+                            en: 'Do you want to delete this cat data?',
+                            th: 'คุณต้องการลบข้อมูลแมวนี้ใช่หรือไม่?')),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: Text(languageProvider.translate(
+                                en: 'Cancel', th: 'ยกเลิก')),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+
+                              setState(() {
+                                _detectedCat = null;
+                                _recommendedProducts = [];
+                                _selectedImage = null;
+                              });
+
+                              // ⭐ เปิดกล้องใหม่
+                              _initCamera();
+
+                              _showSuccessMessage(languageProvider.translate(
+                                  en: 'Deleted data successfully',
+                                  th: 'ลบข้อมูลแล้ว'));
+                            },
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.red,
+                            ),
+                            child: Text(languageProvider.translate(
+                                en: 'Delete', th: 'ลบ')),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                  icon: Icon(
+                    Icons.delete_outline,
+                    color: Colors.red.shade600,
+                    size: 28,
+                  ),
+                  tooltip: languageProvider.translate(
+                      en: 'Delete Data', th: 'ลบข้อมูล'),
                 ),
               ],
             ),
@@ -1180,7 +1282,8 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
 
           // หัวข้อสินค้าแนะนำ
           Text(
-            'สินค้าแนะนำ',
+            languageProvider.translate(
+                en: 'Recommended Products', th: 'สินค้าแนะนำ'),
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -1249,7 +1352,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     return Consumer<FavoriteProvider>(
       builder: (context, favoriteProvider, child) {
         final isFav = favoriteProvider.isFavorite(product.id);
-
+        final languageProvider = Provider.of<LanguageProvider>(context);
         return Container(
           width: 160,
           margin: EdgeInsets.only(right: 12),
@@ -1303,7 +1406,9 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                         if (!isFav) {
                           _showProductDialog(context, product, isDark);
                         } else {
-                          _showSuccessMessage('ลบออกจากรายการโปรด');
+                          _showSuccessMessage(languageProvider.translate(
+                              en: 'Removed from favorites',
+                              th: 'ลบออกจากรายการโปรด'));
                         }
                       },
                       child: Container(
@@ -1341,7 +1446,9 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                     ),
                     SizedBox(height: 4),
                     Text(
-                      'Price: ${product.price}',
+                      languageProvider.translate(
+                          en: 'Price: ${product.price}',
+                          th: 'ราคา: ${product.price}'),
                       style: TextStyle(
                         fontSize: 12,
                         color: isDark ? Colors.orange[300] : Colors.orange[700],
@@ -1353,7 +1460,9 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                       children: [
                         Expanded(
                           child: ElevatedButton(
-                            onPressed: () => _showInfoMessage('Coming Soon!'),
+                            onPressed: () => _showInfoMessage(
+                                languageProvider.translate(
+                                    en: 'Coming Soon!', th: 'เร็วๆ นี้')),
                             style: ElevatedButton.styleFrom(
                               padding: EdgeInsets.symmetric(vertical: 6),
                               backgroundColor: Colors.green,
@@ -1363,13 +1472,18 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                             ),
-                            child: Text('Buy', style: TextStyle(fontSize: 11)),
+                            child: Text(
+                                languageProvider.translate(
+                                    en: 'Buy', th: 'ซื้อ'),
+                                style: TextStyle(fontSize: 11)),
                           ),
                         ),
                         SizedBox(width: 4),
                         ElevatedButton(
-                          onPressed: () =>
-                              _showInfoMessage('Opening details...'),
+                          onPressed: () => _showInfoMessage(
+                              languageProvider.translate(
+                                  en: 'Opening details...',
+                                  th: 'กำลังเปิดรายละเอียด...')),
                           style: ElevatedButton.styleFrom(
                             padding: EdgeInsets.symmetric(
                                 vertical: 6, horizontal: 8),
@@ -1382,7 +1496,10 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          child: Text('More', style: TextStyle(fontSize: 11)),
+                          child: Text(
+                              languageProvider.translate(
+                                  en: 'More', th: 'เพิ่มเติม'),
+                              style: TextStyle(fontSize: 11)),
                         ),
                       ],
                     ),
@@ -1402,7 +1519,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     if (_selectedImage != null || _detectedCat != null) {
       return SizedBox.shrink(); // ไม่แสดงอะไร
     }
-
+    final languageProvider = Provider.of<LanguageProvider>(context);
     // แสดงปุ่มเฉพาะตอนแสดงกล้อง
     return Container(
       padding: EdgeInsets.all(16),
@@ -1422,7 +1539,9 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'ถ่ายรูป: วางตัวแมวให้อยู่ กลางวงกลม และเห็นทั้งตัว \n เลือกรูป: ใช้ไฟล์ JPEG ขนาดไม่เกิน 500KB',
+              languageProvider.translate(
+                  en: 'Take a photo: Place the cat in the center of the circle and see the whole body \n Choose a photo: Use JPEG files no larger than 500KB',
+                  th: 'ถ่ายรูป: วางตัวแมวให้อยู่ กลางวงกลม และเห็นทั้งตัว \n เลือกรูป: ใช้ไฟล์ JPEG ขนาดไม่เกิน 500KB'),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
@@ -1438,7 +1557,8 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                     onPressed: _isProcessing ? null : _captureFromLiveCamera,
                     icon: Icon(Icons.camera_alt),
                     label: Text(
-                      'ถ่ายรูป',
+                      languageProvider.translate(
+                          en: 'Take Photo', th: 'ถ่ายรูป'),
                       style:
                           TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
@@ -1459,7 +1579,8 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                     onPressed: _isProcessing ? null : _pickImage,
                     icon: Icon(Icons.photo_library),
                     label: Text(
-                      'เลือกรูป',
+                      languageProvider.translate(
+                          en: 'Choose Photo', th: 'เลือกรูป'),
                       style:
                           TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
@@ -1508,8 +1629,8 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
 
         _showSuccessMessage('ถ่ายรูปสำเร็จ 📸');
 
-        // 🚀 เข้าหน้าวิเคราะห์ทันที
-        await _analyzeCat();
+        // ❌ ลบบรรทัดนี้ออก - ไม่ต้องเรียก Widget ตรง ๆ
+        // await _buildImageWithAnalyzeSection(true);
       }
     } catch (e) {
       _showError('ถ่ายรูปไม่สำเร็จ: $e');

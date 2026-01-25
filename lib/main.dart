@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/provider/Language_Provider.dart';
 import 'firebase_options.dart';
 //ติดตั้งแพคเกจ firebase_core จาก pub.dev
 import 'package:firebase_core/firebase_core.dart';
@@ -34,10 +35,9 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-          create: (_) => ThemeProvider(),
-        ),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => FavoriteProvider()),
+        ChangeNotifierProvider(create: (_) => LanguageProvider()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

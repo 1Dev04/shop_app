@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/provider/Language_Provider.dart';
 
 import 'package:flutter_application_1/provider/Theme_Provider.dart';
 import 'package:provider/provider.dart';
@@ -21,13 +22,15 @@ class _BasketState extends State<Basket> {
   @override
   Widget build(BuildContext context) {
     final themeProvider = context.watch<ThemeProvider>();
+    final languageProvider = Provider.of<LanguageProvider>(context);
     final isDark = themeProvider.themeMode == ThemeMode.dark;
 
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: Text(
-          'BASKET',
+        title: Text(languageProvider.translate(
+            en: 'BASKET',
+            th: 'ตะกร้า'),
           style: TextStyle(
             fontFamily: "catFont",
             fontSize: 30,
