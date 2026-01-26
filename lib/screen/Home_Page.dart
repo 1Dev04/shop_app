@@ -2578,7 +2578,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 Positioned(
-                  bottom: 140,
+                  bottom: 160,
                   left: 20,
                   right: 20,
                   child: Text(
@@ -2600,9 +2600,9 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 Positioned(
-                  bottom: 90,
+                  bottom: 110,
                   left: 20,
-                  right: 20,
+                  right: 0,
                   child: Text(
                     item['price']?.toString() ?? '',
                     style: TextStyle(
@@ -2622,7 +2622,7 @@ class _HomePageState extends State<HomePage> {
                 Positioned(
                   left: 20,
                   right: 20,
-                  bottom: 10,
+                  bottom: 30,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -2635,13 +2635,11 @@ class _HomePageState extends State<HomePage> {
                       ),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        
                         child: CachedNetworkImage(
                           imageUrl: item['images']['image_clothing'] ?? '',
                           width: 100,
                           height: 100,
                           fit: BoxFit.cover,
-                          
                           placeholder: (context, url) => Center(
                             child: CircularProgressIndicator(),
                           ),
@@ -3612,69 +3610,185 @@ class _ShopPageState extends State<ShopPage> {
   final PageController _pageControlShop1 = PageController(initialPage: 0);
   final PageController _pageControlShop2 = PageController(initialPage: 0);
 
-  final List<Map<String, String>> imagesShop1 = [
-    {
-      "ImageShop":
-          "https://res.cloudinary.com/dag73dhpl/image/upload/v1741172937/kitty_rxmloz.jpg",
-      "CategoryL": "ABCSEX (For Male)",
-      "SizeRangeL": "XS–3XL",
-      "ProductD":
-          "เสื้อน้องแมว Pastel Kitty ดีไซน์อ่อนหวาน ความน่ารักและมินิมอล",
-      "ProductPr": "THB 590",
-      "ProductP": "ทำจากวัสดุรีไซเคิล",
-    },
-    {
-      "ImageShop":
-          "https://res.cloudinary.com/dag73dhpl/image/upload/v1741172937/rock_icucey.jpg",
-      "CategoryL": "ABCSEX (For Female)",
-      "SizeRangeL": "XS–3XL",
-      "ProductD": "เสื้อน้องแมว Rockstar Meow ลวดลายที่สะท้อนความเป็นร็อค",
-      "ProductPr": "THB 590",
-      "ProductP": "ทำจากวัสดุรีไซเคิล",
-    },
-    {
-      "ImageShop":
-          "https://res.cloudinary.com/dag73dhpl/image/upload/v1741172936/candy_ogwsew.jpg",
-      "CategoryL": "ABCSEX (For Kitten)",
-      "SizeRangeL": "XS–3XL",
-      "ProductD":
-          "เสื้อน้องแมว Candy Cutie แนวหวานๆ หรือมินิมอลที่เข้ากับไลฟ์สไตล์ของคนรักแมว",
-      "ProductPr": "THB 590",
-      "ProductP": "ทำจากวัสดุรีไซเคิล",
-    },
-  ];
+  // ✅ แก้ไข: เพิ่ม List สำหรับเก็บข้อมูลจาก API
+  List<Map<String, dynamic>> dataShoplike = [];
+  List<Map<String, dynamic>> dataShopSeller = [];
+  bool isLoadingLike = true;
+  bool isLoadingSeller = true;
+  String errorMessageLike = '';
+  String errorMessageSeller = '';
 
-  final List<Map<String, String>> imagesShop2 = [
-    {
-      "ImageShop":
-          "https://res.cloudinary.com/dag73dhpl/image/upload/v1741169093/princesspaws_wxepsy.jpg",
-      "CategoryL": "ABCSEX (For Female)",
-      "SizeRangeL": "XS–3XL",
-      "ProductD":
-          "เสื้อน้องแมว Princess Paws สไตล์หรูหรา ที่เน้นความน่ารักและทันสมัย ",
-      "ProductPr": "THB 1290",
-      "ProductP": "ทำจากวัสดุรีไซเคิล",
-    },
-    {
-      "ImageShop":
-          "https://res.cloudinary.com/dag73dhpl/image/upload/v1741170571/royalqueen_ng40rd.jpg",
-      "CategoryL": "ABCSEX (For Female)",
-      "SizeRangeL": "XS–3XL",
-      "ProductD":
-          "เสื้อน้องแมว Royal Queen สไตล์ที่เน้นความหรูหรา, มีการตกแต่งด้วยลูกไม้",
-      "ProductPr": "THB 1290",
-      "ProductP": "ทำจากวัสดุรีไซเคิล",
-    },
-    {
-      "ImageShop":
-          "https://res.cloudinary.com/dag73dhpl/image/upload/v1741170942/sweetlolita_d1pg8d.jpg",
-      "CategoryL": "ABCSEX (For Female)",
-      "SizeRangeL": "XS–3XL",
-      "ProductD": "เสื้อน้องแมว Sweet Lolita สไตล์เน้นความหวานหรือความน่ารัก",
-      "ProductPr": "THB 1290",
-      "ProductP": "ทำจากวัสดุรีไซเคิล",
-    },
-  ];
+  // ฟังก์ชันสำหรับหา Base URL ที่ถูกต้องตาม Platform
+  String getBaseUrl() {
+    if (kIsWeb) {
+      return 'http://localhost:8000';
+    } else if (Platform.isAndroid) {
+      return 'http://10.0.2.2:8000';
+    } else {
+      return 'http://localhost:8000';
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchShoplike();
+    fetchShopseller();
+  }
+
+  // ✅ gender
+  String getGenderText(dynamic gender) {
+    final genderCode =
+        gender is int ? gender : int.tryParse(gender?.toString() ?? '');
+
+    switch (genderCode) {
+      case 0:
+        return 'Unisex';
+      case 1:
+        return 'Male';
+      case 2:
+        return 'Female';
+      case 3:
+        return 'Kitten';
+      default:
+        return 'N/A';
+    }
+  }
+
+  // ✅ แก้ไข: ดึงข้อมูล "You might like"
+  Future<void> fetchShoplike() async {
+    try {
+      final baseUrl = getBaseUrl();
+      final url = '$baseUrl/api/clothing-shop/like';
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        List<Map<String, dynamic>> parsedImages = [];
+
+        if (data is List) {
+          parsedImages = data.map<Map<String, dynamic>>((item) {
+            final rawImages = item['images'];
+            return {
+              ...item,
+              'images': rawImages is String ? jsonDecode(rawImages) : rawImages,
+            };
+          }).toList();
+        } else if (data is Map && data.containsKey('data')) {
+          parsedImages = List<Map<String, dynamic>>.from(
+            data['data'].map<Map<String, dynamic>>((item) {
+              final rawImages = item['images'];
+              return {
+                ...item,
+                'images':
+                    rawImages is String ? jsonDecode(rawImages) : rawImages,
+              };
+            }),
+          );
+        }
+
+        setState(() {
+          dataShoplike = parsedImages;
+          isLoadingLike = false;
+        });
+      } else {
+        setState(() {
+          errorMessageLike = 'ไม่สามารถโหลดข้อมูลได้ (${response.statusCode})';
+          isLoadingLike = false;
+        });
+      }
+    } on SocketException {
+      setState(() {
+        errorMessageLike = 'ไม่สามารถเชื่อมต่อได้\nกรุณาตรวจสอบ Backend';
+        isLoadingLike = false;
+      });
+    } on TimeoutException {
+      setState(() {
+        errorMessageLike = 'หมดเวลาการเชื่อมต่อ';
+        isLoadingLike = false;
+      });
+    } catch (e) {
+      setState(() {
+        errorMessageLike = 'เกิดข้อผิดพลาด: $e';
+        isLoadingLike = false;
+      });
+    }
+  }
+
+  // ✅ แก้ไข: ดึงข้อมูล "Best Seller"
+  Future<void> fetchShopseller() async {
+    try {
+      final baseUrl = getBaseUrl();
+      final url = '$baseUrl/api/clothing-shop/seller';
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        List<Map<String, dynamic>> parsedImages = [];
+
+        if (data is List) {
+          parsedImages = data.map<Map<String, dynamic>>((item) {
+            final rawImages = item['images'];
+            return {
+              ...item,
+              'images': rawImages is String ? jsonDecode(rawImages) : rawImages,
+            };
+          }).toList();
+        } else if (data is Map && data.containsKey('data')) {
+          parsedImages = List<Map<String, dynamic>>.from(
+            data['data'].map<Map<String, dynamic>>((item) {
+              final rawImages = item['images'];
+              return {
+                ...item,
+                'images':
+                    rawImages is String ? jsonDecode(rawImages) : rawImages,
+              };
+            }),
+          );
+        }
+
+        setState(() {
+          dataShopSeller = parsedImages;
+          isLoadingSeller = false;
+        });
+      } else {
+        setState(() {
+          errorMessageSeller =
+              'ไม่สามารถโหลดข้อมูลได้ (${response.statusCode})';
+          isLoadingSeller = false;
+        });
+      }
+    } on SocketException {
+      setState(() {
+        errorMessageSeller = 'ไม่สามารถเชื่อมต่อได้\nกรุณาตรวจสอบ Backend';
+        isLoadingSeller = false;
+      });
+    } on TimeoutException {
+      setState(() {
+        errorMessageSeller = 'หมดเวลาการเชื่อมต่อ';
+        isLoadingSeller = false;
+      });
+    } catch (e) {
+      setState(() {
+        errorMessageSeller = 'เกิดข้อผิดพลาด: $e';
+        isLoadingSeller = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -3710,10 +3824,7 @@ class _ShopPageState extends State<ShopPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.badge_outlined,
-                        size: 30,
-                      ),
+                      Icon(Icons.badge_outlined, size: 30),
                       Text(
                         languageProvider.translate(
                             en: "Profile", th: "โปรไฟล์"),
@@ -3726,9 +3837,9 @@ class _ShopPageState extends State<ShopPage> {
             ),
           ),
           Divider(color: Theme.of(context).colorScheme.onSurface, height: 1),
-          SizedBox(
-            height: 10,
-          ),
+          SizedBox(height: 10),
+
+          // ✅ Section: You might like
           Container(
             child: Column(
               children: [
@@ -3737,176 +3848,156 @@ class _ShopPageState extends State<ShopPage> {
                     languageProvider.translate(
                         en: "You might like this", th: "คุณอาจจะชอบสิ่งนี้"),
                     style: TextStyle(
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.primary),
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                   ),
                 ),
-                SizedBox(
-                  height: 490, // กำหนดความสูงของ PageView
-                  child: PageView.builder(
-                    controller: _pageControlShop1,
-                    itemCount: imagesShop1.length,
-                    scrollDirection: Axis.horizontal,
-                    // ปิดการเลื่อนของ PageView
 
-                    itemBuilder: (context, index) {
-                      final itemS1 = imagesShop1[index % imagesShop1.length];
-                      return Stack(
-                        children: [
-                          Container(
-                            //color: Colors.white,
-                            child: Container(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 10),
-                                child: Column(
-                                  children: [
-                                    CachedNetworkImage(
-                                      imageUrl: itemS1["ImageShop"]!,
-                                      fit: BoxFit.fill,
-                                      width: double.infinity,
-                                      height: 350,
-                                      placeholder: (context, url) =>
-                                          CircularProgressIndicator.adaptive(
-                                        backgroundColor: Colors.white,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                                Color.fromARGB(75, 50, 50, 50)),
+                // ✅ แสดง Loading, Error หรือข้อมูล
+                isLoadingLike
+                    ? SizedBox(
+                        height: 490,
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    : errorMessageLike.isNotEmpty
+                        ? SizedBox(
+                            height: 490,
+                            child: Center(child: Text(errorMessageLike)),
+                          )
+                        : dataShoplike.isEmpty
+                            ? SizedBox(
+                                height: 490,
+                                child: Center(child: Text('ไม่มีข้อมูล')),
+                              )
+                            : SizedBox(
+                                height: 490,
+                                child: PageView.builder(
+                                  controller: _pageControlShop1,
+                                  itemCount: dataShoplike.length,
+                                  scrollDirection: Axis.horizontal,
+                                  itemBuilder: (context, index) {
+                                    final item = dataShoplike[index];
+                                    return Container(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 10),
+                                      child: Column(
+                                        children: [
+                                          CachedNetworkImage(
+                                            imageUrl:
+                                                item["image_url"]?.toString() ??
+                                                    '',
+                                            fit: BoxFit.cover,
+                                            width: double.infinity,
+                                            height: 350,
+                                            placeholder: (context, url) =>
+                                                CircularProgressIndicator
+                                                    .adaptive(),
+                                            errorWidget:
+                                                (context, url, error) =>
+                                                    Icon(Icons.error),
+                                          ),
+                                          SizedBox(height: 10),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                getGenderText(item['gender']),
+                                                style: TextStyle(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurface,
+                                                ),
+                                              ),
+                                              Text(
+                                                item['size_category']
+                                                        ?.toString() ??
+                                                    'N/A',
+                                                style: TextStyle(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurface,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          SizedBox(height: 10),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                item['clothing_name']
+                                                        ?.toString() ??
+                                                    'N/A',
+                                                style: TextStyle(
+                                                  fontSize: 15,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .primary,
+                                                ),
+                                              ),
+                                              Text(
+                                                'Items: ${item['stock']}',
+                                                style: TextStyle(
+                                                  fontSize: 15,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurface,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          SizedBox(height: 10),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                '${item['price']?.toString() ?? '0'} ฿',
+                                                style: TextStyle(
+                                                  fontSize: 20,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .primary,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              FloatingActionButton.small(
+                                                onPressed: () {
+                                                  // Add to cart logic
+                                                },
+                                                child: Icon(
+                                                  Icons.shopping_cart_outlined,
+                                                  size: 30,
+                                                  color: Theme.of(context)
+                                                      .floatingActionButtonTheme
+                                                      .foregroundColor,
+                                                ),
+                                                backgroundColor: Theme.of(
+                                                        context)
+                                                    .floatingActionButtonTheme
+                                                    .backgroundColor,
+                                              ),
+                                            ],
+                                          ),
+                                        ],
                                       ),
-                                      errorWidget: (context, url, error) =>
-                                          Icon(Icons.error),
-                                    ),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          itemS1['CategoryL']!,
-                                          style: TextStyle(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.bold,
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .onSurface
-                                              /*
-                                          shadows: [
-                                            
-                                            Shadow(
-                                              blurRadius: 5,
-                                              color: Colors.black45,
-                                              offset: Offset(2, 2),
-                                            ),
-                                            
-                                          ]*/
-                                              ),
-                                        ),
-                                        Text(
-                                          itemS1['SizeRangeL']!,
-                                          style: TextStyle(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.bold,
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .onSurface
-                                              /*
-                                          shadows: [
-                                            
-                                            Shadow(
-                                              blurRadius: 5,
-                                              color: Colors.black45,
-                                              offset: Offset(2, 2),
-                                            ),
-                                            
-                                          ]*/
-                                              ),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(
-                                      height: 10,
-                                    ),
-                                    Text(
-                                      itemS1['ProductD']!,
-                                      style: TextStyle(
-                                          fontSize: 15,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary
-                                          /*
-                                          shadows: [
-                                            
-                                            Shadow(
-                                              blurRadius: 5,
-                                              color: Colors.black45,
-                                              offset: Offset(2, 2),
-                                            ),
-                                            
-                                          ]*/
-                                          ),
-                                    ),
-                                    SizedBox(
-                                      height: 10,
-                                    ),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          itemS1['ProductPr']!,
-                                          style: TextStyle(
-                                            fontSize: 20,
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .primary,
-                                            fontWeight: FontWeight.bold,
-
-                                            /*
-                                          shadows: [
-                                            
-                                            Shadow(
-                                              blurRadius: 5,
-                                              color: Colors.black45,
-                                              offset: Offset(2, 2),
-                                            ),
-                                            
-                                          ]*/
-                                          ),
-                                        ),
-                                        SizedBox(
-                                          height: 10,
-                                        ),
-                                        Text(
-                                          itemS1['ProductP']!,
-                                          style: TextStyle(
-                                              fontSize: 15,
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .onSurface
-                                              /*
-                                          shadows: [
-                                            
-                                            Shadow(
-                                              blurRadius: 5,
-                                              color: Colors.black45,
-                                              offset: Offset(2, 2),
-                                            ),
-                                            
-                                          ]*/
-                                              ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                )),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
+                                    );
+                                  },
+                                ),
+                              ),
               ],
             ),
           ),
+
+          // ✅ Section: Best Seller
           Container(
             child: Column(
               children: [
@@ -3915,173 +4006,149 @@ class _ShopPageState extends State<ShopPage> {
                     languageProvider.translate(
                         en: "Best Seller", th: "สินค้าขายดี"),
                     style: TextStyle(
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.primary),
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                   ),
                 ),
-                SizedBox(
-                  height: 490, // กำหนดความสูงของ PageView
-                  child: PageView.builder(
-                    controller: _pageControlShop2,
-                    itemCount: imagesShop2.length,
-                    scrollDirection: Axis.horizontal,
-                    // ปิดการเลื่อนของ PageView
-
-                    itemBuilder: (context, index) {
-                      final itemS2 = imagesShop2[index % imagesShop2.length];
-                      return Stack(
-                        children: [
-                          Container(
-                            //color: Colors.white,
-                            child: Container(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 10),
-                                child: Column(
-                                  children: [
-                                    CachedNetworkImage(
-                                      imageUrl: itemS2["ImageShop"]!,
-                                      fit: BoxFit.fill,
-                                      width: double.infinity,
-                                      height: 350,
-                                      placeholder: (context, url) =>
-                                          CircularProgressIndicator.adaptive(
-                                        backgroundColor: Colors.white,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                                Color.fromARGB(75, 50, 50, 50)),
+                isLoadingSeller
+                    ? SizedBox(
+                        height: 490,
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    : errorMessageSeller.isNotEmpty
+                        ? SizedBox(
+                            height: 490,
+                            child: Center(child: Text(errorMessageSeller)),
+                          )
+                        : dataShopSeller.isEmpty
+                            ? SizedBox(
+                                height: 490,
+                                child: Center(child: Text('ไม่มีข้อมูล')),
+                              )
+                            : SizedBox(
+                                height: 490,
+                                child: PageView.builder(
+                                  controller: _pageControlShop2,
+                                  itemCount: dataShopSeller.length,
+                                  scrollDirection: Axis.horizontal,
+                                  itemBuilder: (context, index) {
+                                    final item = dataShopSeller[index];
+                                    return Container(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 10),
+                                      child: Column(
+                                        children: [
+                                          CachedNetworkImage(
+                                            imageUrl:
+                                                item["image_url"]?.toString() ??
+                                                    '',
+                                            fit: BoxFit.cover,
+                                            width: double.infinity,
+                                            height: 350,
+                                            placeholder: (context, url) =>
+                                                CircularProgressIndicator
+                                                    .adaptive(),
+                                            errorWidget:
+                                                (context, url, error) =>
+                                                    Icon(Icons.error),
+                                          ),
+                                          SizedBox(height: 10),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                getGenderText(item['gender']),
+                                                style: TextStyle(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurface,
+                                                ),
+                                              ),
+                                              Text(
+                                                item['size_category']
+                                                        ?.toString() ??
+                                                    'N/A',
+                                                style: TextStyle(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurface,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          SizedBox(height: 10),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                item['clothing_name']
+                                                        ?.toString() ??
+                                                    'N/A',
+                                                style: TextStyle(
+                                                  fontSize: 15,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .primary,
+                                                ),
+                                              ),
+                                              Text(
+                                                'Items: ${item['stock']}',
+                                                style: TextStyle(
+                                                  fontSize: 15,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurface,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          SizedBox(height: 10),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                '${item['price']?.toString() ?? '0'} ฿',
+                                                style: TextStyle(
+                                                  fontSize: 20,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .primary,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              FloatingActionButton.small(
+                                                onPressed: () {
+                                                  // Add to cart logic
+                                                },
+                                                child: Icon(
+                                                  Icons.shopping_cart_outlined,
+                                                  size: 30,
+                                                  color: Theme.of(context)
+                                                      .floatingActionButtonTheme
+                                                      .foregroundColor,
+                                                ),
+                                                backgroundColor: Theme.of(
+                                                        context)
+                                                    .floatingActionButtonTheme
+                                                    .backgroundColor,
+                                              ),
+                                            ],
+                                          ),
+                                        ],
                                       ),
-                                      errorWidget: (context, url, error) =>
-                                          Icon(Icons.error),
-                                    ),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          itemS2['CategoryL']!,
-                                          style: TextStyle(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.bold,
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .onSurface
-                                              /*
-                                          shadows: [
-                                            
-                                            Shadow(
-                                              blurRadius: 5,
-                                              color: Colors.black45,
-                                              offset: Offset(2, 2),
-                                            ),
-                                            
-                                          ]*/
-                                              ),
-                                        ),
-                                        Text(
-                                          itemS2['SizeRangeL']!,
-                                          style: TextStyle(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.bold,
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .onSurface
-                                              /*
-                                          shadows: [
-                                            
-                                            Shadow(
-                                              blurRadius: 5,
-                                              color: Colors.black45,
-                                              offset: Offset(2, 2),
-                                            ),
-                                            
-                                          ]*/
-                                              ),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(
-                                      height: 10,
-                                    ),
-                                    Text(
-                                      itemS2['ProductD']!,
-                                      style: TextStyle(
-                                          fontSize: 15,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary
-                                          /*
-                                          shadows: [
-                                            
-                                            Shadow(
-                                              blurRadius: 5,
-                                              color: Colors.black45,
-                                              offset: Offset(2, 2),
-                                            ),
-                                            
-                                          ]*/
-                                          ),
-                                    ),
-                                    SizedBox(
-                                      height: 10,
-                                    ),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          itemS2['ProductPr']!,
-                                          style: TextStyle(
-                                            fontSize: 20,
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .primary,
-                                            fontWeight: FontWeight.bold,
-
-                                            /*
-                                          shadows: [
-                                            
-                                            Shadow(
-                                              blurRadius: 5,
-                                              color: Colors.black45,
-                                              offset: Offset(2, 2),
-                                            ),
-                                            
-                                          ]*/
-                                          ),
-                                        ),
-                                        SizedBox(
-                                          height: 10,
-                                        ),
-                                        Text(
-                                          itemS2['ProductP']!,
-                                          style: TextStyle(
-                                              fontSize: 15,
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .onSurface
-                                              /*
-                                          shadows: [
-                                            
-                                            Shadow(
-                                              blurRadius: 5,
-                                              color: Colors.black45,
-                                              offset: Offset(2, 2),
-                                            ),
-                                            
-                                          ]*/
-                                              ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                )),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
+                                    );
+                                  },
+                                ),
+                              ),
               ],
             ),
           ),
