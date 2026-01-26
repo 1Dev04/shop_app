@@ -62,6 +62,7 @@ class _BasketState extends State<Basket> {
 
   /// 1️⃣ หน้าจอเปล่า (Default - ยังไม่มีรูป)
   Widget _buildEmptyState(bool isDark) {
+    final languageProvider = Provider.of<LanguageProvider>(context);
     return Padding(
       padding: EdgeInsets.all(16),
       child: Column(
@@ -80,7 +81,9 @@ class _BasketState extends State<Basket> {
                 ),
                 SizedBox(height: 16),
                 Text(
-                  'ตะกร้าของคุณว่างอยู่',
+                    languageProvider.translate(
+                        en: 'Your basket is empty',
+                        th: 'ตะกร้าของคุณว่างอยู่'),
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,

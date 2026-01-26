@@ -2635,11 +2635,13 @@ class _HomePageState extends State<HomePage> {
                       ),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
+                        
                         child: Image.network(
                           item['images']['image_clothing'] ?? '',
-                          width: 100,
-                          height: 100,
+                          width: 120,
+                          height: 120,
                           fit: BoxFit.cover,
+                          
                           errorBuilder: (context, error, stackTrace) {
                             return Container(
                               width: 100,
