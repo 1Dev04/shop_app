@@ -40,7 +40,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => FavoriteProvider()),
         ChangeNotifierProvider(create: (_) => LanguageProvider()),
       ],
-      child: MyApp(), // ✅ Remove the MaterialApp wrapper here
+      child: MyApp(), 
     ),
   );
 }
@@ -57,12 +57,12 @@ class MyApp extends StatelessWidget {
       themeMode: themeProvider.themeMode,
       theme: AppThemes.lightTheme,
       darkTheme: AppThemes.darkTheme,
-      home: WelcomeScreen(), // ✅ Separate the welcome screen
+      home: WelcomeScreen(), 
     );
   }
 }
 
-// ✅ Create a separate WelcomeScreen widget
+
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
 
