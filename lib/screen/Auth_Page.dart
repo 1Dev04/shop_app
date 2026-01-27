@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 //ติดตั้งแพคเกจ firebase_auth จาก http://pub.dev
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_application_1/screen/Home_Page.dart';
-import 'package:flutter_application_1/screen/SignIn_User.dart';
+import 'package:flutter_application_1/components/controll_btn.dart';
+
+import 'package:flutter_application_1/screen/signin_user.dart';
 
 class authPage extends StatelessWidget {
   const authPage({super.key});
@@ -17,7 +18,7 @@ class authPage extends StatelessWidget {
            
             //Logged in ถ้าล็อกอินแล้วไปที่ homePage
             if (snapshot.hasData ) {
-              return MyHome();
+              return MyControll();
             } else {
               //NOT logged in ถ้ายังไม่ล็อกอินไปที่ loginPage
               return Login();

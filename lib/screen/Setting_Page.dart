@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/provider/Language_Provider.dart';
-import 'package:flutter_application_1/provider/Theme_Provider.dart';
+import 'package:flutter_application_1/provider/language_provider.dart';
+import 'package:flutter_application_1/provider/theme_provider.dart';
 import 'package:provider/provider.dart';
 
 class Settingpage extends StatefulWidget {
@@ -27,7 +27,6 @@ class _SettingpageState extends State<Settingpage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Theme Dark Switch
             Container(
               width: double.infinity,
               height: 70,
@@ -59,7 +58,7 @@ class _SettingpageState extends State<Settingpage> {
               ),
             ),
 
-            // Multi Languages Button
+     
             Container(
               width: double.infinity,
               height: 70,
@@ -83,12 +82,12 @@ class _SettingpageState extends State<Settingpage> {
                         width: 70,
                         height: 45,
                         decoration: BoxDecoration(
-                          // สีธงชาติ
+                        
                           color: languageProvider.isEnglish
                               ? Color.fromARGB(
-                                  255, 222, 231, 255) // น้ำเงินเข้มของธงอังกฤษ
+                                  255, 222, 231, 255) 
                               : Color.fromARGB(
-                                  255, 255, 215, 216), // แดงของธงไทย
+                                  255, 255, 215, 216),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
                             color: Colors.white,

@@ -2,8 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_1/provider/theme.dart';
-import 'package:flutter_application_1/provider/Theme_Provider.dart';
-import 'package:flutter_application_1/screen/Auth_Page.dart';
+import 'package:flutter_application_1/provider/theme_provider.dart';
+import 'package:flutter_application_1/screen/auth_page.dart';
 import 'package:provider/provider.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
@@ -73,7 +73,7 @@ class _regisUserState extends State<regisUser> {
   void signUserUp() async {
     showDialog(
       context: context,
-      barrierDismissible: false, // barrier close
+      barrierDismissible: false, 
       builder: (context) {
         return const Center(
           child: CircularProgressIndicator.adaptive(
@@ -86,10 +86,10 @@ class _regisUserState extends State<regisUser> {
     );
 
     try {
-      // Check if the passwords match
+
       if (passwordController.text.trim() !=
           confirmPasswordController.text.trim()) {
-        Navigator.pop(context); // ปิด Dialog
+        Navigator.pop(context); 
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Password do not match")),
@@ -100,29 +100,29 @@ class _regisUserState extends State<regisUser> {
         return;
       }
 
-      // Check if email already exists
+     
       var querySnapshot = await FirebaseFirestore.instance
           .collection('users')
           .where('email', isEqualTo: emailController.text.trim())
           .get();
 
       if (querySnapshot.docs.isNotEmpty) {
-        Navigator.pop(context); // ปิด Dialog
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("This email is already registered")),
         );
         return;
       }
-      // Register the user in Firebase Authentication
+     
       UserCredential userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(
               email: emailController.text.trim(),
               password: passwordController.text.trim());
 
-      // Get user id
+      
       String uid = userCredential.user!.uid;
 
-      // Store user details in Firestore
+    
       await FirebaseFirestore.instance.collection('users').doc(uid).set({
         'uid': uid,
         'name': nameController.text.trim(),
@@ -138,18 +138,18 @@ class _regisUserState extends State<regisUser> {
         'createdAt': FieldValue.serverTimestamp()
       });
 
-      Navigator.pop(context); // ปิด Dialog
+      Navigator.pop(context); 
       Navigator.pushReplacement(
           context, MaterialPageRoute(builder: (context) => authPage()));
       print("Successfully Registered");
     } on FirebaseAuthException catch (e) {
-      Navigator.pop(context); // ปิด Dialog
+      Navigator.pop(context); 
       print("An error occurred ${e.message}");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: ${e.message}')),
       );
     } catch (e) {
-      Navigator.pop(context); // ปิด Dialog
+      Navigator.pop(context);
       print("Error: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: $e")),
@@ -207,7 +207,7 @@ class _regisUserState extends State<regisUser> {
                 SizedBox(height: 10),
                 Container(
                   padding: EdgeInsets.symmetric(
-                      horizontal: 10), // เพิ่ม padding แทน Positioned
+                      horizontal: 10), 
                   child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -218,7 +218,7 @@ class _regisUserState extends State<regisUser> {
                             style: TextStyle(),
                             maxLines: 5,
                             overflow:
-                                TextOverflow.ellipsis, // ตัดข้อความถ้ายาวเกิน
+                                TextOverflow.ellipsis,
                             softWrap: true,
                           ),
                         ),
@@ -375,7 +375,7 @@ class _regisUserState extends State<regisUser> {
                           },
                         ),
                         SizedBox(height: 15),
-                        // เบอร์โทร (กรอกตัวเลข 10 ตัว)
+                     
                         TextFormField(
                           controller: phoneController,
                           keyboardType: TextInputType.number,
@@ -405,7 +405,7 @@ class _regisUserState extends State<regisUser> {
                           },
                         ),
                         SizedBox(height: 15),
-                        // รหัสไปรษณีย์ (กรอกตัวเลข 5 ตัว)
+                       
                         TextFormField(
                           controller: postalController,
                           keyboardType: TextInputType.number,
@@ -432,7 +432,7 @@ class _regisUserState extends State<regisUser> {
                           },
                         ),
                         SizedBox(height: 15),
-                        // วันเกิด (เลือกจากปฏิทิน)
+                
                         ListTile(
                           title: Text(
                             selectedDate == null
@@ -444,7 +444,7 @@ class _regisUserState extends State<regisUser> {
                         ),
 
                         SizedBox(height: 15),
-                        // เพศ
+                     
                         Text("Gender"),
                         Row(
                           children: [
@@ -481,7 +481,7 @@ class _regisUserState extends State<regisUser> {
                           ],
                         ),
                         SizedBox(height: 15),
-                        // ยืนยันการสมัครรับจดหมายข่าว
+                    
                         CheckboxListTile(
                           title: Text("Subscribe to the newsletter"),
                           value: subscribeNewsletter,
@@ -491,7 +491,7 @@ class _regisUserState extends State<regisUser> {
                             });
                           },
                         ),
-                        // ข้อตกลงของสมาชิก (ต้องติ๊กก่อนกดสมัคร)
+                      
                         SizedBox(height: 15),
                         CheckboxListTile(
                           title: Text("Accept the member agreement"),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/provider/Language_Provider.dart';
+import 'package:flutter_application_1/provider/favorite_provider.dart';
+import 'package:flutter_application_1/provider/language_provider.dart';
 
 import 'dart:io';
 import 'dart:async';
@@ -10,13 +11,13 @@ import 'dart:convert';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_application_1/provider/Favorite_Provider.dart';
-import 'package:flutter_application_1/provider/Theme_Provider.dart';
+
+import 'package:flutter_application_1/provider/theme_provider.dart';
 
 import 'package:image_picker/image_picker.dart';
 import 'package:camera/camera.dart';
 
-// 🎨 Custom Painter สำหรับวงกลมตรงกล้อง
+
 class _CircleHolePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
@@ -39,7 +40,7 @@ class _CircleHolePainter extends CustomPainter {
 
     canvas.drawPath(finalPath, paint);
 
-    // วาดเส้นขอบวงกลม
+ 
     canvas.drawCircle(
       center,
       radius,
@@ -54,7 +55,7 @@ class _CircleHolePainter extends CustomPainter {
   bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
 
-// Model สำหรับข้อมูลแมว
+
 class CatData {
   final String name;
   final String? breed;
@@ -819,27 +820,26 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                 ),
               ),
 
-              // ✅ ปุ่มล่าง (แสดงเฉพาะหน้ากล้อง)
+            
               _buildBottomButtons(isDark),
             ],
           ),
 
-          // Processing Overlay
+      
           if (_isProcessing) _buildProcessingOverlay(),
         ],
       ),
     );
   }
 
-  // ส่วนที่ 2
-  /// 2️⃣ แสดงรูปที่เลือก + ปุ่มวิเคราะห์และยกเลิก
+
   Widget _buildImageWithAnalyzeSection(bool isDark) {
     final languageProvider = Provider.of<LanguageProvider>(context);
     return Padding(
       padding: EdgeInsets.all(16),
       child: Column(
         children: [
-          // รูปภาพใหญ่
+          
           Container(
             height: 300,
             decoration: BoxDecoration(
@@ -864,7 +864,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
 
           SizedBox(height: 20),
 
-          // Card ข้อมูล (ตอนยังไม่วิเคราะห์)
+       
           Container(
             padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -877,7 +877,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
             ),
             child: Row(
               children: [
-                // รูปย่อ
+         
                 Container(
                   width: 100,
                   height: 120,
@@ -896,13 +896,14 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
 
                 SizedBox(width: 16),
 
-                // ข้อมูล N/A
+             
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildInfoRow(
-                          languageProvider.translate(en: 'Name:', th: 'ชื่อ:'),
+                          languageProvider.translate(
+                              en: 'Cat color:', th: 'ชื่อ:'),
                           'N/A',
                           isDark),
                       SizedBox(height: 10),
@@ -930,7 +931,6 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
 
           SizedBox(height: 16),
 
-          // ข้อความแจ้งเตือน
           Container(
             padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -962,7 +962,6 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
 
           SizedBox(height: 16),
 
-          // ปุ่มวิเคราะห์และยกเลิก
           Row(
             children: [
               Expanded(
@@ -1018,7 +1017,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     );
   }
 
-  /// 3️⃣ แสดงผลลัพธ์การวิเคราะห์ + สินค้าแนะนำ
+  
   Widget _buildResultSection(bool isDark) {
     final languageProvider = Provider.of<LanguageProvider>(context);
     return Padding(
@@ -1026,7 +1025,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Card ข้อมูลแมว (มีข้อมูลจริง)
+       
           Container(
             padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -1040,7 +1039,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // รูปย่อ
+             
                 Container(
                   width: 100,
                   height: 120,
@@ -1086,7 +1085,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
 
                 SizedBox(width: 16),
 
-                // ข้อมูลแมว
+               
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1119,160 +1118,154 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                   ),
                 ),
 
-                // ปุ่มแก้ไข
-                IconButton(
-                  onPressed: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true, // สำคัญมาก
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(20),
-                        ),
-                      ),
-                      builder: (context) {
-                        return Container(
-                          height: MediaQuery.of(context).size.height *
-                              0.5, // ครึ่งจอ
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // ขีดเล็ก ๆ ด้านบน (สาย UX)
-                              Center(
-                                child: Container(
-                                  width: 40,
-                                  height: 4,
-                                  margin: EdgeInsets.only(bottom: 12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey.shade400,
-                                    borderRadius: BorderRadius.circular(10),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                   
+                    IconButton(
+                      onPressed: () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(
+                              top: Radius.circular(20),
+                            ),
+                          ),
+                          builder: (context) {
+                            return Container(
+                              height: MediaQuery.of(context).size.height * 0.5,
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Center(
+                                    child: Container(
+                                      width: 40,
+                                      height: 4,
+                                      margin: EdgeInsets.only(bottom: 12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.shade400,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
                                   ),
-                                ),
+                                  Text(
+                                    languageProvider.translate(
+                                        en: 'Edit Data', th: 'แก้ไขข้อมูล'),
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  SizedBox(height: 16),
+                                  TextField(
+                                    decoration: InputDecoration(
+                                      labelText: languageProvider.translate(
+                                          en: 'Cat Color', th: 'สีแมว'),
+                                      border: OutlineInputBorder(),
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  TextField(
+                                    decoration: InputDecoration(
+                                      labelText: languageProvider.translate(
+                                          en: 'Age', th: 'อายุ'),
+                                      border: OutlineInputBorder(),
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  TextField(
+                                    decoration: InputDecoration(
+                                      labelText: languageProvider.translate(
+                                          en: 'Breed', th: 'พันธุ์'),
+                                      border: OutlineInputBorder(),
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  TextField(
+                                    decoration: InputDecoration(
+                                      labelText: languageProvider.translate(
+                                          en: 'Size', th: 'ขนาด'),
+                                      border: OutlineInputBorder(),
+                                    ),
+                                  ),
+                                  Spacer(),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                      },
+                                      child: Text(languageProvider.translate(
+                                          en: 'Save', th: 'บันทึก')),
+                                    ),
+                                  ),
+                                ],
                               ),
+                            );
+                          },
+                        );
+                      },
+                      icon: Icon(
+                        Icons.mode_edit_outline_outlined,
+                        color: Colors.blue.shade700,
+                        size: 28,
+                      ),
+                      tooltip: languageProvider.translate(
+                          en: 'Edit Data', th: 'แก้ไขข้อมูล'),
+                    ),
 
-                              Text(
-                                languageProvider.translate(
-                                    en: 'Edit Data', th: 'แก้ไขข้อมูล'),
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                  
+                    IconButton(
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: Text(languageProvider.translate(
+                                en: 'Confirm Deletion', th: 'ยืนยันการลบ')),
+                            content: Text(languageProvider.translate(
+                                en: 'Do you want to delete this cat data?',
+                                th: 'คุณต้องการลบข้อมูลแมวนี้ใช่หรือไม่?')),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: Text(languageProvider.translate(
+                                    en: 'Cancel', th: 'ยกเลิก')),
                               ),
-
-                              SizedBox(height: 16),
-
-                              // เนื้อหาด้านใน
-                              TextField(
-                                decoration: InputDecoration(
-                                  labelText: languageProvider.translate(
-                                      en: 'Cat Color', th: 'สีแมว'),
-                                  border: OutlineInputBorder(),
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  setState(() {
+                                    _detectedCat = null;
+                                    _recommendedProducts = [];
+                                    _selectedImage = null;
+                                  });
+                                  _initCamera();
+                                  _showSuccessMessage(
+                                      languageProvider.translate(
+                                          en: 'Deleted data successfully',
+                                          th: 'ลบข้อมูลแล้ว'));
+                                },
+                                style: TextButton.styleFrom(
+                                  foregroundColor: Colors.red,
                                 ),
-                              ),
-                              SizedBox(height: 8),
-                              TextField(
-                                decoration: InputDecoration(
-                                  labelText: languageProvider.translate(
-                                      en: 'Age', th: 'อายุ'),
-                                  border: OutlineInputBorder(),
-                                ),
-                              ),
-                              SizedBox(height: 8),
-                              TextField(
-                                decoration: InputDecoration(
-                                  labelText: languageProvider.translate(
-                                      en: 'Breed', th: 'พันธุ์'),
-                                  border: OutlineInputBorder(),
-                                ),
-                              ),
-                              SizedBox(height: 8),
-                              TextField(
-                                decoration: InputDecoration(
-                                  labelText: languageProvider.translate(
-                                      en: 'Size', th: 'ขนาด'),
-                                  border: OutlineInputBorder(),
-                                ),
-                              ),
-                              Spacer(),
-
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                  child: Text(languageProvider.translate(
-                                      en: 'Save', th: 'บันทึก')),
-                                ),
+                                child: Text(languageProvider.translate(
+                                    en: 'Delete', th: 'ลบ')),
                               ),
                             ],
                           ),
                         );
                       },
-                    );
-                  },
-                  icon: Icon(
-                    Icons.mode_edit_outline_outlined,
-                    color: Colors.blue.shade700,
-                    size: 28,
-                  ),
-                  tooltip: languageProvider.translate(
-                      en: 'Edit Data', th: 'แก้ไขข้อมูล'),
-                ),
-
-                // Delete Data
-                // Delete Data
-                IconButton(
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: Text(languageProvider.translate(
-                            en: 'Confirm Deletion', th: 'ยืนยันการลบ')),
-                        content: Text(languageProvider.translate(
-                            en: 'Do you want to delete this cat data?',
-                            th: 'คุณต้องการลบข้อมูลแมวนี้ใช่หรือไม่?')),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: Text(languageProvider.translate(
-                                en: 'Cancel', th: 'ยกเลิก')),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-
-                              setState(() {
-                                _detectedCat = null;
-                                _recommendedProducts = [];
-                                _selectedImage = null;
-                              });
-
-                              // ⭐ เปิดกล้องใหม่
-                              _initCamera();
-
-                              _showSuccessMessage(languageProvider.translate(
-                                  en: 'Deleted data successfully',
-                                  th: 'ลบข้อมูลแล้ว'));
-                            },
-                            style: TextButton.styleFrom(
-                              foregroundColor: Colors.red,
-                            ),
-                            child: Text(languageProvider.translate(
-                                en: 'Delete', th: 'ลบ')),
-                          ),
-                        ],
+                      icon: Icon(
+                        Icons.delete_outline,
+                        color: Colors.red.shade600,
+                        size: 28,
                       ),
-                    );
-                  },
-                  icon: Icon(
-                    Icons.delete_outline,
-                    color: Colors.red.shade600,
-                    size: 28,
-                  ),
-                  tooltip: languageProvider.translate(
-                      en: 'Delete Data', th: 'ลบข้อมูล'),
+                      tooltip: languageProvider.translate(
+                          en: 'Delete Data', th: 'ลบข้อมูล'),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -1280,7 +1273,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
 
           SizedBox(height: 20),
 
-          // หัวข้อสินค้าแนะนำ
+          
           Text(
             languageProvider.translate(
                 en: 'Recommended Products', th: 'สินค้าแนะนำ'),
@@ -1293,13 +1286,13 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
 
           SizedBox(height: 12),
 
-          // รายการสินค้า (Horizontal Scroll)
+          
           Container(
             height: 450,
             padding: EdgeInsets.symmetric(horizontal: 1),
             child: Center(
               child: GridView.builder(
-                shrinkWrap: true, // สำคัญมาก
+                shrinkWrap: true, 
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   crossAxisSpacing: 5,
@@ -1319,7 +1312,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     );
   }
 
-  /// Widget แสดงข้อมูล (Row)
+
   Widget _buildInfoRow(String label, String value, bool isDark) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1346,7 +1339,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     );
   }
 
-  /// Card สินค้า
+ 
   Widget _buildProductCard(
       ProductRecommendation product, int index, bool isDark) {
     return Consumer<FavoriteProvider>(
@@ -1402,7 +1395,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                       onTap: () {
                         favoriteProvider.toggleFavorite(product);
 
-                        // ⭐ แสดง Dialog เมื่อเพิ่มเข้า Favorite
+                     
                         if (!isFav) {
                           _showProductDialog(context, product, isDark);
                         } else {
@@ -1428,7 +1421,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                 ],
               ),
 
-              // ข้อมูลสินค้า
+             
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Column(
@@ -1513,14 +1506,14 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     );
   }
 
-  /// 4️⃣ ปุ่มด้านล่าง (ถ่ายรูป/เลือกรูป)
+  
   Widget _buildBottomButtons(bool isDark) {
-    // 🔥 ซ่อนปุ่มถ่าย/เลือกรูป เมื่อมีรูปแล้ว
+   
     if (_selectedImage != null || _detectedCat != null) {
-      return SizedBox.shrink(); // ไม่แสดงอะไร
+      return SizedBox.shrink(); 
     }
     final languageProvider = Provider.of<LanguageProvider>(context);
-    // แสดงปุ่มเฉพาะตอนแสดงกล้อง
+
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1603,7 +1596,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     );
   }
 
-  /// ถ่ายรูปตรง โดยไม่เข้าหน้า Camera Preview
+
   Future<void> _captureFromLiveCamera() async {
     try {
       if (_cameraController == null ||
@@ -1617,7 +1610,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
       final processedImage = await _validateAndCompressGalleryImage(imageFile);
 
       if (processedImage != null) {
-        // 🔥 ปิดกล้องทันทีหลังถ่ายรูป
+        
         _detectTimer?.cancel();
         await _cameraController?.dispose();
         _cameraController = null;
@@ -1629,8 +1622,6 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
 
         _showSuccessMessage('ถ่ายรูปสำเร็จ 📸');
 
-        // ❌ ลบบรรทัดนี้ออก - ไม่ต้องเรียก Widget ตรง ๆ
-        // await _buildImageWithAnalyzeSection(true);
       }
     } catch (e) {
       _showError('ถ่ายรูปไม่สำเร็จ: $e');

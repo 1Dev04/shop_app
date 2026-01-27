@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/provider/theme.dart';
-import 'package:flutter_application_1/provider/Theme_Provider.dart';
-import 'package:flutter_application_1/screen/SignUp_User.dart';
-import 'package:flutter_application_1/screen/Auth_Page.dart';
+import 'package:flutter_application_1/provider/theme_provider.dart';
+import 'package:flutter_application_1/screen/signup_user.dart';
+import 'package:flutter_application_1/screen/auth_page.dart';
 import 'package:provider/provider.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
@@ -25,16 +25,15 @@ class _LoginState extends State<Login> {
 
   void signUserIn() async {
     try {
-      // Sign out the user before sign in (to ensure a fresh session)
+
       await FirebaseAuth.instance.signOut();
 
-      // Sign in with updated email and password
+
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
 
-      // Close Dialog before changing page
       if (mounted) Navigator.pop(context);
 
       showTopSnackBar(
@@ -43,13 +42,13 @@ class _LoginState extends State<Login> {
           message: "Login successful!",
         ),
       );
-      // Navigate to Home page
+      
       Navigator.pushReplacement(
           context, MaterialPageRoute(builder: (context) => authPage()));
     } on FirebaseAuthException catch (e) {
       if (mounted) Navigator.pop(context);
 
-      // Handle different error codes with a switch statement
+   
       String errorMessage;
       switch (e.code) {
         case 'user-not-found':
@@ -73,22 +72,22 @@ class _LoginState extends State<Login> {
     }
   }
 
-  //---------- ฟังก์ชันสำหรับล็อกอินด้วย google account ----------
+
   Future<UserCredential> signInWithGoogle() async {
-    // Trigger the authentication flow
+  
     final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
 
-    // Obtain the auth details from the request
+    
     final GoogleSignInAuthentication? googleAuth =
         await googleUser?.authentication;
 
-    // Create a new credential
+   
     final credential = GoogleAuthProvider.credential(
       accessToken: googleAuth?.accessToken,
       idToken: googleAuth?.idToken,
     );
 
-    // Once signed in, return the UserCredential
+  
     return await FirebaseAuth.instance.signInWithCredential(credential);
   }
 
@@ -158,7 +157,7 @@ class _LoginState extends State<Login> {
                                                       secondaryAnimation,
                                                       child) {
                                                     const begin = Offset(1.0,
-                                                        0.0); //Slide from right to left
+                                                        0.0); 
                                                     const end =
                                                         Offset(0.0, 0.0);
                                                     const curve =
@@ -180,7 +179,7 @@ class _LoginState extends State<Login> {
                                           minimumSize: const Size(180, 40),
                                           shape: RoundedRectangleBorder(
                                             borderRadius: BorderRadius.circular(
-                                                12), // radius
+                                                12), 
                                           ),
                                         ),
                                         child: Text(
@@ -431,7 +430,7 @@ class _LoginState extends State<Login> {
                                   transitionsBuilder: (context, animation,
                                       secondaryAnimation, child) {
                                     const begin = Offset(
-                                        1.0, 0.0); //Slide from right to left
+                                        1.0, 0.0);
                                     const end = Offset(0.0, 0.0);
                                     const curve = Curves.easeInOut;
                                     var tween = Tween(begin: begin, end: end)

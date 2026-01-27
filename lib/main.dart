@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/provider/Language_Provider.dart';
+import 'package:flutter_application_1/provider/language_provider.dart';
 import 'firebase_options.dart';
-//ติดตั้งแพคเกจ firebase_core จาก pub.dev
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter_application_1/provider/Favorite_Provider.dart';
+import 'package:flutter_application_1/provider/favorite_provider.dart';
 import 'package:flutter_application_1/provider/theme.dart';
-import 'package:flutter_application_1/provider/Theme_Provider.dart';
-import 'package:flutter_application_1/screen/Auth_Page.dart';
+import 'package:flutter_application_1/provider/theme_provider.dart';
+import 'package:flutter_application_1/screen/auth_page.dart';
 import 'package:provider/provider.dart';
 
 import 'package:camera/camera.dart';
@@ -26,12 +26,13 @@ Future<void> initializeCameras() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // await Firebase.initializeApp(); // เรียกใช้ Firebase ก่อนเริ่มแอป
+
   await Firebase.initializeApp(
-  options: DefaultFirebaseOptions.currentPlatform,
+    options: DefaultFirebaseOptions.currentPlatform,
   );
 
   await initializeCameras();
+  
   runApp(
     MultiProvider(
       providers: [
@@ -39,30 +40,43 @@ void main() async {
         ChangeNotifierProvider(create: (_) => FavoriteProvider()),
         ChangeNotifierProvider(create: (_) => LanguageProvider()),
       ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: MyApp(),
-      ),
+      child: MyApp(), // ✅ Remove the MaterialApp wrapper here
     ),
   );
 }
 
-// ignore: must_be_immutable
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       themeMode: themeProvider.themeMode,
       theme: AppThemes.lightTheme,
       darkTheme: AppThemes.darkTheme,
-      home: Scaffold(
-        backgroundColor: themeProvider.themeMode == ThemeMode.dark
-            ? Colors.black
-            : Colors.white,
-        body: Center(
-            child: Column(
+      home: WelcomeScreen(), // ✅ Separate the welcome screen
+    );
+  }
+}
+
+// ✅ Create a separate WelcomeScreen widget
+class WelcomeScreen extends StatelessWidget {
+  const WelcomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final languageProvider = Provider.of<LanguageProvider>(context);
+    
+    return Scaffold(
+      backgroundColor: themeProvider.themeMode == ThemeMode.dark
+          ? Colors.black
+          : Colors.white,
+      body: Center(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             CachedNetworkImage(
@@ -73,7 +87,8 @@ class MyApp extends StatelessWidget {
               placeholder: (context, url) => CircularProgressIndicator.adaptive(
                 backgroundColor: Colors.transparent,
                 valueColor: AlwaysStoppedAnimation<Color>(
-                    Color.fromARGB(75, 50, 50, 50)),
+                  Color.fromARGB(75, 50, 50, 50),
+                ),
               ),
               errorWidget: (context, url, error) => Icon(Icons.error),
             ),
@@ -87,7 +102,10 @@ class MyApp extends StatelessWidget {
             ),
             SizedBox(height: 10),
             Text(
-              'Welcome!',
+              languageProvider.translate(
+                en: 'Welcome!',
+                th: 'ยินดีต้อนรับ!',
+              ),
               style: TextStyle(
                 fontSize: 15,
               ),
@@ -95,18 +113,23 @@ class MyApp extends StatelessWidget {
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
-                Navigator.push(context,
-                    (MaterialPageRoute(builder: (context) => authPage())));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => authPage()),
+                );
               },
               child: Text(
-                "Get Started",
+                languageProvider.translate(
+                  en: "Get Started",
+                  th: "เริ่มต้น",
+                ),
                 style: TextStyle(
                   fontSize: 16,
                 ),
               ),
             )
           ],
-        )),
+        ),
       ),
     );
   }

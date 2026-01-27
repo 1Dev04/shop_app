@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/provider/Language_Provider.dart';
+import 'package:flutter_application_1/provider/language_provider.dart';
 
-import 'package:flutter_application_1/provider/Theme_Provider.dart';
+import 'package:flutter_application_1/provider/theme_provider.dart';
 import 'package:provider/provider.dart';
 
 class Basket extends StatefulWidget {
@@ -45,7 +45,7 @@ class _BasketState extends State<Basket> {
       ),
       body: Column(
         children: [
-          // ส่วนเนื้อหาหลัก (Scrollable)
+          
           Expanded(
             child: SingleChildScrollView(
               child: Column(
@@ -60,7 +60,7 @@ class _BasketState extends State<Basket> {
     );
   }
 
-  /// 1️⃣ หน้าจอเปล่า (Default - ยังไม่มีรูป)
+
   Widget _buildEmptyState(bool isDark) {
     final languageProvider = Provider.of<LanguageProvider>(context);
     return Padding(
@@ -90,14 +90,7 @@ class _BasketState extends State<Basket> {
                     color: isDark ? Colors.grey[400] : Colors.grey[600],
                   ),
                 ),
-                // SizedBox(height: 8),
-                // Text(
-                //   'ตะกร้าของคุณว่างพูด',
-                //   style: TextStyle(
-                //     fontSize: 14,
-                //     color: isDark ? Colors.grey[500] : Colors.grey[500],
-                //   ),
-                // ),
+               
               ],
             ),
           

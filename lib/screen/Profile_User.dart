@@ -2,8 +2,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_application_1/screen/Edit_Profile.dart';
-import 'package:flutter_application_1/screen/SignIn_User.dart';
+import 'package:flutter_application_1/screen/edit_profile.dart';
+import 'package:flutter_application_1/screen/signin_user.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
 
@@ -71,7 +71,7 @@ class _ProfileState extends State<Profile> {
   @override
   void initState() {
     super.initState();
-    fetchUser(); // เรียกข้อมูลผู้ใช้เมื่อหน้าโปรไฟล์ถูกสร้างขึ้น
+    fetchUser(); 
   }
 
   void fetchUser() async {
@@ -106,7 +106,7 @@ class _ProfileState extends State<Profile> {
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 28)),
         centerTitle: true,
 
-        // iconTheme: const IconThemeData(),
+   
       ),
       body: SingleChildScrollView(
         child: Container(
