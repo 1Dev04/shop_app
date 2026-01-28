@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/provider/Language_Provider.dart';
-import 'firebase_options.dart';
-//ติดตั้งแพคเกจ firebase_core จาก pub.dev
 import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
+import 'package:camera/camera.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_application_1/provider/Language_Provider.dart';
 import 'package:flutter_application_1/provider/Favorite_Provider.dart';
 import 'package:flutter_application_1/provider/theme.dart';
 import 'package:flutter_application_1/provider/Theme_Provider.dart';
 import 'package:flutter_application_1/screen/Auth_Page.dart';
-import 'package:provider/provider.dart';
-
-import 'package:camera/camera.dart';
+import 'firebase_options.dart';
 
 List<CameraDescription>? _availableCameras;
 
@@ -26,12 +24,13 @@ Future<void> initializeCameras() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // await Firebase.initializeApp(); // เรียกใช้ Firebase ก่อนเริ่มแอป
+  
   await Firebase.initializeApp(
-  options: DefaultFirebaseOptions.currentPlatform,
+    options: DefaultFirebaseOptions.currentPlatform,
   );
 
   await initializeCameras();
+
   runApp(
     MultiProvider(
       providers: [
@@ -39,30 +38,41 @@ void main() async {
         ChangeNotifierProvider(create: (_) => FavoriteProvider()),
         ChangeNotifierProvider(create: (_) => LanguageProvider()),
       ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: MyApp(),
-      ),
+      child: const MyApp(), 
     ),
   );
 }
 
-// ignore: must_be_immutable
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      themeMode: themeProvider.themeMode,
-      theme: AppThemes.lightTheme,
-      darkTheme: AppThemes.darkTheme,
-      home: Scaffold(
-        backgroundColor: themeProvider.themeMode == ThemeMode.dark
-            ? Colors.black
-            : Colors.white,
-        body: Center(
-            child: Column(
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'ABC Shop',
+          themeMode: themeProvider.themeMode,
+          theme: AppThemes.lightTheme,
+          darkTheme: AppThemes.darkTheme,
+          home: const WelcomePage(),
+        );
+      },
+    );
+  }
+}
+class WelcomePage extends StatelessWidget {
+  const WelcomePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    return Scaffold(
+      backgroundColor: isDarkMode ? Colors.black : Colors.white,
+      body: Center(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             CachedNetworkImage(
@@ -70,43 +80,47 @@ class MyApp extends StatelessWidget {
                   "https://res.cloudinary.com/dag73dhpl/image/upload/v1741695217/cat3_xvd0mu.png",
               width: 200,
               height: 200,
-              placeholder: (context, url) => CircularProgressIndicator.adaptive(
-                backgroundColor: Colors.transparent,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                    Color.fromARGB(75, 50, 50, 50)),
-              ),
-              errorWidget: (context, url, error) => Icon(Icons.error),
+              placeholder: (context, url) => const CircularProgressIndicator.adaptive(),
+              errorWidget: (context, url, error) => const Icon(Icons.error),
             ),
-            SizedBox(height: 30),
+            const SizedBox(height: 30),
             Text(
               'ABC SHOP',
               style: TextStyle(
                 fontSize: 50,
                 fontFamily: 'Catfont',
+                color: isDarkMode ? Colors.white : Colors.black,
               ),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             Text(
               'Welcome!',
               style: TextStyle(
                 fontSize: 15,
+                color: isDarkMode ? Colors.white70 : Colors.black87,
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
-                Navigator.push(context,
-                    (MaterialPageRoute(builder: (context) => authPage())));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => authPage()),
+                );
               },
-              child: Text(
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+              ),
+              child: const Text(
                 "Get Started",
                 style: TextStyle(
                   fontSize: 16,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             )
           ],
-        )),
+        ),
       ),
     );
   }
