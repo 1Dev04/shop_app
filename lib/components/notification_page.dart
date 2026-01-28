@@ -58,7 +58,8 @@ class _NotificationPageState extends State<NotificationPage> {
           "https://res.cloudinary.com/dag73dhpl/image/upload/v1769586994/Screenshot_2026-01-28_145320_y6kvub.png",
     },
     {
-      "ImageNoti": "",
+      "ImageNoti":
+          "https://res.cloudinary.com/dag73dhpl/image/upload/v1769587277/Screenshot_2026-01-28_145804_rtwpzv.png",
     },
   ];
 
@@ -143,7 +144,6 @@ class _NotificationPageState extends State<NotificationPage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    
     Future.wait(messageSet.map((item2) {
       final imageMes = item2["messageSet"];
       if (imageMes != null && imageMes.isNotEmpty) {
@@ -167,12 +167,11 @@ class _NotificationPageState extends State<NotificationPage> {
   @override
   Widget build(BuildContext context) {
     final languageProvider = Provider.of<LanguageProvider>(context);
-
     return SingleChildScrollView(
       child: Column(
         children: [
           SizedBox(
-            height: 240, // กำหนดความสูงของ PageView
+            height: 350, // กำหนดความสูงของ PageView
             child: PageView.builder(
               controller: _pageControlNotificate1,
               itemCount: imagesNoti.length,
@@ -184,7 +183,6 @@ class _NotificationPageState extends State<NotificationPage> {
                 });
               },
               itemBuilder: (context, index) {
-                ;
                 return Stack(
                   children: [
                     Container(
@@ -341,7 +339,7 @@ class _NotificationPageState extends State<NotificationPage> {
           ),
           Divider(color: Theme.of(context).colorScheme.onSurface, height: 2),
           SizedBox(
-            height: 450,
+            height: 280,
             child: PageView(
               controller: _pageControlNotificate2,
               scrollDirection: Axis.horizontal,
@@ -427,17 +425,49 @@ class _NotificationPageState extends State<NotificationPage> {
                                               .colorScheme
                                               .onSurface,
                                           fontSize: 12,
-                                          fontWeight: FontWeight.normal,
+                                          fontWeight: FontWeight.bold,
                                         ),
                                         maxLines: 1,
                                         softWrap: true,
                                       ),
+                                      SizedBox(height: 40),
+                                      Positioned(
+                                          left: 20,
+                                          right: 20,
+                                          bottom: 40,
+                                          child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                FloatingActionButton.small(
+                                                  onPressed: () {},
+                                                  child: Icon(
+                                                    Icons
+                                                        .shopping_cart_outlined,
+                                                    size: 30,
+                                                    color: Theme.of(context)
+                                                        .floatingActionButtonTheme
+                                                        .foregroundColor,
+                                                  ),
+                                                  backgroundColor: Theme.of(
+                                                          context)
+                                                      .floatingActionButtonTheme
+                                                      .backgroundColor,
+                                                ),
+                                                ElevatedButton.icon(
+                                                  onPressed: () {
+                                                    // ตะกร้าสินค้า
+                                                  },
+                                                  // icon:
+                                                  //     Icon(Icons.),
+                                                  label: Text('Learn More'),
+                                                )
+                                              ])),
                                     ],
                                   ),
                                 ),
                               ),
-
-                              //Divider(color: Colors.black12, height: 1),
                             ],
                           ),
                         );
@@ -525,11 +555,44 @@ class _NotificationPageState extends State<NotificationPage> {
                                         maxLines: 1,
                                         softWrap: true,
                                       ),
+                                       SizedBox(height: 15),
+                                       Positioned(
+                                          left: 20,
+                                          right: 20,
+                                          bottom: 40,
+                                          child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                FloatingActionButton.small(
+                                                  onPressed: () {},
+                                                  child: Icon(
+                                                    Icons
+                                                        .shopping_cart_outlined,
+                                                    size: 30,
+                                                    color: Theme.of(context)
+                                                        .floatingActionButtonTheme
+                                                        .foregroundColor,
+                                                  ),
+                                                  backgroundColor: Theme.of(
+                                                          context)
+                                                      .floatingActionButtonTheme
+                                                      .backgroundColor,
+                                                ),
+                                                ElevatedButton.icon(
+                                                  onPressed: () {
+                                                    // ตะกร้าสินค้า
+                                                  },
+                                                  // icon:
+                                                  //     Icon(Icons.),
+                                                  label: Text('Learn More'),
+                                                )
+                                              ])),
                                     ],
                                   ),
                                 ),
                               ),
-
                               //Divider(color: Colors.black12, height: 1),
                             ],
                           ),

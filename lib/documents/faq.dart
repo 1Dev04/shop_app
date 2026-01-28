@@ -95,6 +95,7 @@ class FAQPage extends StatelessWidget {
   // Widget สร้างกล่องคำถามแบบยืดหดได้
   Widget _buildFAQItem(String question, String answer) {
     return Card(
+      color: Colors.grey[50],
       elevation: 0,
       margin: const EdgeInsets.only(bottom: 10),
       shape: RoundedRectangleBorder(
