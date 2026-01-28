@@ -1,6 +1,5 @@
 // ----Control Button--------------------------------------------------------------------------
 
-
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/components/home_page.dart';
 import 'package:flutter_application_1/components/favorite_page.dart';
@@ -9,12 +8,9 @@ import 'package:flutter_application_1/components/notification_page.dart';
 import 'package:flutter_application_1/components/search_page.dart';
 import 'package:flutter_application_1/components/shop_page.dart';
 import 'package:flutter_application_1/provider/language_provider.dart';
-import 'package:flutter_application_1/provider/theme.dart';
 import 'package:flutter_application_1/provider/theme_provider.dart';
 import 'package:flutter_application_1/screen/%E0%B8%BABasket.dart';
-
 import 'package:provider/provider.dart';
-
 import '../screen/Measue_SizeCat.dart';
 
 class MyControll extends StatefulWidget {
@@ -39,7 +35,7 @@ class _MyControllState extends State<MyControll> {
     HomePage(),
     ShopPage(),
     NotificationPage(),
-    SettingPage(),
+    MenuPage(),
   ];
 
   //Set Header Title EN
@@ -85,14 +81,12 @@ class _MyControllState extends State<MyControll> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final languageProvider = Provider.of<LanguageProvider>(context);
 
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      themeMode: themeProvider.themeMode,
-      theme: AppThemes.lightTheme,
-      darkTheme: AppThemes.darkTheme,
-      home: Scaffold(
+    return Scaffold(
         //------------------- AppBar -------------------
         appBar: AppBar(
+          leading: SizedBox.shrink(),
+          elevation: 0,
+           
           title: Text(
             languageProvider.translate(en: setTitleEN(), th: setTitleTH()),
             style: TextStyle(
@@ -197,42 +191,11 @@ class _MyControllState extends State<MyControll> {
               ),
               GestureDetector(
                 onTap: () {
-                  /*
-                  setState(() {
-                    screenPushIndex = 1;
-                  });
-                  */
+                 
                   setState(() {
                     screenIndex = 3;
                     activeButton = 3;
                   });
-                  /*
-Navigator.push(
-                      context,
-                      PageRouteBuilder(
-                          pageBuilder:
-                              (context, animation, secondaryAnimation) =>
-                                  Login(),
-                          transitionsBuilder:
-                              (context, animation, secondaryAnimation, child) {
-                            const begin =
-                                Offset(0.0, 1.0); //Slide from right to left
-                            const end = Offset(0.0, 0.0);
-                            const curve = Curves.easeInOut;
-                            var tween = Tween(begin: begin, end: end)
-                                .chain(CurveTween(curve: curve));
-                            return SlideTransition(
-                              position: animation.drive(tween),
-                              child: child,
-                            );
-                          })).then((_) {
-                          
-                    setState(() {
-                      screenIndex = 2;
-                      activeButton = 2;
-                    });
-                  });
-                  */
                 },
                 child: Icon(
                   screenIndex == 3
@@ -303,7 +266,6 @@ Navigator.push(
             ],
           ),
         ),
-      ),
     );
   }
 }

@@ -1,20 +1,24 @@
-// ----SettingPage--------------------------------------------------------------------------
+// ----MenuPage--------------------------------------------------------------------------
 
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/components/history_page.dart';
+import 'package:flutter_application_1/components/my_order_page.dart';
+import 'package:flutter_application_1/documents/faq.dart';
+import 'package:flutter_application_1/documents/terms_of_use.dart';
+import 'package:flutter_application_1/documents/privacy_policy.dart';
 import 'package:flutter_application_1/provider/language_provider.dart';
 import 'package:flutter_application_1/screen/profile_user.dart';
 import 'package:flutter_application_1/screen/setting_page.dart';
 import 'package:provider/provider.dart';
 
-class SettingPage extends StatefulWidget {
-  const SettingPage({super.key});
+class MenuPage extends StatefulWidget {
+  const MenuPage({super.key});
 
   @override
-  State<SettingPage> createState() => _SettingPageState();
+  State<MenuPage> createState() => _MenuPageState();
 }
 
-
-class _SettingPageState extends State<SettingPage> {
+class _MenuPageState extends State<MenuPage> {
   @override
   Widget build(BuildContext context) {
     final languageProvider = Provider.of<LanguageProvider>(context);
@@ -64,7 +68,13 @@ class _SettingPageState extends State<SettingPage> {
                           ),
                         ),
                         GestureDetector(
-                          onTap: () {},
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const MyOrderPage()),
+                            );
+                          },
                           child: Container(
                             padding: EdgeInsets.symmetric(
                                 horizontal: 5, vertical: 5),
@@ -89,7 +99,13 @@ class _SettingPageState extends State<SettingPage> {
                           ),
                         ),
                         GestureDetector(
-                          onTap: () {},
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const HistoryPage()),
+                            );
+                          },
                           child: Container(
                             padding: EdgeInsets.symmetric(
                                 horizontal: 5, vertical: 5),
@@ -207,150 +223,140 @@ class _SettingPageState extends State<SettingPage> {
                 ),
               ),
               SizedBox(height: 20),
+              // ✅ แก้ไขส่วนนี้ - เปลี่ยนจาก Row เป็น Column
               Column(
                 children: [
-                  Container(
-                    width: double.infinity,
-                    height: 70,
-                    decoration: BoxDecoration(
-                      color: Color.fromARGB(15, 0, 0, 0),
-                      border: Border(
-                        bottom: BorderSide(color: Colors.black12, width: 1),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 10),
-                          child: Text(
-                              languageProvider.translate(
-                                  en: "Learn how to use it",
-                                  th: "เรียนรู้วิธีใช้งาน"),
-                              style: TextStyle(fontSize: 18)),
+                  // FAQ
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const FAQPage()),
+                      );
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      height: 70,
+                      decoration: BoxDecoration(
+                        color: Color.fromARGB(15, 0, 0, 0),
+                        border: Border(
+                          bottom: BorderSide(color: Colors.black12, width: 1),
                         ),
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                              horizontal:
-                                  10), //padding = ระยะขอบ //horizontal = ซ้ายและขวา
-                          child: Transform(
-                            alignment: Alignment.center,
-                            transform: Matrix4.rotationY(-180), // rotate
-                            child: Icon(Icons.arrow_back_ios_new_outlined,
-                                size: 20),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 10),
+                            child: Text(
+                                languageProvider.translate(
+                                    en: "Frequently asked questions",
+                                    th: "คำถามที่พบบ่อย"),
+                                style: TextStyle(fontSize: 18)),
                           ),
-                        )
-                      ],
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 10),
+                            child: Transform(
+                              alignment: Alignment.center,
+                              transform: Matrix4.rotationY(-180),
+                              child: Icon(Icons.arrow_back_ios_new_outlined,
+                                  size: 20),
+                            ),
+                          )
+                        ],
+                      ),
                     ),
                   ),
                   Divider(height: 1),
-                  Container(
-                    width: double.infinity,
-                    height: 70,
-                    decoration: BoxDecoration(
-                      color: Color.fromARGB(15, 0, 0, 0),
-                      border: Border(
-                        bottom: BorderSide(color: Colors.black12, width: 1),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 10),
-                          child: Text(
-                              languageProvider.translate(
-                                  en: "Frequently asked questions",
-                                  th: "คำถามที่พบบ่อย"),
-                              style: TextStyle(fontSize: 18)),
+                  // Terms of Use
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const TermsOfUsePage()),
+                      );
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      height: 70,
+                      decoration: BoxDecoration(
+                        color: Color.fromARGB(15, 0, 0, 0),
+                        border: Border(
+                          bottom: BorderSide(color: Colors.black12, width: 1),
                         ),
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                              horizontal:
-                                  10), //padding = ระยะขอบ //horizontal = ซ้ายและขวา
-                          child: Transform(
-                            alignment: Alignment.center,
-                            transform: Matrix4.rotationY(-180), // rotate
-                            child: Icon(Icons.arrow_back_ios_new_outlined,
-                                size: 20),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 10),
+                            child: Text(
+                                languageProvider.translate(
+                                    en: "Terms of Use",
+                                    th: "ข้อกำหนดการใช้งาน"),
+                                style: TextStyle(fontSize: 18)),
                           ),
-                        )
-                      ],
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 10),
+                            child: Transform(
+                              alignment: Alignment.center,
+                              transform: Matrix4.rotationY(-180),
+                              child: Icon(Icons.arrow_back_ios_new_outlined,
+                                  size: 20),
+                            ),
+                          )
+                        ],
+                      ),
                     ),
                   ),
                   Divider(height: 1),
-                  Container(
-                    width: double.infinity,
-                    height: 70,
-                    decoration: BoxDecoration(
-                      color: Color.fromARGB(15, 0, 0, 0),
-                      border: Border(
-                        bottom: BorderSide(color: Colors.black12, width: 1),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 10),
-                          child: Text(
-                              languageProvider.translate(
-                                  en: "Terms of Use", th: "ข้อกำหนดการใช้งาน"),
-                              style: TextStyle(fontSize: 18)),
+                  // Privacy Policy
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const PrivacyPolicyPage()),
+                      );
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      height: 70,
+                      decoration: BoxDecoration(
+                        color: Color.fromARGB(15, 0, 0, 0),
+                        border: Border(
+                          bottom: BorderSide(color: Colors.black12, width: 1),
                         ),
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                              horizontal:
-                                  10), //padding = ระยะขอบ //horizontal = ซ้ายและขวา
-                          child: Transform(
-                            alignment: Alignment.center,
-                            transform: Matrix4.rotationY(-180), // rotate
-                            child: Icon(Icons.arrow_back_ios_new_outlined,
-                                size: 20),
-                          ),
-                        )
-                      ],
-                    ),
-                  ),
-                  Divider(height: 1),
-                  Container(
-                    width: double.infinity,
-                    height: 70,
-                    decoration: BoxDecoration(
-                      color: Color.fromARGB(15, 0, 0, 0),
-                      border: Border(
-                        bottom: BorderSide(color: Colors.black12, width: 1),
                       ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 10),
-                          child: Text(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 10),
+                            child: Text(
                               languageProvider.translate(
                                   en: "Privacy Policy",
                                   th: "นโยบายความเป็นส่วนตัว"),
-                              style: TextStyle(fontSize: 18)),
-                        ),
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                              horizontal:
-                                  10), //padding = ระยะขอบ //horizontal = ซ้ายและขวา
-                          child: Transform(
-                            alignment: Alignment.center,
-                            transform: Matrix4.rotationY(-180), // rotate
-                            child: Icon(
-                              Icons.arrow_back_ios_new_outlined,
-                              size: 20,
+                              style: TextStyle(fontSize: 18),
                             ),
                           ),
-                        )
-                      ],
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 10),
+                            child: Transform(
+                              alignment: Alignment.center,
+                              transform: Matrix4.rotationY(-180),
+                              child: Icon(
+                                Icons.arrow_back_ios_new_outlined,
+                                size: 20,
+                              ),
+                            ),
+                          )
+                        ],
+                      ),
                     ),
                   ),
-                  Divider(height: 1),
                 ],
               ),
               SizedBox(height: 15),

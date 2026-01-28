@@ -247,28 +247,6 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
-                // Positioned(
-                //   bottom: 160,
-                //   left: 20,
-                //   right: 20,
-                //   child: Text(
-                //     item['description'] ?? '',
-                //     style: TextStyle(
-                //       color: const Color.fromARGB(238, 255, 255, 255),
-                //       fontSize: 18,
-                //       fontWeight: FontWeight.bold,
-                //       shadows: [
-                //         Shadow(
-                //           blurRadius: 20,
-                //           color: Colors.black.withOpacity(0.7),
-                //           offset: Offset(2, 2),
-                //         ),
-                //       ],
-                //     ),
-                //     maxLines: 3,
-                //     softWrap: true,
-                //   ),
-                // ),
                 Positioned(
                   bottom: 130,
                   left: 20,
