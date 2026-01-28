@@ -42,19 +42,23 @@ class _NotificationPageState extends State<NotificationPage> {
 
   final List<Map<String, String>> imagesNoti = [
     {
-      "TextNoti": "Free for VIP Member\nABC_SHOP",
+      "ImageNoti":
+          "https://res.cloudinary.com/dag73dhpl/image/upload/v1769586709/Screenshot_2026-01-28_144831_d4yurr.png",
     },
     {
-      "TextNoti": "EASY E-RECEIPT\nABC_SHOP",
+      "ImageNoti":
+          "https://res.cloudinary.com/dag73dhpl/image/upload/v1769585619/Screenshot_2026-01-28_143025_qzfh7o.png",
     },
     {
-      "TextNoti": "CREDIT CARD PROMOTION\nABC_SHOP",
+      "ImageNoti":
+          "https://res.cloudinary.com/dag73dhpl/image/upload/v1769585953/Screenshot_2026-01-28_143538_gtwma8.png",
     },
     {
-      "TextNoti": "STORES_WEEKLY\nABC_SHOP",
+      "ImageNoti":
+          "https://res.cloudinary.com/dag73dhpl/image/upload/v1769586994/Screenshot_2026-01-28_145320_y6kvub.png",
     },
     {
-      "TextNoti": "GIFT CARD BALANCE CHECK\nABC_SHOP",
+      "ImageNoti": "",
     },
   ];
 
@@ -139,15 +143,7 @@ class _NotificationPageState extends State<NotificationPage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    Future.wait(imagesNoti.map((item1) {
-      final imageN = item1["imagesNoti"];
-      if (imageN != null && imageN.isNotEmpty) {
-        return precacheImage(AssetImage(imageN), context);
-      } else {
-        // not imagePath return Future
-        return Future.value();
-      }
-    }).toList());
+    
     Future.wait(messageSet.map((item2) {
       final imageMes = item2["messageSet"];
       if (imageMes != null && imageMes.isNotEmpty) {
@@ -176,7 +172,7 @@ class _NotificationPageState extends State<NotificationPage> {
       child: Column(
         children: [
           SizedBox(
-            height: 135, // กำหนดความสูงของ PageView
+            height: 240, // กำหนดความสูงของ PageView
             child: PageView.builder(
               controller: _pageControlNotificate1,
               itemCount: imagesNoti.length,
@@ -188,24 +184,23 @@ class _NotificationPageState extends State<NotificationPage> {
                 });
               },
               itemBuilder: (context, index) {
-                final item1 = imagesNoti[index % imagesNoti.length];
+                ;
                 return Stack(
                   children: [
                     Container(
                       color: Theme.of(context).textTheme.bodyLarge?.color,
                       child: Center(
-                        child: Text(
-                          item1['TextNoti']!,
-                          style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              shadows: [
-                                Shadow(
-                                  blurRadius: 20,
-                                  //color: Colors.black45,
-                                  offset: Offset(2, 2),
-                                ),
-                              ]),
+                        child: CachedNetworkImage(
+                          imageUrl: imagesNoti[index]['ImageNoti'] ?? '',
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                          placeholder: (context, url) => Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                          errorWidget: (context, url, error) => Center(
+                            child: Icon(Icons.error),
+                          ),
                         ),
                       ),
                     ),
