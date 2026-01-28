@@ -85,12 +85,7 @@ class _MyControllState extends State<MyControll> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final languageProvider = Provider.of<LanguageProvider>(context);
 
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      themeMode: themeProvider.themeMode,
-      theme: AppThemes.lightTheme,
-      darkTheme: AppThemes.darkTheme,
-      home: Scaffold(
+    return Scaffold(
         //------------------- AppBar -------------------
         appBar: AppBar(
           title: Text(
@@ -303,7 +298,6 @@ Navigator.push(
             ],
           ),
         ),
-      ),
     );
   }
 }
