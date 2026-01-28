@@ -25,7 +25,7 @@ class _ShopPageState extends State<ShopPage> {
   final PageController _pageControlShop1 = PageController(initialPage: 0);
   final PageController _pageControlShop2 = PageController(initialPage: 0);
 
-  // ✅ แก้ไข: เพิ่ม List สำหรับเก็บข้อมูลจาก API
+  
   List<Map<String, dynamic>> dataShoplike = [];
   List<Map<String, dynamic>> dataShopSeller = [];
   bool isLoadingLike = true;
@@ -33,7 +33,7 @@ class _ShopPageState extends State<ShopPage> {
   String errorMessageLike = '';
   String errorMessageSeller = '';
 
-  // ฟังก์ชันสำหรับหา Base URL ที่ถูกต้องตาม Platform
+ 
   String getBaseUrl() {
     if (kIsWeb) {
       return 'http://localhost:8000';
@@ -51,7 +51,7 @@ class _ShopPageState extends State<ShopPage> {
     fetchShopseller();
   }
 
-  // ✅ gender
+ 
   String getGenderText(dynamic gender) {
     final genderCode =
         gender is int ? gender : int.tryParse(gender?.toString() ?? '');
@@ -70,7 +70,7 @@ class _ShopPageState extends State<ShopPage> {
     }
   }
 
-  // ✅ แก้ไข: ดึงข้อมูล "You might like"
+  
   Future<void> fetchShoplike() async {
     try {
       final baseUrl = getBaseUrl();
@@ -137,7 +137,7 @@ class _ShopPageState extends State<ShopPage> {
     }
   }
 
-  // ✅ แก้ไข: ดึงข้อมูล "Best Seller"
+  
   Future<void> fetchShopseller() async {
     try {
       final baseUrl = getBaseUrl();
@@ -254,7 +254,7 @@ class _ShopPageState extends State<ShopPage> {
           Divider(color: Theme.of(context).colorScheme.onSurface, height: 1),
           SizedBox(height: 10),
 
-          // ✅ Section: You might like
+       
           Container(
             child: Column(
               children: [
@@ -270,7 +270,7 @@ class _ShopPageState extends State<ShopPage> {
                   ),
                 ),
 
-                // ✅ แสดง Loading, Error หรือข้อมูล
+               
                 isLoadingLike
                     ? SizedBox(
                         height: 490,
@@ -387,7 +387,7 @@ class _ShopPageState extends State<ShopPage> {
                                               ),
                                               FloatingActionButton.small(
                                                 onPressed: () {
-                                                  // Add to cart logic
+                                                
                                                 },
                                                 child: Icon(
                                                   Icons.shopping_cart_outlined,
@@ -413,7 +413,6 @@ class _ShopPageState extends State<ShopPage> {
             ),
           ),
 
-          // ✅ Section: Best Seller
           Container(
             child: Column(
               children: [
@@ -546,7 +545,7 @@ class _ShopPageState extends State<ShopPage> {
                                               ),
                                               FloatingActionButton.small(
                                                 onPressed: () {
-                                                  // Add to cart logic
+                                               
                                                 },
                                                 child: Icon(
                                                   Icons.shopping_cart_outlined,

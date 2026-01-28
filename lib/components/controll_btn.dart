@@ -4,7 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/components/home_page.dart';
 import 'package:flutter_application_1/components/favorite_page.dart';
-import 'package:flutter_application_1/components/setting_page.dart';
+import 'package:flutter_application_1/components/menu_page.dart';
 import 'package:flutter_application_1/components/notification_page.dart';
 import 'package:flutter_application_1/components/search_page.dart';
 import 'package:flutter_application_1/components/shop_page.dart';

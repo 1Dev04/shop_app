@@ -1,4 +1,4 @@
-// ----MenuPage--------------------------------------------------------------------------
+// ----SettingPage--------------------------------------------------------------------------
 
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/provider/language_provider.dart';
@@ -13,7 +13,6 @@ class SettingPage extends StatefulWidget {
   State<SettingPage> createState() => _SettingPageState();
 }
 
-// ----SettingPage--------------------------------------------------------------------------
 
 class _SettingPageState extends State<SettingPage> {
   @override
@@ -210,40 +209,6 @@ class _SettingPageState extends State<SettingPage> {
               SizedBox(height: 20),
               Column(
                 children: [
-                  Container(
-                    width: double.infinity,
-                    height: 70,
-                    decoration: BoxDecoration(
-                      color: Color.fromARGB(15, 0, 0, 0),
-                      border: Border(
-                        bottom: BorderSide(color: Colors.black12, width: 1),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 10),
-                          child: Text(
-                              languageProvider.translate(
-                                  en: "Find branch locations", th: "ค้นหาสาขา"),
-                              style: TextStyle(fontSize: 18)),
-                        ),
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                              horizontal:
-                                  10), //padding = ระยะขอบ //horizontal = ซ้ายและขวา
-                          child: Transform(
-                            alignment: Alignment.center,
-                            transform: Matrix4.rotationY(-180), // rotate
-                            child: Icon(Icons.arrow_back_ios_new_outlined,
-                                size: 20),
-                          ),
-                        )
-                      ],
-                    ),
-                  ),
-                  Divider(height: 1),
                   Container(
                     width: double.infinity,
                     height: 70,
