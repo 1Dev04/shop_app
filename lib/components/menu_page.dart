@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/components/history_page.dart';
 import 'package:flutter_application_1/components/my_order_page.dart';
+import 'package:flutter_application_1/components/my_coupon_page.dart';
 import 'package:flutter_application_1/documents/faq.dart';
 import 'package:flutter_application_1/documents/terms_of_use.dart';
 import 'package:flutter_application_1/documents/privacy_policy.dart';
@@ -138,7 +139,12 @@ class _MenuPageState extends State<MenuPage> {
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         GestureDetector(
-                          onTap: () {},
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const MyCouponPage()), 
+                            );
+                          },
                           child: Container(
                             padding: EdgeInsets.symmetric(
                                 horizontal: 5, vertical: 5),
