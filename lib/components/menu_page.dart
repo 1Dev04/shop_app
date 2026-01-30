@@ -89,10 +89,10 @@ class _MenuPageState extends State<MenuPage> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                Icon(Icons.archive_outlined, size: 30),
+                                Icon(Icons.shopping_basket_outlined, size: 30),
                                 Text(
                                   languageProvider.translate(
-                                      en: "My Orders", th: "ค้าของฉัน"),
+                                      en: "Orders", th: "คำสั่งซื้อ"),
                                   style: TextStyle(fontSize: 16),
                                 ),
                               ],
@@ -120,10 +120,10 @@ class _MenuPageState extends State<MenuPage> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                Icon(Icons.shopping_bag_outlined, size: 30),
+                                Icon(Icons.history, size: 30),
                                 Text(
                                   languageProvider.translate(
-                                      en: "Order List", th: "รายการค้า"),
+                                      en: "History", th: "ประวัติ"),
                                   style: TextStyle(fontSize: 16),
                                 ),
                               ],
@@ -136,6 +136,7 @@ class _MenuPageState extends State<MenuPage> {
                       height: 14,
                     ),
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         GestureDetector(
@@ -162,31 +163,6 @@ class _MenuPageState extends State<MenuPage> {
                                 Text(
                                   languageProvider.translate(
                                       en: "Coupon", th: "คูปอง"),
-                                  style: TextStyle(fontSize: 16),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () {},
-                          child: Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 5, vertical: 5),
-                            width: 100,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).primaryColor,
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Icon(Icons.list_alt_outlined, size: 30),
-                                Text(
-                                  languageProvider.translate(
-                                      en: "Survey B.", th: "แบบสอบถาม"),
                                   style: TextStyle(fontSize: 16),
                                 ),
                               ],

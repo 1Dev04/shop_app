@@ -223,8 +223,8 @@ class _MyControllState extends State<MyControll> {
                       });
                     });
                   },
-                  child: Image.asset(
-                    'assets/icons/sizeCat.png',
+                  child: Image.network(
+                    'https://res.cloudinary.com/dag73dhpl/image/upload/v1769662814/sizeCat_xil2jh.png',
                     width: 40,
                     height: 40,
                     color: AppBarTheme.of(context)
