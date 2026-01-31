@@ -375,6 +375,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
+                
                 // ส่วนแสดงราคา
                 Positioned(
                   bottom: 130,
@@ -434,7 +435,7 @@ class _HomePageState extends State<HomePage> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            '-${item['discount_percent']?.toString() ?? '0'}%',
+                            '-${item['discount_percent']?.toString() ?? '0'}',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 18,
@@ -612,7 +613,51 @@ class ItemDetailsCard extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      SizedBox(height: 12),
+                
+
+                      
+                      SizedBox(height: 5),
+
+
+                      // รายละเอียดสินค้า
+                      if (itemDetails['description'] != null)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'รายละเอียด',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              itemDetails['description'] ?? '',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                            SizedBox(height: 16),
+                          ],
+                        ),
+
+                        _DetailRow(
+                          label: languageProvider.translate(
+                              en: 'Category',
+                              th: 'หมวดหมู่',
+                            ),
+                            value: itemDetails['category'],
+                        ),
+                         _DetailRow(
+                          label: languageProvider.translate(
+                              en: 'Size',
+                              th: 'ขนาด',
+                            ),
+                            value: itemDetails['size_category'],
+                        ),
+
 
                       // ราคา
                       Row(
@@ -658,31 +703,6 @@ class ItemDetailsCard extends StatelessWidget {
                             ),
                         ],
                       ),
-                      SizedBox(height: 16),
-
-                      // รายละเอียดสินค้า
-                      if (itemDetails['description'] != null)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'รายละเอียด',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              itemDetails['description'] ?? '',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey[700],
-                              ),
-                            ),
-                            SizedBox(height: 16),
-                          ],
-                        ),
 
                       // ปุ่มปิด
                       SizedBox(
@@ -716,6 +736,50 @@ class ItemDetailsCard extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _DetailRow({
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (value.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(context).colorScheme.secondary,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
