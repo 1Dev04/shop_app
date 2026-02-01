@@ -10,6 +10,8 @@ import 'package:http/http.dart' as http;
 import 'dart:async';
 
 import 'package:provider/provider.dart';
+import 'package:top_snackbar_flutter/custom_snack_bar.dart';
+import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -375,7 +377,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
-                
+
                 // ส่วนแสดงราคา
                 Positioned(
                   bottom: 130,
@@ -411,7 +413,9 @@ class _HomePageState extends State<HomePage> {
                             ? '฿${discountPrice.toStringAsFixed(0)}'
                             : '฿${item['price']?.toString() ?? ''}',
                         style: TextStyle(
-                          color: hasDiscount ? Colors.yellow : Colors.white,
+                          color: hasDiscount
+                              ? const Color.fromARGB(255, 255, 244, 125)
+                              : Colors.white,
                           fontSize: 25,
                           fontWeight: FontWeight.bold,
                           shadows: [
@@ -435,7 +439,7 @@ class _HomePageState extends State<HomePage> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            '-${item['discount_percent']?.toString() ?? '0'}',
+                            '-${item['discount_percent']?.toString() ?? '0'}%',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 18,
@@ -541,15 +545,16 @@ class ItemDetailsCard extends StatelessWidget {
 
     return Center(
       child: Container(
-        margin: EdgeInsets.symmetric(horizontal: 20, vertical: 60),
+        margin: const EdgeInsets.only(top: 50, left: 20, right: 20),
+        constraints: const BoxConstraints(maxHeight: 600),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.3),
               blurRadius: 20,
-              offset: Offset(0, 10),
+              offset: const Offset(0, 10),
             ),
           ],
         ),
@@ -560,27 +565,27 @@ class ItemDetailsCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                  // Positioned(
-                  //   top: 6,
-                  //   right: 6,
-                  //   child: GestureDetector(
-                  //     onTap: () {
+                // Positioned(
+                //   top: 6,
+                //   right: 6,
+                //   child: GestureDetector(
+                //     onTap: () {
 
-                  //     },
-                  //     child: Container(
-                  //       padding: EdgeInsets.all(6),
-                  //       decoration: BoxDecoration(
-                  //         color: Colors.black.withOpacity(0.1),
-                  //         shape: BoxShape.circle,
-                  //       ),
-                  //       child: Icon(
-                  //         Icons.favorite,
-                  //         color:  Colors.white,
-                  //         size: 18,
-                  //       ),
-                  //     ),
-                  //   ),
-                  // ),
+                //     },
+                //     child: Container(
+                //       padding: EdgeInsets.all(6),
+                //       decoration: BoxDecoration(
+                //         color: Colors.black.withOpacity(0.1),
+                //         shape: BoxShape.circle,
+                //       ),
+                //       child: Icon(
+                //         Icons.favorite,
+                //         color:  Colors.white,
+                //         size: 18,
+                //       ),
+                //     ),
+                //   ),
+                // ),
                 // รูปภาพสินค้า
                 ClipRRect(
                   borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -613,11 +618,45 @@ class ItemDetailsCard extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                
 
-                      
                       SizedBox(height: 5),
 
+                      _DetailRow(
+                        label: languageProvider.translate(
+                          en: 'Category',
+                          th: 'หมวดหมู่',
+                        ),
+                        value: itemDetails['category'],
+                      ),
+                      _DetailRow(
+                        label: languageProvider.translate(
+                          en: 'Size',
+                          th: 'ขนาด',
+                        ),
+                        value: itemDetails['size_category'],
+                      ),
+                      _DetailRow(
+                        label: languageProvider.translate(
+                          en: 'Gender',
+                          th: 'เพศ',
+                        ),
+                        value: formatGender(
+                            itemDetails['gender'], languageProvider),
+                      ),
+                      _DetailRow(
+                        label: languageProvider.translate(
+                          en: 'Stock',
+                          th: 'สต็อก',
+                        ),
+                        value: itemDetails['stock']?.toString() ?? '',
+                      ),
+                      _DetailRow(
+                        label: languageProvider.translate(
+                          en: 'Breed',
+                          th: 'สายพันธุ์',
+                        ),
+                        value: itemDetails['breed'],
+                      ),
 
                       // รายละเอียดสินค้า
                       if (itemDetails['description'] != null)
@@ -642,22 +681,6 @@ class ItemDetailsCard extends StatelessWidget {
                             SizedBox(height: 16),
                           ],
                         ),
-
-                        _DetailRow(
-                          label: languageProvider.translate(
-                              en: 'Category',
-                              th: 'หมวดหมู่',
-                            ),
-                            value: itemDetails['category'],
-                        ),
-                         _DetailRow(
-                          label: languageProvider.translate(
-                              en: 'Size',
-                              th: 'ขนาด',
-                            ),
-                            value: itemDetails['size_category'],
-                        ),
-
 
                       // ราคา
                       Row(
@@ -693,7 +716,7 @@ class ItemDetailsCard extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
-                                '-${itemDetails['discount_percent']?.toString() ?? '0'}%',
+                                '-${itemDetails['discount_percent']?.toString() ?? '0'}',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,
@@ -703,29 +726,33 @@ class ItemDetailsCard extends StatelessWidget {
                             ),
                         ],
                       ),
-
-                      // ปุ่มปิด
+                       const SizedBox(height: 10),
+                      //Add to Cart button
                       SizedBox(
                         width: double.infinity,
                         height: 60,
-                        child: ElevatedButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          style: ElevatedButton.styleFrom(
-                            padding: EdgeInsets.symmetric(vertical: 16),
-                            backgroundColor: Colors.black,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            showTopSnackBar(
+                              Overlay.of(context),
+                              CustomSnackBar.success(
+                                message: languageProvider.translate(
+                                  en: 'Added to cart successfully!',
+                                  th: 'เพิ่มลงตะกร้าสำเร็จ!',
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.add_shopping_cart_sharp),
+                          label: Text(
+                            languageProvider.translate(
+                                en: 'Add to Cart', th: 'เพิ่มลงตะกร้า'),
+                            style: const TextStyle(fontSize: 16),
                           ),
-                          child: ElevatedButton.icon(
-                            onPressed: () => {},
-                            icon: Icon(Icons.add_shopping_cart_sharp),
-                            label: Text(
-                              languageProvider.translate(
-                                en: 'Add to Cart',
-                                th: 'เพิ่มลงตะกร้า',
-                              ),
-                              style: TextStyle(
-                                fontSize: 16
-                              ),
-                            ),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            backgroundColor: Colors.black,
                           ),
                         ),
                       ),
@@ -782,5 +809,24 @@ class _DetailRow extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+// ============================================================================
+// Helper: format gender
+// ============================================================================
+
+String formatGender(int value, LanguageProvider lang) {
+  switch (value) {
+    case 0:
+      return lang.translate(en: 'Unisex', th: 'ยูนิเซ็กซ์');
+    case 1:
+      return lang.translate(en: 'Male', th: 'เพศผู้');
+    case 2:
+      return lang.translate(en: 'Female', th: 'เพศเมีย');
+    case 3:
+      return lang.translate(en: 'Kitten', th: 'ลูกแมว');
+    default:
+      return lang.translate(en: 'Unknown', th: 'ไม่ระบุ');
   }
 }

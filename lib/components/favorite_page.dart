@@ -74,7 +74,7 @@ class FavoritePage extends StatelessWidget {
           ),
           SizedBox(height: 20),
           Text(
-            languageProvider.translate(en: "Setting", th: "การตั้งค่า"),
+            languageProvider.translate(en: "No favorites", th: "ไม่มีรายการโปรด"),
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,

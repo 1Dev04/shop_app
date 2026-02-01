@@ -13,6 +13,25 @@ import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
 // ============================================================================
+// Helper: parse any dynamic → double safely
+// ============================================================================
+
+double _parseDouble(dynamic value) {
+  if (value == null) return 0.0;
+  if (value is double) return value;
+  if (value is int) return value.toDouble();
+  if (value is String) {
+    // ลบ " THB", "%", whitespace ออก ก่อน parse
+    final cleaned = value
+        .replaceAll('THB', '')
+        .replaceAll('%', '')
+        .trim();
+    return double.tryParse(cleaned) ?? 0.0;
+  }
+  return 0.0;
+}
+
+// ============================================================================
 // API Configuration
 // ============================================================================
 
@@ -50,26 +69,21 @@ class NotificationPage extends StatefulWidget {
 }
 
 class _NotificationPageState extends State<NotificationPage> {
-  // Page Controllers - initialized lazily
   PageController? _bannerController;
   PageController? _contentTypeController;
   PageController? _messageController;
   PageController? _newsController;
 
-  // Page Indices
   int _currentBannerIndex = 0;
   int _currentContentType = 0; // 0: Messages, 1: News
 
-  // Data Lists
   List<NotificationItemMess> _messages = [];
   List<NotificationItemNews> _news = [];
 
-  // Loading States
   bool _isLoadingMessages = true;
   bool _isLoadingNews = true;
   bool _isRefreshing = false;
 
-  // Error States
   String? _messagesError;
   String? _newsError;
 
@@ -206,12 +220,19 @@ class _NotificationPageState extends State<NotificationPage> {
   }
 
   // ============================================================================
-  // Detail Fetch Functions
+  // Detail Fetch & Popup
   // ============================================================================
 
   Future<void> _showMessageDetail(String id) async {
     final languageProvider =
         Provider.of<LanguageProvider>(context, listen: false);
+
+    // Loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
 
     try {
       final response = await http
@@ -219,11 +240,12 @@ class _NotificationPageState extends State<NotificationPage> {
           .timeout(ApiConfig.apiTimeout);
 
       if (!mounted) return;
+      Navigator.of(context).pop(); // ปิด loading
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final item = NotificationItemMess.fromJson(data);
-        _showDetailPopup(context, item, isMessage: true);
+        _showDetailPopup(context, item);
       } else {
         _showError(languageProvider.translate(
           en: 'Failed to load message details',
@@ -232,9 +254,10 @@ class _NotificationPageState extends State<NotificationPage> {
       }
     } catch (e) {
       if (!mounted) return;
+      Navigator.of(context).pop();
       _showError(languageProvider.translate(
-        en: 'Error loading details: ${_getErrorMessage(e)}',
-        th: 'เกิดข้อผิดพลาดในการโหลดรายละเอียด: ${_getErrorMessage(e)}',
+        en: 'Error loading details',
+        th: 'เกิดข้อผิดพลาดในการโหลดรายละเอียด',
       ));
     }
   }
@@ -243,17 +266,24 @@ class _NotificationPageState extends State<NotificationPage> {
     final languageProvider =
         Provider.of<LanguageProvider>(context, listen: false);
 
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
     try {
       final response = await http
           .get(ApiConfig.getNewsDetailUri(id))
           .timeout(ApiConfig.apiTimeout);
 
       if (!mounted) return;
+      Navigator.of(context).pop();
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final item = NotificationItemNews.fromJson(data);
-        _showDetailPopup(context, item, isMessage: false);
+        _showDetailPopup(context, item);
       } else {
         _showError(languageProvider.translate(
           en: 'Failed to load news details',
@@ -262,9 +292,10 @@ class _NotificationPageState extends State<NotificationPage> {
       }
     } catch (e) {
       if (!mounted) return;
+      Navigator.of(context).pop();
       _showError(languageProvider.translate(
-        en: 'Error loading details: ${_getErrorMessage(e)}',
-        th: 'เกิดข้อผิดพลาดในการโหลดรายละเอียด: ${_getErrorMessage(e)}',
+        en: 'Error loading details',
+        th: 'เกิดข้อผิดพลาดในการโหลดรายละเอียด',
       ));
     }
   }
@@ -282,7 +313,7 @@ class _NotificationPageState extends State<NotificationPage> {
   }
 
   // ============================================================================
-  // Navigation Functions
+  // Navigation
   // ============================================================================
 
   void _navigateToBanner(int index) {
@@ -338,9 +369,7 @@ class _NotificationPageState extends State<NotificationPage> {
                 onPageChanged: (index) =>
                     setState(() => _currentContentType = index),
                 children: [
-                  // Messages Tab
                   _buildMessagesTab(),
-                  // News Tab
                   _buildNewsTab(),
                 ],
               ),
@@ -357,22 +386,15 @@ class _NotificationPageState extends State<NotificationPage> {
     if (_isLoadingMessages) {
       return const Center(child: CircularProgressIndicator());
     }
-
     if (_messagesError != null) {
-      return _ErrorView(
-        message: _messagesError!,
-        onRetry: _fetchMessages,
-      );
+      return _ErrorView(message: _messagesError!, onRetry: _fetchMessages);
     }
-
     if (_messages.isEmpty) {
       return Center(
-        child: Text(
-          languageProvider.translate(
-            en: 'No messages available',
-            th: 'ไม่มีข้อความ',
-          ),
-        ),
+        child: Text(languageProvider.translate(
+          en: 'No messages available',
+          th: 'ไม่มีข้อความ',
+        )),
       );
     }
 
@@ -389,22 +411,15 @@ class _NotificationPageState extends State<NotificationPage> {
     if (_isLoadingNews) {
       return const Center(child: CircularProgressIndicator());
     }
-
     if (_newsError != null) {
-      return _ErrorView(
-        message: _newsError!,
-        onRetry: _fetchNews,
-      );
+      return _ErrorView(message: _newsError!, onRetry: _fetchNews);
     }
-
     if (_news.isEmpty) {
       return Center(
-        child: Text(
-          languageProvider.translate(
-            en: 'No news available',
-            th: 'ไม่มีข่าว',
-          ),
-        ),
+        child: Text(languageProvider.translate(
+          en: 'No news available',
+          th: 'ไม่มีข่าว',
+        )),
       );
     }
 
@@ -417,52 +432,37 @@ class _NotificationPageState extends State<NotificationPage> {
 }
 
 // ============================================================================
-// Error View Widget
+// Error View
 // ============================================================================
 
 class _ErrorView extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
 
-  const _ErrorView({
-    required this.message,
-    required this.onRetry,
-  });
+  const _ErrorView({required this.message, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
     final languageProvider = Provider.of<LanguageProvider>(context);
-
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.error_outline,
-            size: 48,
-            color: Colors.red.shade300,
-          ),
+          Icon(Icons.error_outline, size: 48, color: Colors.red.shade300),
           const SizedBox(height: 16),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32),
             child: Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
             ),
           ),
           const SizedBox(height: 16),
           ElevatedButton.icon(
             onPressed: onRetry,
             icon: const Icon(Icons.refresh),
-            label: Text(
-              languageProvider.translate(
-                en: 'Retry',
-                th: 'ลองอีกครั้ง',
-              ),
-            ),
+            label: Text(languageProvider.translate(en: 'Retry', th: 'ลองอีกครั้ง')),
           ),
         ],
       ),
@@ -471,88 +471,69 @@ class _ErrorView extends StatelessWidget {
 }
 
 // ============================================================================
-// Detail Popup Dialog
+// Detail Popup — แบบเดียวกับ HomePage ItemDetailsCard
 // ============================================================================
 
-void _showDetailPopup(BuildContext context, dynamic item,
-    {required bool isMessage}) {
+void _showDetailPopup(BuildContext context, dynamic item) {
   showGeneralDialog(
     context: context,
     barrierDismissible: true,
-    barrierLabel: 'Dismiss',
+    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
     barrierColor: Colors.black54,
     transitionDuration: const Duration(milliseconds: 400),
     pageBuilder: (context, animation, secondaryAnimation) {
-      return Container();
+      return _NotificationDetailCard(item: item);
     },
     transitionBuilder: (context, animation, secondaryAnimation, child) {
-      final curvedAnimation = CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeOutCubic,
+      const begin = Offset(0.0, -1.0);
+      const end = Offset.zero;
+      const curve = Curves.easeInOut;
+
+      var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+      var offsetAnimation = animation.drive(tween);
+      var fadeAnimation = animation.drive(
+        Tween(begin: 0.0, end: 1.0).chain(CurveTween(curve: curve)),
       );
 
       return SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, -1),
-          end: Offset.zero,
-        ).animate(curvedAnimation),
+        position: offsetAnimation,
         child: FadeTransition(
-          opacity: curvedAnimation,
-          child: _DetailPopupContent(item: item, isMessage: isMessage),
+          opacity: fadeAnimation,
+          child: child,
         ),
       );
     },
   );
 }
 
-class _DetailPopupContent extends StatefulWidget {
-  final dynamic item;
-  final bool isMessage;
+// ============================================================================
+// Notification Detail Card — คล้าย HomePage ItemDetailsCard
+// ============================================================================
 
-  const _DetailPopupContent({
-    required this.item,
-    required this.isMessage,
-  });
+class _NotificationDetailCard extends StatelessWidget {
+  final dynamic item; // NotificationItemMess หรือ NotificationItemNews
 
-  @override
-  State<_DetailPopupContent> createState() => _DetailPopupContentState();
-}
-
-class _DetailPopupContentState extends State<_DetailPopupContent> {
-  bool _isAddingToCart = false;
-
-  Future<void> _addToCart() async {
-    setState(() => _isAddingToCart = true);
-
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 1));
-
-    if (!mounted) return;
-
-    setState(() => _isAddingToCart = false);
-
-    final languageProvider =
-        Provider.of<LanguageProvider>(context, listen: false);
-
-    showTopSnackBar(
-      Overlay.of(context),
-      CustomSnackBar.success(
-        message: languageProvider.translate(
-          en: 'Added to cart successfully!',
-          th: 'เพิ่มลงตะกร้าสำเร็จ!',
-        ),
-      ),
-    );
-  }
+  const _NotificationDetailCard({required this.item});
 
   @override
   Widget build(BuildContext context) {
     final languageProvider = Provider.of<LanguageProvider>(context);
 
-    return Align(
-      alignment: Alignment.topCenter,
+    // เทียบราคาเป็น double เหมือน HomePage
+    final price = _parseDouble(item.price);
+    final discountPrice = _parseDouble(item.discount_price);
+    final hasDiscount = discountPrice > 0 && discountPrice < price;
+
+    // discount_percent จาก API อาจมี "%" อยู่แล้ว ให้ clean
+    final discountPercentRaw = item is NotificationItemMess
+        ? (item as NotificationItemMess).discount_percent
+        : '';
+    final discountPercentClean =
+        discountPercentRaw.replaceAll('%', '').trim();
+
+    return Center(
       child: Container(
-        margin: const EdgeInsets.only(top: 150, left: 20, right: 20),
+        margin: const EdgeInsets.only(top: 50, left: 20, right: 20),
         constraints: const BoxConstraints(maxHeight: 600),
         decoration: BoxDecoration(
           color: Theme.of(context).scaffoldBackgroundColor,
@@ -565,263 +546,206 @@ class _DetailPopupContentState extends State<_DetailPopupContent> {
             ),
           ],
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Header with close button
-            SelectionContainer.disabled(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      widget.isMessage
-                          ? languageProvider.translate(
-                              en: 'Message Details',
-                              th: 'รายละเอียดข้อความ',
-                            )
-                          : languageProvider.translate(
-                              en: 'News Details',
-                              th: 'รายละเอียดข่าว',
-                            ),
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
+        child: Material(
+          color: Colors.transparent,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // รูปภาพสินค้า
+                ClipRRect(
+                  borderRadius:
+                      BorderRadius.vertical(top: Radius.circular(20)),
+                  child: CachedNetworkImage(
+                    imageUrl: item.image_url,
+                    width: double.infinity,
+                    height: 300,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Container(
+                      height: 300,
+                      child: const Center(child: CircularProgressIndicator()),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
+                    errorWidget: (context, url, error) => Container(
+                      height: 300,
+                      child: const Center(child: Icon(Icons.error)),
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-            const Divider(height: 1),
-            // Scrollable content
-            Flexible(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Image
-                    SelectionContainer.disabled(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (widget.item.image_url.isNotEmpty)
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: CachedNetworkImage(
-                                imageUrl: widget.item.image_url,
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                height: 250,
-                                placeholder: (context, url) => const Center(
-                                  child: CircularProgressIndicator(),
-                                ),
-                                errorWidget: (context, url, error) =>
-                                    const Icon(Icons.error),
+
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // ชื่อสินค้า
+                      Text(
+                        item.clothing_name,
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+
+                      const SizedBox(height: 5),
+
+                      // Detail rows
+                      _DetailRow(
+                        label: languageProvider.translate(
+                            en: 'Category', th: 'หมวดหมู่'),
+                        value: item.category,
+                      ),
+                      _DetailRow(
+                        label: languageProvider.translate(
+                            en: 'Size', th: 'ขนาด'),
+                        value: item.size_category,
+                      ),
+                      _DetailRow(
+                        label: languageProvider.translate(
+                            en: 'Gender', th: 'เพศ'),
+                        value: formatGender(item.gender, languageProvider),
+                      ),
+                      _DetailRow(
+                        label: languageProvider.translate(
+                            en: 'Stock', th: 'สต็อก'),
+                        value: item.stock,
+                      ),
+                      _DetailRow(
+                        label: languageProvider.translate(
+                            en: 'Breed', th: 'สายพันธุ์'),
+                        value: item.breed,
+                      ),
+
+                      // รายละเอียด
+                      if (item.description.isNotEmpty)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 8),
+                            Text(
+                              languageProvider.translate(
+                                  en: 'Description', th: 'รายละเอียด'),
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                          const SizedBox(height: 20),
+                            const SizedBox(height: 8),
+                            Text(
+                              item.description,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                        ),
 
-                          // Clothing Name
+                      // ราคา — เทียบเป็น double เหมือน HomePage
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // ราคาเดิม (ขีดฆ่า)
+                          if (hasDiscount)
+                            Text(
+                              '฿${price.toStringAsFixed(0)}',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey,
+                                decoration: TextDecoration.lineThrough,
+                                decorationThickness: 2,
+                              ),
+                            ),
+                          if (hasDiscount) const SizedBox(width: 10),
+
+                          // ราคาหลัง discount หรือราคาปกติ
                           Text(
-                            widget.item.clothing_name,
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-
-                          // Description
-                          Text(
-                            widget.item.description,
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Theme.of(context).colorScheme.secondary,
-                              height: 1.5,
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-
-                          // Details Grid
-                          _DetailRow(
-                            label: languageProvider.translate(
-                              en: 'Category',
-                              th: 'หมวดหมู่',
-                            ),
-                            value: widget.item.category,
-                          ),
-                          _DetailRow(
-                            label: languageProvider.translate(
-                              en: 'Size',
-                              th: 'ขนาด',
-                            ),
-                            value: widget.item.size_category,
-                          ),
-                          _DetailRow(
-                            label: languageProvider.translate(
-                              en: 'Gender',
-                              th: 'เพศ',
-                            ),
-                            value: formatGender(
-                                widget.item.gender, languageProvider),
-                          ),
-                          _DetailRow(
-                            label: languageProvider.translate(
-                              en: 'Stock',
-                              th: 'สต็อก',
-                            ),
-                            value: widget.item.stock,
-                          ),
-                          _DetailRow(
-                            label: languageProvider.translate(
-                              en: 'Breed',
-                              th: 'สายพันธุ์',
-                            ),
-                            value: widget.item.breed,
-                          ),
-
-                          const SizedBox(height: 20),
-                          const Divider(),
-                          const SizedBox(height: 10),
-                        ],
-                      ),
-                    ),
-
-                    // Price Section - เปิดให้เลือกได้
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (widget.isMessage &&
-                            widget.item is NotificationItemMess) ...[
-                          SelectionContainer.disabled(
-                            child: Row(
-                              children: [
-                                if (widget.item.discount_percent.isNotEmpty &&
-                                    widget.item.discount_percent != '0')
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.red,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Text(
-                                      '-${widget.item.discount_percent}',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                  ),
-                                const SizedBox(width: 10),
-                                if (widget.item.discount_price.isNotEmpty &&
-                                    widget.item.discount_price != '0')
-                                  Text(
-                                    '฿${_formatPrice(widget.item.price)}',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      decoration: TextDecoration.lineThrough,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-
-                          // ราคาที่เลือกได้
-                          SelectableText(
-                            '฿${_formatPrice(
-                              widget.item.discount_price.isNotEmpty &&
-                                      widget.item.discount_price != "0"
-                                  ? widget.item.discount_price
-                                  : widget.item.price,
-                            )}',
+                            hasDiscount
+                                ? '฿${discountPrice.toStringAsFixed(0)}'
+                                : '฿${price.toStringAsFixed(0)}',
                             style: TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.primary,
+                              color: hasDiscount ? Colors.red : Colors.black,
                             ),
                           ),
-                        ] else ...[
-                          SelectableText(
-                            '฿${_formatPrice(widget.item.price)}',
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 20),
+                          if (hasDiscount) const SizedBox(width: 10),
 
-                    // Action Buttons
-                    SelectionContainer.disabled(
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: _isAddingToCart ? null : _addToCart,
-                              icon: _isAddingToCart
-                                  ? const SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                                Colors.white),
-                                      ),
-                                    )
-                                  : const Icon(Icons.shopping_cart_outlined),
-                              label: Text(
-                                languageProvider.translate(
-                                  en: 'Add to Cart',
-                                  th: 'เพิ่มลงตะกร้า',
+                          // Badge % ลด
+                          if (hasDiscount && discountPercentClean.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                '-$discountPercentClean%',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w900,
                                 ),
                               ),
-                              style: ElevatedButton.styleFrom(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 16),
-                              ),
                             ),
-                          ),
                         ],
                       ),
-                    ),
-                  ],
+
+                       const SizedBox(height: 10),
+
+                      // ปุ่ม Add to Cart — แบบเดียวกับ HomePage
+                      SizedBox(
+                        width: double.infinity,
+                        height: 60,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            showTopSnackBar(
+                              Overlay.of(context),
+                              CustomSnackBar.success(
+                                message: languageProvider.translate(
+                                  en: 'Added to cart successfully!',
+                                  th: 'เพิ่มลงตะกร้าสำเร็จ!',
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.add_shopping_cart_sharp),
+                          label: Text(
+                            languageProvider.translate(
+                                en: 'Add to Cart', th: 'เพิ่มลงตะกร้า'),
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 16),
+                            backgroundColor: Colors.black,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
+// ============================================================================
+// Detail Row
+// ============================================================================
+
 class _DetailRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const _DetailRow({
-    required this.label,
-    required this.value,
-  });
+  const _DetailRow({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -859,7 +783,7 @@ class _DetailRow extends StatelessWidget {
 }
 
 // ============================================================================
-// Banner Carousel Widget
+// Banner Carousel
 // ============================================================================
 
 class _BannerCarousel extends StatelessWidget {
@@ -889,12 +813,10 @@ class _BannerCarousel extends StatelessWidget {
               fit: BoxFit.cover,
               width: double.infinity,
               height: double.infinity,
-              placeholder: (context, url) => const Center(
-                child: CircularProgressIndicator(),
-              ),
-              errorWidget: (context, url, error) => const Center(
-                child: Icon(Icons.error),
-              ),
+              placeholder: (context, url) =>
+                  const Center(child: CircularProgressIndicator()),
+              errorWidget: (context, url, error) =>
+                  const Center(child: Icon(Icons.error)),
             ),
           );
         },
@@ -904,7 +826,7 @@ class _BannerCarousel extends StatelessWidget {
 }
 
 // ============================================================================
-// Banner Indicators Widget
+// Banner Indicators
 // ============================================================================
 
 class _BannerIndicators extends StatelessWidget {
@@ -939,7 +861,7 @@ class _BannerIndicators extends StatelessWidget {
 }
 
 // ============================================================================
-// Content Type Tabs Widget
+// Content Type Tabs
 // ============================================================================
 
 class _ContentTypeTabs extends StatelessWidget {
@@ -954,7 +876,6 @@ class _ContentTypeTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final languageProvider = Provider.of<LanguageProvider>(context);
-
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -1018,7 +939,7 @@ class _TabButton extends StatelessWidget {
 }
 
 // ============================================================================
-// Content List Widget
+// Content List
 // ============================================================================
 
 class _ContentList extends StatelessWidget {
@@ -1039,9 +960,8 @@ class _ContentList extends StatelessWidget {
       itemCount: items.length,
       scrollDirection: Axis.vertical,
       itemBuilder: (context, index) {
-        final item = items[index];
         return _ContentCard(
-          item: item,
+          item: items[index],
           onLearnMore: onLearnMore,
         );
       },
@@ -1050,17 +970,14 @@ class _ContentList extends StatelessWidget {
 }
 
 // ============================================================================
-// Content Card Widget
+// Content Card
 // ============================================================================
 
 class _ContentCard extends StatelessWidget {
   final dynamic item;
   final Function(String) onLearnMore;
 
-  const _ContentCard({
-    required this.item,
-    required this.onLearnMore,
-  });
+  const _ContentCard({required this.item, required this.onLearnMore});
 
   @override
   Widget build(BuildContext context) {
@@ -1071,10 +988,7 @@ class _ContentCard extends StatelessWidget {
           _ContentImage(imageUrl: item.image_url),
           const SizedBox(width: 10),
           Expanded(
-            child: _ContentDetails(
-              item: item,
-              onLearnMore: onLearnMore,
-            ),
+            child: _ContentDetails(item: item, onLearnMore: onLearnMore),
           ),
         ],
       ),
@@ -1096,11 +1010,12 @@ class _ContentImage extends StatelessWidget {
         fit: BoxFit.cover,
         width: 180,
         height: 180,
-        placeholder: (context, url) => const CircularProgressIndicator.adaptive(
-          backgroundColor: Colors.white,
-          valueColor:
-              AlwaysStoppedAnimation<Color>(Color.fromARGB(75, 50, 50, 50)),
-        ),
+        placeholder: (context, url) =>
+            const CircularProgressIndicator.adaptive(
+              backgroundColor: Colors.white,
+              valueColor:
+                  AlwaysStoppedAnimation<Color>(Color.fromARGB(75, 50, 50, 50)),
+            ),
         errorWidget: (context, url, error) => Container(
           width: 180,
           height: 180,
@@ -1116,17 +1031,24 @@ class _ContentDetails extends StatelessWidget {
   final dynamic item;
   final Function(String) onLearnMore;
 
-  const _ContentDetails({
-    required this.item,
-    required this.onLearnMore,
-  });
+  const _ContentDetails({required this.item, required this.onLearnMore});
 
   @override
   Widget build(BuildContext context) {
-    final hasDiscount = item is NotificationItemMess &&
-        item.discount_percent.isNotEmpty &&
-        item.discount_percent != '0';
+    // เทียบราคาเป็น double เหมือน HomePage
+    final price = _parseDouble(item.price);
+    final discountPrice = _parseDouble(
+        item is NotificationItemMess ? (item as NotificationItemMess).discount_price : '0');
+    final hasDiscount = discountPrice > 0 && discountPrice < price;
+
     final isMessage = item is NotificationItemMess;
+
+    // clean discount_percent
+    final discountPercentRaw = isMessage
+        ? (item as NotificationItemMess).discount_percent
+        : '';
+    final discountPercentClean =
+        discountPercentRaw.replaceAll('%', '').trim();
 
     return Container(
       padding: const EdgeInsets.all(8),
@@ -1134,11 +1056,11 @@ class _ContentDetails extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ===== TITLE =====
+          // Title
           Text(
             isMessage
                 ? '${item.clothing_name} ลดพิเศษ!'
-                : '${item.clothing_name}',
+                : item.clothing_name,
             style: TextStyle(
               color: Theme.of(context).colorScheme.primary,
               fontSize: 22,
@@ -1150,7 +1072,7 @@ class _ContentDetails extends StatelessWidget {
 
           const SizedBox(height: 8),
 
-          // ===== DATE + DISCOUNT =====
+          // Date + Discount badge
           Row(
             children: [
               Text(
@@ -1161,19 +1083,17 @@ class _ContentDetails extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              if (hasDiscount) ...[
+              if (hasDiscount && discountPercentClean.isNotEmpty) ...[
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.red,
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    '-${(item as NotificationItemMess).discount_percent}',
+                    '-$discountPercentClean%',
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -1187,7 +1107,7 @@ class _ContentDetails extends StatelessWidget {
 
           const Spacer(),
 
-          // ===== ACTION BUTTONS =====
+          // Action buttons
           _ActionButtons(
             itemId: item.id,
             onLearnMore: onLearnMore,
@@ -1197,6 +1117,10 @@ class _ContentDetails extends StatelessWidget {
     );
   }
 }
+
+// ============================================================================
+// Action Buttons (Card)
+// ============================================================================
 
 class _ActionButtons extends StatefulWidget {
   final String itemId;
@@ -1216,12 +1140,8 @@ class _ActionButtonsState extends State<_ActionButtons> {
 
   Future<void> _handleAddToCart() async {
     setState(() => _isAddingToCart = true);
-
-    // Simulate API call
     await Future.delayed(const Duration(seconds: 1));
-
     if (!mounted) return;
-
     setState(() => _isAddingToCart = false);
 
     final languageProvider =
@@ -1267,11 +1187,9 @@ class _ActionButtonsState extends State<_ActionButtons> {
                       .foregroundColor,
                 ),
         ),
-        
         ElevatedButton(
           onPressed: () => widget.onLearnMore(widget.itemId),
           child: Text(
-            
             languageProvider.translate(
               en: 'Learn More',
               th: 'ดูเพิ่มเติม',
@@ -1434,10 +1352,7 @@ String _formatDate(String dateString, BuildContext context) {
     final difference = now.difference(dateTime);
 
     if (difference.inMinutes < 1) {
-      return languageProvider.translate(
-        en: 'Just now',
-        th: 'เมื่อสักครู่',
-      );
+      return languageProvider.translate(en: 'Just now', th: 'เมื่อสักครู่');
     } else if (difference.inMinutes < 60) {
       return languageProvider.translate(
         en: '${difference.inMinutes} min ago',
@@ -1463,16 +1378,7 @@ String _formatDate(String dateString, BuildContext context) {
   }
 }
 
-String _formatPrice(String price) {
-  if (price.isEmpty) return '0.00';
 
-  try {
-    final number = double.parse(price);
-    return NumberFormat('#,##0.00').format(number);
-  } catch (e) {
-    return price;
-  }
-}
 
 String formatGender(String value, LanguageProvider lang) {
   switch (value) {
