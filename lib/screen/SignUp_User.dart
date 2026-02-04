@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_1/provider/theme.dart';
@@ -7,6 +10,19 @@ import 'package:flutter_application_1/screen/auth_page.dart';
 import 'package:provider/provider.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
+import 'package:http/http.dart' as http;
+
+String getBaseUrl() {
+  if (kIsWeb) {
+    return 'http://localhost:8000';
+  } else if (Platform.isAndroid) {
+    return 'http://10.0.2.2:8000'; // สำหรับ Android Emulator
+  } else if (Platform.isIOS) {
+    return 'http://localhost:8000'; // สำหรับ iOS Simulator
+  } else {
+    return 'http://localhost:8000';
+  }
+}
 
 class regisUser extends StatefulWidget {
   const regisUser({super.key});
@@ -59,21 +75,19 @@ class _regisUserState extends State<regisUser> {
         ),
       );
     } else {
-  showTopSnackBar(
+      showTopSnackBar(
         Overlay.of(context),
         CustomSnackBar.error(
           message: "Please>> Fill in the information completely.",
         ),
       );
-
-      
     }
   }
 
   void signUserUp() async {
     showDialog(
       context: context,
-      barrierDismissible: false, 
+      barrierDismissible: false,
       builder: (context) {
         return const Center(
           child: CircularProgressIndicator.adaptive(
@@ -86,21 +100,17 @@ class _regisUserState extends State<regisUser> {
     );
 
     try {
-
       if (passwordController.text.trim() !=
           confirmPasswordController.text.trim()) {
-        Navigator.pop(context); 
+        Navigator.pop(context);
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Password do not match")),
         );
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Password do not match')),
-        );
+
         return;
       }
 
-     
       var querySnapshot = await FirebaseFirestore.instance
           .collection('users')
           .where('email', isEqualTo: emailController.text.trim())
@@ -113,16 +123,32 @@ class _regisUserState extends State<regisUser> {
         );
         return;
       }
-     
+
       UserCredential userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(
               email: emailController.text.trim(),
               password: passwordController.text.trim());
 
-      
+      final user = userCredential.user;
+      final idToken = await user!.getIdToken(true);
+
+      final uri = Uri.parse('${getBaseUrl()}/api/auth/register');
+
+      final response = await http.post(
+        uri,
+        headers: {
+          "Authorization": "Bearer $idToken",
+          "Content-Type": "application/json",
+        },
+      );
+      if (response.statusCode != 200) {
+        throw Exception("Backend register failed: ${response.body}");
+      }
+
+      if (!mounted) return;
+
       String uid = userCredential.user!.uid;
 
-    
       await FirebaseFirestore.instance.collection('users').doc(uid).set({
         'uid': uid,
         'name': nameController.text.trim(),
@@ -138,12 +164,12 @@ class _regisUserState extends State<regisUser> {
         'createdAt': FieldValue.serverTimestamp()
       });
 
-      Navigator.pop(context); 
+      Navigator.pop(context);
       Navigator.pushReplacement(
           context, MaterialPageRoute(builder: (context) => authPage()));
       print("Successfully Registered");
     } on FirebaseAuthException catch (e) {
-      Navigator.pop(context); 
+      Navigator.pop(context);
       print("An error occurred ${e.message}");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: ${e.message}')),
@@ -206,8 +232,7 @@ class _regisUserState extends State<regisUser> {
                     )),
                 SizedBox(height: 10),
                 Container(
-                  padding: EdgeInsets.symmetric(
-                      horizontal: 10), 
+                  padding: EdgeInsets.symmetric(horizontal: 10),
                   child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -217,8 +242,7 @@ class _regisUserState extends State<regisUser> {
                             "You will receive a confirmation email to the email address you entered below. Please check your inbox.",
                             style: TextStyle(),
                             maxLines: 5,
-                            overflow:
-                                TextOverflow.ellipsis,
+                            overflow: TextOverflow.ellipsis,
                             softWrap: true,
                           ),
                         ),
@@ -375,7 +399,6 @@ class _regisUserState extends State<regisUser> {
                           },
                         ),
                         SizedBox(height: 15),
-                     
                         TextFormField(
                           controller: phoneController,
                           keyboardType: TextInputType.number,
@@ -405,7 +428,6 @@ class _regisUserState extends State<regisUser> {
                           },
                         ),
                         SizedBox(height: 15),
-                       
                         TextFormField(
                           controller: postalController,
                           keyboardType: TextInputType.number,
@@ -432,7 +454,6 @@ class _regisUserState extends State<regisUser> {
                           },
                         ),
                         SizedBox(height: 15),
-                
                         ListTile(
                           title: Text(
                             selectedDate == null
@@ -442,9 +463,7 @@ class _regisUserState extends State<regisUser> {
                           trailing: Icon(Icons.calendar_today),
                           onTap: () => selectDate(context),
                         ),
-
                         SizedBox(height: 15),
-                     
                         Text("Gender"),
                         Row(
                           children: [
@@ -481,7 +500,6 @@ class _regisUserState extends State<regisUser> {
                           ],
                         ),
                         SizedBox(height: 15),
-                    
                         CheckboxListTile(
                           title: Text("Subscribe to the newsletter"),
                           value: subscribeNewsletter,
@@ -491,7 +509,6 @@ class _regisUserState extends State<regisUser> {
                             });
                           },
                         ),
-                      
                         SizedBox(height: 15),
                         CheckboxListTile(
                           title: Text("Accept the member agreement"),

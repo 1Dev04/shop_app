@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/provider/theme.dart';
 import 'package:flutter_application_1/provider/theme_provider.dart';
@@ -9,6 +12,19 @@ import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:http/http.dart' as http;
+
+String getBaseUrl() {
+  if (kIsWeb) {
+    return 'http://localhost:8000';
+  } else if (Platform.isAndroid) {
+    return 'http://10.0.2.2:8000'; // สำหรับ Android Emulator
+  } else if (Platform.isIOS) {
+    return 'http://localhost:8000'; // สำหรับ iOS Simulator
+  } else {
+    return 'http://localhost:8000';
+  }
+}
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -26,15 +42,31 @@ class _LoginState extends State<Login> {
   void signUserIn() async {
     try {
 
-      await FirebaseAuth.instance.signOut();
+     await FirebaseAuth.instance.signOut();
 
+    UserCredential userCredential =
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+      email: emailController.text.trim(),
+      password: passwordController.text.trim(),
+    );
 
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
-      );
+    final user = userCredential.user;
+    final idToken = await user!.getIdToken(true);
+    
+    final uri = Uri.parse('${getBaseUrl()}/api/auth/login');
+    
+    final response = await http.post(
+      uri,
+      headers: {
+        "Authorization": "Bearer $idToken",
+        "Content-Type": "application/json",
+      },
+    );
+    if (response.statusCode != 200) {
+      throw Exception("Backend login failed: ${response.body}");
+    }
 
-      if (mounted) Navigator.pop(context);
+      if (!mounted) return;
 
       showTopSnackBar(
         Overlay.of(context),
@@ -42,52 +74,49 @@ class _LoginState extends State<Login> {
           message: "Login successful!",
         ),
       );
-      
-      Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => authPage()));
-    } on FirebaseAuthException catch (e) {
-      if (mounted) Navigator.pop(context);
 
-   
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => authPage()),
+        );
+      });
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+
       String errorMessage;
       switch (e.code) {
         case 'user-not-found':
           errorMessage = 'No user found for that email.';
           break;
         case 'wrong-password':
-          errorMessage = 'Wrong password provided for that user.';
+          errorMessage = 'Wrong password provided.';
           break;
         default:
-          errorMessage = 'Error: ${e.message}';
+          errorMessage = e.message ?? 'Login failed';
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMessage)),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(errorMessage)));
     } catch (e) {
-      if (mounted) Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
-      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Error: $e")));
     }
   }
 
-
   Future<UserCredential> signInWithGoogle() async {
-  
     final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
 
-    
     final GoogleSignInAuthentication? googleAuth =
         await googleUser?.authentication;
 
-   
     final credential = GoogleAuthProvider.credential(
       accessToken: googleAuth?.accessToken,
       idToken: googleAuth?.idToken,
     );
 
-  
     return await FirebaseAuth.instance.signInWithCredential(credential);
   }
 
@@ -156,8 +185,8 @@ class _LoginState extends State<Login> {
                                                       animation,
                                                       secondaryAnimation,
                                                       child) {
-                                                    const begin = Offset(1.0,
-                                                        0.0); 
+                                                    const begin =
+                                                        Offset(1.0, 0.0);
                                                     const end =
                                                         Offset(0.0, 0.0);
                                                     const curve =
@@ -178,8 +207,8 @@ class _LoginState extends State<Login> {
                                           backgroundColor: Colors.white,
                                           minimumSize: const Size(180, 40),
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                                12), 
+                                            borderRadius:
+                                                BorderRadius.circular(12),
                                           ),
                                         ),
                                         child: Text(
@@ -363,19 +392,6 @@ class _LoginState extends State<Login> {
                             ),
                           ),
                           SizedBox(width: 10),
-                          /*
-                          CircleAvatar(
-                            radius: 20,
-                            backgroundColor: Color.fromRGBO(25, 0, 0, 0.2),
-                            child: Icon(Icons.facebook, color: Colors.white),
-                          ),
-                          SizedBox(width: 10),
-                          CircleAvatar(
-                            radius: 20,
-                            backgroundColor: Color.fromRGBO(25, 0, 0, 0.2),
-                            child: Icon(Icons.apple, color: Colors.white),
-                          ),
-                          */
                         ],
                       ),
                       SizedBox(height: 10),
@@ -429,8 +445,7 @@ class _LoginState extends State<Login> {
                                       regisUser(),
                                   transitionsBuilder: (context, animation,
                                       secondaryAnimation, child) {
-                                    const begin = Offset(
-                                        1.0, 0.0);
+                                    const begin = Offset(1.0, 0.0);
                                     const end = Offset(0.0, 0.0);
                                     const curve = Curves.easeInOut;
                                     var tween = Tween(begin: begin, end: end)

@@ -346,8 +346,7 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Future<void> _fetchOutfitSuggestions(int itemId) async {
-    print('🔍 Fetching outfit suggestions for category ID: $itemId with gender: $_selectedGender');
-    
+   
     setState(() {
       _isLoadingOutfits = true;
       _outfitSuggestions = [];
@@ -366,13 +365,9 @@ class _SearchPageState extends State<SearchPage> {
             const Duration(seconds: 5),
           );
 
-      print('📦 Response status: ${response.statusCode}');
-      print('📡 Raw response: ${response.body}');
-
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        print('✅ Received ${data.length} items from API');
-        
+   
         if (data.isNotEmpty) {
           print('📦 First item raw: ${data[0]}');
         }
@@ -454,8 +449,7 @@ class _SearchPageState extends State<SearchPage> {
     final languageProvider = Provider.of<LanguageProvider>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    print('🏗️ Building UI - isLoadingOutfits: $_isLoadingOutfits, outfitSuggestions: ${_outfitSuggestions.length}');
-
+  
     return Scaffold(
       body: Column(
         children: [
@@ -480,11 +474,6 @@ class _SearchPageState extends State<SearchPage> {
 
   // ✅ FIX: แยก logic การแสดงผลออกมาเป็น method เพื่อให้อ่านง่ายขึ้น
   Widget _buildContentArea(LanguageProvider languageProvider, bool isDark) {
-    print('🏗️ Building content area:');
-    print('   _isLoadingOutfits: $_isLoadingOutfits');
-    print('   _outfitSuggestions.length: ${_outfitSuggestions.length}');
-    print('   _isLoadingResults: $_isLoadingResults');
-    print('   _searchResults.length: ${_searchResults.length}');
 
     if (_isLoadingOutfits) {
       print('   → Showing loading for outfits');
@@ -598,7 +587,7 @@ class _SearchPageState extends State<SearchPage> {
         ),
         const SizedBox(height: 20),
         Text(
-          languageProvider.translate(en: "Outfit Search", th: "ค้นหาชุด"),
+          languageProvider.translate(en: "Not Found", th: "ไม่พบข้อมูล"),
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -610,8 +599,8 @@ class _SearchPageState extends State<SearchPage> {
           padding: const EdgeInsets.symmetric(horizontal: 40),
           child: Text(
             languageProvider.translate(
-                en: "Find the perfect cat clothes for the occasion and season for your feline friend.",
-                th: "ค้นหาเสื้อผ้าแมวตามเทศกาลและฤดูกาลที่ใช่ สำหรับน้องเหมียวของคุณ"),
+                en: "There are no products available for this category.",
+                th: "ไม่มีสินค้าในหมวดหมู่นี้"),
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
@@ -781,7 +770,7 @@ class _SearchPageState extends State<SearchPage> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(50),
                   ),
-                  hintText: '𓇼 ⋆.˚ 𓆉 𓆝 𓆡⋆.˚ 𓇼',
+                  hintText: 'ᓚ₍⑅^- .-^₎ -ᶻ 𝗓 𐰁',
                   prefixIcon: const Icon(Icons.search),
                   suffixIcon: _hasSelected
                       ? IconButton(
