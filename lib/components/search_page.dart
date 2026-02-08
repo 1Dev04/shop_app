@@ -1439,8 +1439,8 @@ LinearGradient getTextGradient(String type, String name) {
   if (name.contains('Every Day')) {
     return const LinearGradient(
       colors: [
-        Color.fromARGB(255, 113, 131, 179),
-        Color.fromARGB(255, 131, 174, 254)
+        Color.fromARGB(255, 90, 102, 234), // deep slate blue
+        Color.fromARGB(255, 109, 118, 202),
       ],
     );
   }
@@ -1448,29 +1448,31 @@ LinearGradient getTextGradient(String type, String name) {
   if (name.contains('Pride Month')) {
     return const LinearGradient(
       colors: [
-        Color(0xFFFF5F6D),
-        Color(0xFFFFC371),
-        Color(0xFF47CACC),
-        Color(0xFF845EC2),
+        Color.fromARGB(255, 192, 92, 92),
+        Color.fromARGB(255, 192, 182, 92),
+        Color.fromARGB(255, 104, 200, 95), // muted purple
+        Color.fromARGB(255, 101, 137, 190), // deep teal
+        Color.fromARGB(255, 192, 92, 185),
+        
       ],
     );
   }
 
   if (name.contains('Cyber')) {
     return const LinearGradient(
-  colors: [
-    Color(0xFFFF0080), 
-    Color(0xFF7928CA), 
-    Color(0xFF00E5FF), 
-  ],
-);
+      colors: [
+        Color.fromARGB(255, 69, 105, 188), // almost black blue
+        Color.fromARGB(255, 48, 123, 118),
+        
+      ],
+    );
   }
 
   if (name.contains('Chinese')) {
     return const LinearGradient(
       colors: [
-        Color(0xFFD31027),
-        Color(0xFFEA384D),
+        Color.fromARGB(255, 160, 35, 35), // dark red
+        Color.fromARGB(255, 145, 137, 19),
       ],
     );
   }
@@ -1478,8 +1480,9 @@ LinearGradient getTextGradient(String type, String name) {
   if (name.contains('Loy')) {
     return const LinearGradient(
       colors: [
-        Color(0xFF2193B0),
-        Color(0xFF6DD5ED),
+        
+        Color.fromARGB(255, 65, 172, 202), // night river blue
+        Color.fromARGB(255, 63, 65, 186),
       ],
     );
   }
@@ -1487,8 +1490,8 @@ LinearGradient getTextGradient(String type, String name) {
   if (name.contains('Songkran')) {
     return const LinearGradient(
       colors: [
-        Color(0xFF56CCF2),
-        Color(0xFF2F80ED),
+        Color.fromARGB(255, 27, 150, 180), // deep aqua
+        Color.fromARGB(255, 45, 199, 132),
       ],
     );
   }
@@ -1496,8 +1499,8 @@ LinearGradient getTextGradient(String type, String name) {
   if (name.contains('Valentine')) {
     return const LinearGradient(
       colors: [
-        Color(0xFFFF758C),
-        Color(0xFFFF7EB3),
+        Color.fromARGB(255, 218, 86, 128), // wine red
+        Color.fromARGB(255, 195, 58, 58),
       ],
     );
   }
@@ -1505,8 +1508,8 @@ LinearGradient getTextGradient(String type, String name) {
   if (name.contains('Christmas')) {
     return const LinearGradient(
       colors: [
-        Color.fromARGB(255, 255, 52, 52),
-        Color(0xFF38EF7D),
+        Color.fromARGB(255, 36, 159, 54), // pine green
+        Color.fromARGB(255, 169, 70, 70),
       ],
     );
   }
@@ -1514,8 +1517,8 @@ LinearGradient getTextGradient(String type, String name) {
   if (name.contains('Winter')) {
     return const LinearGradient(
       colors: [
-        Color(0xFF83A4D4),
-        Color.fromARGB(255, 133, 242, 248),
+        Color.fromARGB(255, 79, 128, 152), // cold gray
+        Color.fromARGB(255, 40, 180, 183),
       ],
     );
   }
@@ -1523,8 +1526,8 @@ LinearGradient getTextGradient(String type, String name) {
   if (name.contains('Summer')) {
     return const LinearGradient(
       colors: [
-        Color(0xFFFFC371),
-        Color(0xFFFF5F6D),
+        Color.fromARGB(255, 183, 107, 66), // sunset brown-orange
+        Color.fromARGB(255, 185, 185, 63),
       ],
     );
   }
@@ -1532,13 +1535,25 @@ LinearGradient getTextGradient(String type, String name) {
   if (name.contains('Rainy')) {
     return const LinearGradient(
       colors: [
-        Color(0xFF4FACFE),
-        Color(0xFF00F2FE),
+        Color.fromARGB(255, 68, 109, 144), // storm blue
+        Color.fromARGB(255, 66, 109, 157),
+      ],
+    );
+  }
+
+  if (name.contains('Halloween')) {
+    return const LinearGradient(
+      colors: [
+        Color.fromARGB(255, 166, 102, 66), // dark pumpkin
+        Color.fromARGB(255, 184, 85, 85),
       ],
     );
   }
 
   return const LinearGradient(
-    colors: [Color(0xFFBDBDBD), Color(0xFFE0E0E0)],
+    colors: [
+      Color(0xFF424242),
+      Color(0xFF616161),
+    ],
   );
 }
