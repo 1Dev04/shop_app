@@ -17,7 +17,7 @@ String getBaseUrl() {
       String.fromEnvironment('ENV', defaultValue: 'dev');
 
   if (env == 'prod') {
-    return 'https://catshop-backend-yd2q.onrender.com';
+    return 'https://catshop-backend-9pzq.onrender.com';
   }
 
   if (kIsWeb) {
@@ -30,6 +30,7 @@ String getBaseUrl() {
 
   return 'http://localhost:8000';
 }
+
 
 class regisUser extends StatefulWidget {
   const regisUser({super.key});
