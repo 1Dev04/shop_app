@@ -1357,7 +1357,7 @@ class _ItemDetailCard extends StatelessWidget {
                         height: 60,
                         child: ElevatedButton.icon(
                           onPressed: () {
-                            Navigator.of(context).pop();
+    
                             showTopSnackBar(
                               Overlay.of(context),
                               CustomSnackBar.success(
