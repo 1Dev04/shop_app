@@ -30,23 +30,25 @@ class _HomePageState extends State<HomePage> {
   String? errorMessage;
 
   // ฟังก์ชันสำหรับหา Base URL ที่ถูกต้องตาม Platform
-  String getBaseUrl() {
-  const bool isProd = bool.fromEnvironment('dart.vm.product');
+String getBaseUrl() {
+  const String env =
+      String.fromEnvironment('ENV', defaultValue: 'dev');
 
-  if (isProd) {
+  if (env == 'prod') {
     return 'https://catshop-backend-yd2q.onrender.com';
   }
 
   if (kIsWeb) {
     return 'http://localhost:8000';
-  } else if (Platform.isAndroid) {
-    return 'http://10.0.2.2:8000';
-  } else if (Platform.isIOS) {
-    return 'http://localhost:8000';
-  } else {
-    return 'http://localhost:8000';
   }
+
+  if (Platform.isAndroid) {
+    return 'http://10.0.2.2:8000';
+  }
+
+  return 'http://localhost:8000';
 }
+
 
   // ฟังก์ชันแปลงค่าเป็น double (รองรับทั้ง String และ number)
   double parseDouble(dynamic value) {

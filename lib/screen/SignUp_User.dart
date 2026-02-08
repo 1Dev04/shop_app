@@ -13,21 +13,22 @@ import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import 'package:http/http.dart' as http;
 
 String getBaseUrl() {
-  const bool isProd = bool.fromEnvironment('dart.vm.product');
+  const String env =
+      String.fromEnvironment('ENV', defaultValue: 'dev');
 
-  if (isProd) {
+  if (env == 'prod') {
     return 'https://catshop-backend-yd2q.onrender.com';
   }
 
   if (kIsWeb) {
     return 'http://localhost:8000';
-  } else if (Platform.isAndroid) {
-    return 'http://10.0.2.2:8000';
-  } else if (Platform.isIOS) {
-    return 'http://localhost:8000';
-  } else {
-    return 'http://localhost:8000';
   }
+
+  if (Platform.isAndroid) {
+    return 'http://10.0.2.2:8000';
+  }
+
+  return 'http://localhost:8000';
 }
 
 class regisUser extends StatefulWidget {
