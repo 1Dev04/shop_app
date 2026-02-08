@@ -31,16 +31,22 @@ class _HomePageState extends State<HomePage> {
 
   // ฟังก์ชันสำหรับหา Base URL ที่ถูกต้องตาม Platform
   String getBaseUrl() {
-    if (kIsWeb) {
-      return 'http://localhost:8000';
-    } else if (Platform.isAndroid) {
-      return 'http://10.0.2.2:8000'; // สำหรับ Android Emulator
-    } else if (Platform.isIOS) {
-      return 'http://localhost:8000'; // สำหรับ iOS Simulator
-    } else {
-      return 'http://localhost:8000';
-    }
+  const bool isProd = bool.fromEnvironment('dart.vm.product');
+
+  if (isProd) {
+    return 'https://catshop-backend-yd2q.onrender.com';
   }
+
+  if (kIsWeb) {
+    return 'http://localhost:8000';
+  } else if (Platform.isAndroid) {
+    return 'http://10.0.2.2:8000';
+  } else if (Platform.isIOS) {
+    return 'http://localhost:8000';
+  } else {
+    return 'http://localhost:8000';
+  }
+}
 
   // ฟังก์ชันแปลงค่าเป็น double (รองรับทั้ง String และ number)
   double parseDouble(dynamic value) {

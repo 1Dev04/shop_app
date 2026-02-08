@@ -68,10 +68,18 @@ int _parseInt(dynamic value) {
 }
 
 String getBaseUrl() {
+  const bool isProd = bool.fromEnvironment('dart.vm.product');
+
+  if (isProd) {
+    return 'https://catshop-backend-yd2q.onrender.com';
+  }
+
   if (kIsWeb) {
     return 'http://localhost:8000';
   } else if (Platform.isAndroid) {
     return 'http://10.0.2.2:8000';
+  } else if (Platform.isIOS) {
+    return 'http://localhost:8000';
   } else {
     return 'http://localhost:8000';
   }
@@ -1428,7 +1436,7 @@ String _formatGender(int gender, LanguageProvider lang) {
 }
 
 LinearGradient getTextGradient(String type, String name) {
-  if (name.contains('Everday')) {
+  if (name.contains('Every Day')) {
     return const LinearGradient(
       colors: [
         Color.fromARGB(255, 113, 131, 179),
@@ -1437,7 +1445,7 @@ LinearGradient getTextGradient(String type, String name) {
     );
   }
 
-  if (name.contains('LGBT')) {
+  if (name.contains('Pride Month')) {
     return const LinearGradient(
       colors: [
         Color(0xFFFF5F6D),
@@ -1450,11 +1458,12 @@ LinearGradient getTextGradient(String type, String name) {
 
   if (name.contains('Cyber')) {
     return const LinearGradient(
-      colors: [
-        Color(0xFFB721FF),
-        Color(0xFF21D4FD),
-      ],
-    );
+  colors: [
+    Color(0xFFFF0080), 
+    Color(0xFF7928CA), 
+    Color(0xFF00E5FF), 
+  ],
+);
   }
 
   if (name.contains('Chinese')) {
