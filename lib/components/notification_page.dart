@@ -32,28 +32,48 @@ double _parseDouble(dynamic value) {
 // API Configuration
 // ============================================================================
 
-class ApiConfig {
-  static String get baseUrl {
-    if (kIsWeb) {
-      return 'http://localhost:8000';
-    } else if (Platform.isAndroid) {
-      return 'http://10.0.2.2:8000';
-    } else {
-      return 'http://localhost:8000';
-    }
+String getBaseUrl() {
+  // ✅ เปลี่ยนจาก 'dev' เป็น 'prod'
+  const String env = String.fromEnvironment('ENV', defaultValue: 'prod');
+
+  if (env == 'prod') {
+    return 'https://catshop-backend-9pzq.onrender.com';
   }
 
-  static const Duration apiTimeout = Duration(seconds: 30);
+  if (kIsWeb) {
+    return 'http://localhost:8000';
+  }
 
-  static Uri getMessagesUri() =>
-      Uri.parse('$baseUrl/api/notifications/messages');
-  static Uri getNewsUri() => Uri.parse('$baseUrl/api/notifications/news');
-  static Uri getMessageDetailUri(String id) =>
-      Uri.parse('$baseUrl/api/notifications/messages/$id');
-  static Uri getNewsDetailUri(String id) =>
-      Uri.parse('$baseUrl/api/notifications/news/$id');
+  if (Platform.isAndroid) {
+    return 'http://10.0.2.2:8000';
+  }
+
+  return 'http://localhost:8000';
 }
 
+class ApiConfig {
+  static String get baseUrl => getBaseUrl();
+  
+  static const Duration apiTimeout = Duration(seconds: 10);
+
+  // Messages endpoints
+  static Uri getMessagesUri() {
+    return Uri.parse('$baseUrl/api/notifications/messages');
+  }
+
+  static Uri getMessageDetailUri(String id) {
+    return Uri.parse('$baseUrl/api/notifications/messages/$id');
+  }
+
+  // News endpoints
+  static Uri getNewsUri() {
+    return Uri.parse('$baseUrl/api/notifications/news');
+  }
+
+  static Uri getNewsDetailUri(String id) {
+    return Uri.parse('$baseUrl/api/notifications/news/$id');
+  }
+}
 // ============================================================================
 // Main Notification Page
 // ============================================================================
