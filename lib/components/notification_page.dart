@@ -285,6 +285,7 @@ class _NotificationPageState extends State<NotificationPage> {
     }
   }
 
+
   Future<void> _showNewsDetail(String id) async {
     final languageProvider =
         Provider.of<LanguageProvider>(context, listen: false);
