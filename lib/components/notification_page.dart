@@ -53,7 +53,7 @@ String getBaseUrl() {
 
 class ApiConfig {
   static String get baseUrl => getBaseUrl();
-  
+
   static const Duration apiTimeout = Duration(seconds: 10);
 
   // Messages endpoints
@@ -154,7 +154,10 @@ class _NotificationPageState extends State<NotificationPage> {
       if (!mounted) return;
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
+        final decodedBody = utf8.decode(response.bodyBytes);
+
+        final List<dynamic> data = json.decode(decodedBody);
+        
         setState(() {
           _messages =
               data.map((json) => NotificationItemMess.fromJson(json)).toList();
@@ -190,7 +193,9 @@ class _NotificationPageState extends State<NotificationPage> {
       if (!mounted) return;
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
+         final decodedBody = utf8.decode(response.bodyBytes);
+
+        final List<dynamic> data = json.decode(decodedBody);
         setState(() {
           _news =
               data.map((json) => NotificationItemNews.fromJson(json)).toList();
@@ -260,7 +265,8 @@ class _NotificationPageState extends State<NotificationPage> {
       Navigator.of(context).pop(); // ปิด loading
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final decodedBody = utf8.decode(response.bodyBytes);
+        final data = json.decode(decodedBody);
         final item = NotificationItemMess.fromJson(data);
         _showDetailPopup(context, item);
       } else {
@@ -298,7 +304,8 @@ class _NotificationPageState extends State<NotificationPage> {
       Navigator.of(context).pop();
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final decodedBody = utf8.decode(response.bodyBytes);
+        final data = json.decode(decodedBody);
         final item = NotificationItemNews.fromJson(data);
         _showDetailPopup(context, item);
       } else {
@@ -1051,9 +1058,9 @@ class _ContentDetails extends StatelessWidget {
   Widget build(BuildContext context) {
     // เทียบราคาเป็น double เหมือน HomePage
     final price = _parseDouble(item.price);
-   final discountPrice = item is NotificationItemMess 
-    ? _parseDouble((item as NotificationItemMess).discount_price)
-    : 0.0;
+    final discountPrice = item is NotificationItemMess
+        ? _parseDouble((item as NotificationItemMess).discount_price)
+        : 0.0;
     final hasDiscount = discountPrice > 0 && discountPrice < price;
 
     final isMessage = item is NotificationItemMess;
@@ -1284,7 +1291,7 @@ class NotificationItemNews {
   final String category;
   final String size_category;
   final String price;
-  final String discount_price;  // เพิ่มบรรทัดนี้
+  final String discount_price; // เพิ่มบรรทัดนี้
   final String discount_percent; // เพิ่มบรรทัดนี้
   final String gender;
   final String clothing_like;
@@ -1302,7 +1309,7 @@ class NotificationItemNews {
     required this.category,
     required this.size_category,
     required this.price,
-    required this.discount_price,  // เพิ่มบรรทัดนี้
+    required this.discount_price, // เพิ่มบรรทัดนี้
     required this.discount_percent, // เพิ่มบรรทัดนี้
     required this.stock,
     required this.gender,

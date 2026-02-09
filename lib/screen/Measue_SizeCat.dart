@@ -38,7 +38,6 @@ String getBaseUrl() {
   return 'http://localhost:8000';
 }
 
-
 class _CircleHolePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
@@ -573,8 +572,10 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
       final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200) {
-        final jsonMap = jsonDecode(response.body);
+        final decodedBody = utf8.decode(response.bodyBytes);
+        final jsonMap = jsonDecode(decodedBody);
         final imageUrl = jsonMap['secure_url'];
+
         print('✅ อัปโหลดสำเร็จ! URL: $imageUrl');
         return imageUrl;
       } else {
@@ -596,7 +597,8 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
       body: jsonEncode({'image_url': imageUrl}),
     );
 
-    final jsonData = jsonDecode(response.body);
+    final decodedBody = utf8.decode(response.bodyBytes);
+    final jsonData = jsonDecode(decodedBody);
     return VisionResult.fromJson(jsonData);
   }
 

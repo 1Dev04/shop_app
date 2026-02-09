@@ -106,7 +106,8 @@ String getBaseUrl() {
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+                final decodedBody = utf8.decode(response.bodyBytes);
+        final data = json.decode(decodedBody);
         List<Map<String, dynamic>> parsedImages = [];
 
         if (data is List) {
@@ -172,7 +173,8 @@ String getBaseUrl() {
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+                final decodedBody = utf8.decode(response.bodyBytes);
+        final data = json.decode(decodedBody);
         List<Map<String, dynamic>> parsedImages = [];
 
         if (data is List) {
@@ -243,7 +245,8 @@ String getBaseUrl() {
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+                final decodedBody = utf8.decode(response.bodyBytes);
+        final data = json.decode(decodedBody);
         if (data is Map && data.containsKey('data')) {
           return data['data'];
         }

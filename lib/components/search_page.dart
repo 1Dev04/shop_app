@@ -86,8 +86,6 @@ String getBaseUrl() {
   return 'http://localhost:8000';
 }
 
-
-
 // ============================================================================
 // Models
 // ============================================================================
@@ -118,7 +116,7 @@ class ClothingItem {
   final Map<String, dynamic> images;
   final String clothingName;
   final String description;
-  final dynamic category; // ✅ FIX: เปลี่ยนเป็น dynamic เพราะ API ส่งมาทั้ง String และ int
+  final dynamic category;
   final String? categoryNameEn;
   final String? categoryNameTh;
   final String sizeCategory;
@@ -162,7 +160,8 @@ class ClothingItem {
       sizeCategory: json['size_category'] ?? '',
       price: _parseDouble(json['price']),
       discountPrice: _parseDouble(json['discount_price']),
-      discountPercent: _parseInt(json['discount_percent']), // ✅ FIX: ใช้ _parseInt
+      discountPercent:
+          _parseInt(json['discount_percent']), // ✅ FIX: ใช้ _parseInt
       gender: _parseInt(json['gender']), // ✅ FIX: ใช้ _parseInt
       stock: _parseInt(json['stock']), // ✅ FIX: ใช้ _parseInt
       breed: json['breed'] ?? '',
@@ -247,7 +246,9 @@ class _SearchPageState extends State<SearchPage> {
           );
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
+        final decodedBody = utf8.decode(response.bodyBytes);
+
+        final List<dynamic> data = json.decode(decodedBody);
         setState(() {
           _autocompleteSuggestions =
               data.map((json) => SearchCategory.fromJson(json)).toList();
@@ -286,7 +287,8 @@ class _SearchPageState extends State<SearchPage> {
           );
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final decodedBody = utf8.decode(response.bodyBytes);
+        final data = json.decode(decodedBody);
         final List<dynamic> items = data['items'];
 
         setState(() {
@@ -357,7 +359,6 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Future<void> _fetchOutfitSuggestions(int itemId) async {
-   
     setState(() {
       _isLoadingOutfits = true;
       _outfitSuggestions = [];
@@ -377,8 +378,10 @@ class _SearchPageState extends State<SearchPage> {
           );
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-   
+        final decodedBody = utf8.decode(response.bodyBytes);
+
+        final List<dynamic> data = json.decode(decodedBody);
+
         if (data.isNotEmpty) {
           print('📦 First item raw: ${data[0]}');
         }
@@ -398,8 +401,9 @@ class _SearchPageState extends State<SearchPage> {
             _outfitSuggestions = parsedItems;
             _isLoadingOutfits = false;
           });
-          
-          print('✅ Successfully parsed ${_outfitSuggestions.length} outfit suggestions');
+
+          print(
+              '✅ Successfully parsed ${_outfitSuggestions.length} outfit suggestions');
         } catch (e) {
           print('❌ Error during parsing: $e');
           setState(() => _isLoadingOutfits = false);
@@ -460,7 +464,6 @@ class _SearchPageState extends State<SearchPage> {
     final languageProvider = Provider.of<LanguageProvider>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-  
     return Scaffold(
       body: Column(
         children: [
@@ -485,7 +488,6 @@ class _SearchPageState extends State<SearchPage> {
 
   // ✅ FIX: แยก logic การแสดงผลออกมาเป็น method เพื่อให้อ่านง่ายขึ้น
   Widget _buildContentArea(LanguageProvider languageProvider, bool isDark) {
-
     if (_isLoadingOutfits) {
       print('   → Showing loading for outfits');
       return const Center(child: CircularProgressIndicator());
@@ -776,7 +778,6 @@ class _SearchPageState extends State<SearchPage> {
                     }
                   });
                 },
-                
                 decoration: InputDecoration(
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(50),
@@ -982,7 +983,7 @@ class _OutfitSuggestionCard extends StatelessWidget {
     final hasDiscount = item.discountPrice != null &&
         item.discountPrice! > 0 &&
         item.discountPrice! < item.price;
-  final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
       onTap: onTap,
@@ -990,15 +991,12 @@ class _OutfitSuggestionCard extends StatelessWidget {
         elevation: 2,
         margin: const EdgeInsets.only(bottom: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        color:  isDark
-                      ?  Colors.grey[700]
-                      : Colors.grey[100],
+        color: isDark ? Colors.grey[700] : Colors.grey[100],
         child: Padding(
           padding: const EdgeInsets.all(10.0),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: CachedNetworkImage(
@@ -1014,7 +1012,6 @@ class _OutfitSuggestionCard extends StatelessWidget {
 
               const SizedBox(width: 12),
 
-         
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1131,9 +1128,8 @@ class _OutfitSuggestionCard extends StatelessWidget {
               ),
 
               // ✅ Cart Button
-              
+
               FloatingActionButton.small(
-                
                 onPressed: () {
                   showTopSnackBar(
                     Overlay.of(context),
@@ -1147,9 +1143,7 @@ class _OutfitSuggestionCard extends StatelessWidget {
                 },
                 backgroundColor:
                     Theme.of(context).floatingActionButtonTheme.backgroundColor,
-              
                 child: Icon(
-                  
                   Icons.shopping_cart_outlined,
                   size: 24,
                   color: Theme.of(context)
@@ -1357,7 +1351,6 @@ class _ItemDetailCard extends StatelessWidget {
                         height: 60,
                         child: ElevatedButton.icon(
                           onPressed: () {
-    
                             showTopSnackBar(
                               Overlay.of(context),
                               CustomSnackBar.success(
@@ -1456,7 +1449,6 @@ LinearGradient getTextGradient(String type, String name) {
         Color.fromARGB(255, 104, 200, 95), // muted purple
         Color.fromARGB(255, 101, 137, 190), // deep teal
         Color.fromARGB(255, 192, 92, 185),
-        
       ],
     );
   }
@@ -1466,7 +1458,6 @@ LinearGradient getTextGradient(String type, String name) {
       colors: [
         Color.fromARGB(255, 69, 105, 188), // almost black blue
         Color.fromARGB(255, 48, 123, 118),
-        
       ],
     );
   }
@@ -1483,7 +1474,6 @@ LinearGradient getTextGradient(String type, String name) {
   if (name.contains('Loy')) {
     return const LinearGradient(
       colors: [
-        
         Color.fromARGB(255, 65, 172, 202), // night river blue
         Color.fromARGB(255, 63, 65, 186),
       ],

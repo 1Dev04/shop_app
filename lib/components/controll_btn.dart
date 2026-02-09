@@ -82,194 +82,193 @@ class _MyControllState extends State<MyControll> {
     final languageProvider = Provider.of<LanguageProvider>(context);
 
     return Scaffold(
-        //------------------- AppBar -------------------
-        appBar: AppBar(
-          leading: SizedBox.shrink(),
-          elevation: 0,
-           
-          title: Text(
-            languageProvider.translate(en: setTitleEN(), th: setTitleTH()),
-            style: TextStyle(
-              fontFamily: 'Catfont',
-              fontSize: 30,
-              color: themeProvider.themeMode == ThemeMode.dark
-                  ? Colors.white
-                  : Colors.black,
-            ),
+      //------------------- AppBar -------------------
+      appBar: AppBar(
+        leading: SizedBox.shrink(),
+        elevation: 0,
+        title: Text(
+          languageProvider.translate(en: setTitleEN(), th: setTitleTH()),
+          style: TextStyle(
+            fontFamily: 'Catfont',
+            fontSize: 30,
+            color: themeProvider.themeMode == ThemeMode.dark
+                ? Colors.white
+                : Colors.black,
           ),
-          backgroundColor: themeProvider.themeMode == ThemeMode.dark
-              ? Colors.black
-              : Colors.white,
-          actions: [
-            GestureDetector(
-              onTap: () {
-                setState(() {
+        ),
+        backgroundColor: themeProvider.themeMode == ThemeMode.dark
+            ? Colors.black
+            : Colors.white,
+        actions: [
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                if (screenIndex == 0) {
+          
+                  screenIndex = 2;
+                  activeButton = 2;
+                } else {
+                  
                   screenIndex = 0;
                   activeButton = 0;
+                }
+              });
+            },
+            child: Icon(
+              screenIndex == 0 ? Icons.cancel : Icons.search,
+              size: 30,
+              color: AppBarTheme.of(context).iconTheme?.color,
+            ),
+          ),
+          SizedBox(
+            width: 10,
+          ),
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                screenIndex = 1;
+                activeButton = 1;
+              });
+            },
+            child: Icon(
+              screenIndex == 1
+                  ? Icons.favorite
+                  : Icons.favorite_border_outlined,
+              size: 30,
+              color: activeButton == 1
+                  ? AppBarTheme.of(context).iconTheme?.color
+                  : AppBarTheme.of(context).iconTheme?.color,
+            ),
+          ),
+          SizedBox(
+            width: 10,
+          ),
+          IconButton(
+              onPressed: () {
+                Navigator.push(
+                    context, MaterialPageRoute(builder: (context) => Basket()));
+              },
+              icon: Icon(
+                Icons.add_shopping_cart_sharp,
+                color: AppBarTheme.of(context).iconTheme?.color,
+                size: 30,
+              )),
+          SizedBox(width: 10)
+        ],
+      ),
+
+      //------------------- body -------------------
+      body: SafeArea(
+        child: mobileScreen[screenIndex],
+      ),
+
+      //------------------- bottomNavigationBar -------------------
+      bottomNavigationBar: Container(
+        height: 80,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: themeProvider.themeMode == ThemeMode.dark
+              ? Colors.black
+              : Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(0),
+            topRight: Radius.circular(0),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  screenIndex = 2;
+                  activeButton = 2;
                 });
               },
               child: Icon(
-                screenIndex == 0 ? Icons.cancel_outlined : Icons.search,
+                screenIndex == 2 ? Icons.home : Icons.home_outlined,
                 size: 30,
-                color: activeButton == 0
+                color: activeButton == 2
                     ? AppBarTheme.of(context).iconTheme?.color
                     : AppBarTheme.of(context).iconTheme?.color,
               ),
-            ),
-            SizedBox(
-              width: 10,
             ),
             GestureDetector(
               onTap: () {
                 setState(() {
-                  screenIndex = 1;
-                  activeButton = 1;
+                  screenIndex = 3;
+                  activeButton = 3;
                 });
               },
               child: Icon(
-                screenIndex == 1
-                    ? Icons.favorite
-                    : Icons.favorite_border_outlined,
+                screenIndex == 3
+                    ? Icons.shopping_bag
+                    : Icons.shopping_bag_outlined,
                 size: 30,
-                color: activeButton == 1
+                color: activeButton == 3
                     ? AppBarTheme.of(context).iconTheme?.color
                     : AppBarTheme.of(context).iconTheme?.color,
               ),
             ),
-            SizedBox(
-              width: 10,
-            ),
-            IconButton(
-                onPressed: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => Basket()));
+            GestureDetector(
+                onTap: () {
+                  setState(() {
+                    screenPushIndex = 2;
+                  });
+
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => MeasureSizeCat())).then((_) {
+                    setState(() {
+                      screenIndex = 2;
+                      activeButton = 2;
+                    });
+                  });
                 },
-                icon: Icon(
-                  Icons.add_shopping_cart_sharp,
-                  color: AppBarTheme.of(context).iconTheme?.color,
-                  size: 30,
+                child: Image.network(
+                  'https://res.cloudinary.com/dag73dhpl/image/upload/v1769662814/sizeCat_xil2jh.png',
+                  width: 40,
+                  height: 40,
+                  color: AppBarTheme.of(context)
+                      .iconTheme
+                      ?.color, // ถ้าเป็นรูปสีเดียว
                 )),
-            SizedBox(width: 10)
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  screenIndex = 4;
+                  activeButton = 4;
+                });
+              },
+              child: Icon(
+                screenIndex == 4
+                    ? Icons.notifications
+                    : Icons.notifications_outlined,
+                size: 30,
+                color: activeButton == 4
+                    ? AppBarTheme.of(context).iconTheme?.color
+                    : AppBarTheme.of(context).iconTheme?.color,
+              ),
+            ),
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  screenIndex = 5;
+                  activeButton = 5;
+                });
+              },
+              child: Icon(
+                screenIndex == 5 ? Icons.menu_open : Icons.menu,
+                size: 30,
+                color: activeButton == 5
+                    ? AppBarTheme.of(context).iconTheme?.color
+                    : AppBarTheme.of(context).iconTheme?.color,
+              ),
+            ),
           ],
         ),
-
-        //------------------- body -------------------
-        body: SafeArea(
-          child: mobileScreen[screenIndex],
-        ),
-
-        //------------------- bottomNavigationBar -------------------
-        bottomNavigationBar: Container(
-          height: 80,
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: themeProvider.themeMode == ThemeMode.dark
-                ? Colors.black
-                : Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(0),
-              topRight: Radius.circular(0),
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    screenIndex = 2;
-                    activeButton = 2;
-                  });
-                },
-                child: Icon(
-                  screenIndex == 2 ? Icons.home : Icons.home_outlined,
-                  size: 30,
-                  color: activeButton == 2
-                      ? AppBarTheme.of(context).iconTheme?.color
-                      : AppBarTheme.of(context).iconTheme?.color,
-                ),
-              ),
-              GestureDetector(
-                onTap: () {
-                 
-                  setState(() {
-                    screenIndex = 3;
-                    activeButton = 3;
-                  });
-                },
-                child: Icon(
-                  screenIndex == 3
-                      ? Icons.shopping_bag
-                      : Icons.shopping_bag_outlined,
-                  size: 30,
-                  color: activeButton == 3
-                      ? AppBarTheme.of(context).iconTheme?.color
-                      : AppBarTheme.of(context).iconTheme?.color,
-                ),
-              ),
-              GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      screenPushIndex = 2;
-                    });
-
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => MeasureSizeCat())).then((_) {
-                      setState(() {
-                        screenIndex = 2;
-                        activeButton = 2;
-                      });
-                    });
-                  },
-                  child: Image.network(
-                    'https://res.cloudinary.com/dag73dhpl/image/upload/v1769662814/sizeCat_xil2jh.png',
-                    width: 40,
-                    height: 40,
-                    color: AppBarTheme.of(context)
-                        .iconTheme
-                        ?.color, // ถ้าเป็นรูปสีเดียว
-                  )),
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    screenIndex = 4;
-                    activeButton = 4;
-                  });
-                },
-                child: Icon(
-                  screenIndex == 4
-                      ? Icons.notifications
-                      : Icons.notifications_outlined,
-                  size: 30,
-                  color: activeButton == 4
-                      ? AppBarTheme.of(context).iconTheme?.color
-                      : AppBarTheme.of(context).iconTheme?.color,
-                ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    screenIndex = 5;
-                    activeButton = 5;
-                  });
-                },
-                child: Icon(
-                  screenIndex == 5 ? Icons.menu_open : Icons.menu,
-                  size: 30,
-                  color: activeButton == 5
-                      ? AppBarTheme.of(context).iconTheme?.color
-                      : AppBarTheme.of(context).iconTheme?.color,
-                ),
-              ),
-            ],
-          ),
-        ),
+      ),
     );
   }
 }
-
-
-
-
