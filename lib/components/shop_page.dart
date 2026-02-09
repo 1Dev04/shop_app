@@ -49,8 +49,8 @@ class _ShopPageState extends State<ShopPage> {
   String errorMessageSeller = '';
 
 String getBaseUrl() {
-  const String env =
-      String.fromEnvironment('ENV', defaultValue: 'dev');
+  // ✅ เปลี่ยนจาก 'dev' เป็น 'prod'
+  const String env = String.fromEnvironment('ENV', defaultValue: 'prod');
 
   if (env == 'prod') {
     return 'https://catshop-backend-9pzq.onrender.com';
@@ -66,7 +66,6 @@ String getBaseUrl() {
 
   return 'http://localhost:8000';
 }
-
 
   @override
   void initState() {

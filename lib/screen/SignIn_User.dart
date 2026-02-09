@@ -15,8 +15,8 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 
 String getBaseUrl() {
-  const String env =
-      String.fromEnvironment('ENV', defaultValue: 'dev');
+  // ✅ เปลี่ยนจาก 'dev' เป็น 'prod'
+  const String env = String.fromEnvironment('ENV', defaultValue: 'prod');
 
   if (env == 'prod') {
     return 'https://catshop-backend-9pzq.onrender.com';
