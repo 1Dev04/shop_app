@@ -1431,122 +1431,83 @@ String _formatGender(int gender, LanguageProvider lang) {
   }
 }
 
-LinearGradient getTextGradient(String type, String name) {
-  if (name.contains('Every Day')) {
-    return const LinearGradient(
-      colors: [
-        Color.fromARGB(255, 90, 102, 234), // deep slate blue
-        Color.fromARGB(255, 109, 118, 202),
-      ],
-    );
-  }
+Color brighten(Color color, [double amount = 0.15]) {
+  final hsl = HSLColor.fromColor(color);
+  final hslBright = hsl.withLightness((hsl.lightness + amount).clamp(0.0, 1.0));
+  return hslBright.toColor();
+}
 
-  if (name.contains('Pride Month')) {
-    return const LinearGradient(
-      colors: [
-        Color.fromARGB(255, 192, 92, 92),
-        Color.fromARGB(255, 192, 182, 92),
-        Color.fromARGB(255, 104, 200, 95), // muted purple
-        Color.fromARGB(255, 101, 137, 190), // deep teal
-        Color.fromARGB(255, 192, 92, 185),
-      ],
-    );
-  }
-
-  if (name.contains('Cyber')) {
-    return const LinearGradient(
-      colors: [
-        Color.fromARGB(255, 69, 105, 188), // almost black blue
-        Color.fromARGB(255, 48, 123, 118),
-      ],
-    );
-  }
-
-  if (name.contains('Chinese')) {
-    return const LinearGradient(
-      colors: [
-        Color.fromARGB(255, 160, 35, 35), // dark red
-        Color.fromARGB(255, 145, 137, 19),
-      ],
-    );
-  }
-
-  if (name.contains('Loy')) {
-    return const LinearGradient(
-      colors: [
-        Color.fromARGB(255, 65, 172, 202), // night river blue
-        Color.fromARGB(255, 63, 65, 186),
-      ],
-    );
-  }
-
-  if (name.contains('Songkran')) {
-    return const LinearGradient(
-      colors: [
-        Color.fromARGB(255, 27, 150, 180), // deep aqua
-        Color.fromARGB(255, 45, 199, 132),
-      ],
-    );
-  }
-
-  if (name.contains('Valentine')) {
-    return const LinearGradient(
-      colors: [
-        Color.fromARGB(255, 218, 86, 128), // wine red
-        Color.fromARGB(255, 195, 58, 58),
-      ],
-    );
-  }
-
-  if (name.contains('Christmas')) {
-    return const LinearGradient(
-      colors: [
-        Color.fromARGB(255, 36, 159, 54), // pine green
-        Color.fromARGB(255, 169, 70, 70),
-      ],
-    );
-  }
-
-  if (name.contains('Winter')) {
-    return const LinearGradient(
-      colors: [
-        Color.fromARGB(255, 79, 128, 152), // cold gray
-        Color.fromARGB(255, 40, 180, 183),
-      ],
-    );
-  }
-
-  if (name.contains('Summer')) {
-    return const LinearGradient(
-      colors: [
-        Color.fromARGB(255, 183, 107, 66), // sunset brown-orange
-        Color.fromARGB(255, 185, 185, 63),
-      ],
-    );
-  }
-
-  if (name.contains('Rainy')) {
-    return const LinearGradient(
-      colors: [
-        Color.fromARGB(255, 68, 109, 144), // storm blue
-        Color.fromARGB(255, 66, 109, 157),
-      ],
-    );
-  }
-
-  if (name.contains('Halloween')) {
-    return const LinearGradient(
-      colors: [
-        Color.fromARGB(255, 166, 102, 66), // dark pumpkin
-        Color.fromARGB(255, 184, 85, 85),
-      ],
-    );
-  }
-
-  return const LinearGradient(
-    colors: [
-      Color(0xFF424242),
-      Color(0xFF616161),
-    ],
+LinearGradient brightGradient(List<Color> colors) {
+  return LinearGradient(
+    colors: colors.map((c) => brighten(c)).toList(),
   );
+}
+
+
+final Map<String, List<Color>> gradientMap = {
+  'Every Day': [
+    const Color.fromARGB(255, 90, 102, 234),
+    const Color.fromARGB(255, 109, 118, 202),
+  ],
+  'Pride Month': [
+    const Color.fromARGB(255, 192, 92, 92),
+    const Color.fromARGB(255, 192, 182, 92),
+    const Color.fromARGB(255, 104, 200, 95),
+    const Color.fromARGB(255, 101, 137, 190),
+    const Color.fromARGB(255, 192, 92, 185),
+  ],
+  'Cyber': [
+    const Color.fromARGB(255, 69, 105, 188),
+    const Color.fromARGB(255, 48, 123, 118),
+  ],
+  'Chinese': [
+    const Color.fromARGB(255, 160, 35, 35),
+    const Color.fromARGB(255, 145, 137, 19),
+  ],
+  'Loy': [
+    const Color.fromARGB(255, 65, 172, 202),
+    const Color.fromARGB(255, 63, 65, 186),
+  ],
+  'Songkran': [
+    const Color.fromARGB(255, 27, 150, 180),
+    const Color.fromARGB(255, 45, 199, 132),
+  ],
+  'Valentine': [
+    const Color.fromARGB(255, 218, 86, 128),
+    const Color.fromARGB(255, 195, 58, 58),
+  ],
+  'Christmas': [
+    const Color.fromARGB(255, 36, 159, 54),
+    const Color.fromARGB(255, 169, 70, 70),
+  ],
+  'Winter': [
+    const Color.fromARGB(255, 79, 128, 152),
+    const Color.fromARGB(255, 40, 180, 183),
+  ],
+  'Summer': [
+    const Color.fromARGB(255, 183, 107, 66),
+    const Color.fromARGB(255, 185, 185, 63),
+  ],
+  'Rainy': [
+    const Color.fromARGB(255, 68, 109, 144),
+    const Color.fromARGB(255, 66, 109, 157),
+  ],
+  'Halloween': [
+    const Color.fromARGB(255, 166, 102, 66),
+    const Color.fromARGB(255, 184, 85, 85),
+  ],
+};
+
+
+LinearGradient getTextGradient(String type, String name) {
+  for (final entry in gradientMap.entries) {
+    if (name.contains(entry.key)) {
+      return brightGradient(entry.value);
+    }
+  }
+
+  return brightGradient([
+    const Color(0xFF424242),
+    const Color(0xFF616161),
+  ]);
 }

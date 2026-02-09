@@ -1182,7 +1182,7 @@ class _ActionButtonsState extends State<_ActionButtons> {
     final languageProvider = Provider.of<LanguageProvider>(context);
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      mainAxisAlignment: MainAxisAlignment.start,
       children: [
         FloatingActionButton.small(
           onPressed: _isAddingToCart ? null : _handleAddToCart,
@@ -1206,14 +1206,10 @@ class _ActionButtonsState extends State<_ActionButtons> {
                       .foregroundColor,
                 ),
         ),
+        SizedBox(width: 10),
         ElevatedButton(
           onPressed: () => widget.onLearnMore(widget.itemId),
-          child: Text(
-            languageProvider.translate(
-              en: 'Learn More',
-              th: 'ดูเพิ่มเติม',
-            ),
-          ),
+          child: Icon(Icons.read_more_outlined, size: 30)
         ),
       ],
     );
