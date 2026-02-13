@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/provider/favorite_provider.dart';
@@ -18,15 +19,43 @@ import 'package:flutter_application_1/provider/theme_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:camera/camera.dart';
 
+Future<String?> _getFirebaseToken() async {
+  try {
+    final User? user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      print('❌ User not logged in');
+      return null;
+    }
+
+    // ดึง ID Token จาก Firebase (จะ refresh อัตโนมัติถ้าหมดอายุ)
+    final String? token = await user.getIdToken();
+
+    print('✅ Got Firebase token: ${token?.substring(0, 20)}...');
+    return token;
+  } catch (e) {
+    print('❌ Error getting Firebase token: $e');
+    return null;
+  }
+}
+
 // ฟังก์ชันสำหรับหา Base URL ที่ถูกต้องตาม Platform
 String getBaseUrl() {
-  // ✅ เปลี่ยนจาก 'dev' เป็น 'prod'
-  const String env = String.fromEnvironment('ENV', defaultValue: 'prod');
+  // prod / prod-v2 / local
+  const String env = String.fromEnvironment(
+    'ENV',
+    defaultValue: 'local',
+  );
 
   if (env == 'prod') {
     return 'https://catshop-backend-9pzq.onrender.com';
   }
 
+  if (env == 'prod-v2') {
+    return 'https://catshop-backend-v2.onrender.com';
+  }
+
+  // ===== local =====
   if (kIsWeb) {
     return 'http://localhost:8000';
   }
@@ -603,7 +632,16 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
   }
 
   Future<void> _analyzeCat() async {
-    if (_selectedImage == null) return;
+    print('\n========================================');
+    print('🚀 START: _analyzeCat() called');
+    print('========================================\n');
+
+    if (_selectedImage == null) {
+      print('❌ _selectedImage is null, returning...');
+      return;
+    }
+
+    print('✅ _selectedImage exists: ${_selectedImage!.path}');
 
     setState(() {
       _isProcessing = true;
@@ -611,40 +649,267 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
       _progressLabel = 'Uploading image...';
     });
 
+    print('📱 UI State: Processing = true, Progress = 0.1');
+
     try {
-      // 1️⃣ Upload ไป Cloudinary
+      // ========================================
+      // STEP 1: Get Firebase Token
+      // ========================================
+      print('\n--- STEP 1: Getting Firebase Token ---');
+      final token = await _getFirebaseToken();
+
+      if (token == null || token.isEmpty) {
+        print('❌ Firebase token is null or empty');
+        setState(() => _isProcessing = false);
+        _showError('กรุณาเข้าสู่ระบบก่อนใช้งาน');
+        return;
+      }
+
+      print('✅ Firebase Token obtained');
+      print('🔑 Token (first 30 chars): ${token.substring(0, 30)}...');
+      print('🔑 Token length: ${token.length} characters');
+
+      // ========================================
+      // STEP 2: Upload to Cloudinary
+      // ========================================
+      print('\n--- STEP 2: Uploading to Cloudinary ---');
       final imageUrl = await _uploadToCloudinary(_selectedImage!);
-      if (imageUrl == null) throw Exception('Upload failed');
+
+      if (imageUrl == null) {
+        print('❌ Cloudinary upload failed (returned null)');
+        throw Exception('Upload failed');
+      }
+
+      print('✅ Cloudinary upload successful');
+      print('🖼️ Image URL: $imageUrl');
 
       setState(() {
         _progress = 0.4;
         _progressLabel = 'Detecting cat...';
       });
 
-      await Future.delayed(const Duration(milliseconds: 500));
+      print('📱 UI State: Progress = 0.4');
 
-      setState(() {
-        _progress = 0.8;
-        _progressLabel = 'Analyzing size...';
-      });
+// ========================================
+// STEP 3: Call Backend API
+// ========================================
+      print('\n--- STEP 3: Calling Backend API ---');
+      print('📤 Backend URL: $pythonBackendAnalysis');
+      print('📤 Request Method: POST');
+      print('📤 Headers:');
+      print('   - Content-Type: application/json');
+      print('   - Accept: application/json');
+      print('   - Authorization: Bearer ${token.substring(0, 20)}...');
+      print('📤 Body: {"image_url": "$imageUrl"}');
 
-      // 3️⃣ วิเคราะห์ลักษณะแมว
-      final catDataAnalysis = await analysisCatFromBackend(imageUrl);
+      final requestStartTime = DateTime.now();
+      print('⏱️ Request started at: $requestStartTime');
 
-      setState(() {
-        _progress = 1.0;
-        _isProcessing = false;
-      });
+// 🔥 เพิ่ม timeout 60 วินาที
+      final response = await http
+          .post(
+        Uri.parse(pythonBackendAnalysis),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'image_url': imageUrl}),
+      )
+          .timeout(
+        Duration(seconds: 60),
+        onTimeout: () {
+          throw TimeoutException('Backend ใช้เวลานานเกินไป (> 60 วินาที)\n\n'
+              'สาเหตุที่เป็นไปได้:\n'
+              '• Backend กำลังโหลด YOLO model\n'
+              '• รูปภาพใหญ่เกินไป\n'
+              '• Server ช้า\n\n'
+              'กรุณาลองใหม่อีกครั้ง');
+        },
+      );
 
-      if (!catDataAnalysis.isCat) {
-        _showError('😿 (${catDataAnalysis.message})');
+      // ========================================
+      // STEP 4: Process Response
+      // ========================================
+      print('\n--- STEP 4: Processing Response ---');
+      print('📥 HTTP Status Code: ${response.statusCode}');
+      print('📥 Response Headers: ${response.headers}');
+
+      // Decode response body
+      final decodedBody = utf8.decode(response.bodyBytes);
+      final bodyPreview = decodedBody.length > 500
+          ? '${decodedBody.substring(0, 500)}...'
+          : decodedBody;
+
+      print('📦 Response Body (preview):');
+      print(bodyPreview);
+      print('📦 Response Body Length: ${decodedBody.length} characters');
+
+      // ========================================
+      // STEP 5: Check HTTP Status
+      // ========================================
+      print('\n--- STEP 5: Checking HTTP Status ---');
+
+      if (response.statusCode == 401) {
+        print('❌ HTTP 401: Unauthorized');
+        throw Exception('Session หมดอายุ กรุณาเข้าสู่ระบบใหม่');
+      }
+
+      if (response.statusCode == 500) {
+        print('❌ HTTP 500: Internal Server Error');
+        print('🔍 Trying to parse error message...');
+
+        try {
+          final errorData = jsonDecode(decodedBody);
+          print('✅ Successfully parsed error JSON:');
+          print(errorData);
+
+          final errorMsg = errorData['message'] ??
+              errorData['detail'] ??
+              errorData['error'] ??
+              'Internal Server Error';
+
+          print('❌ Backend Error Message: $errorMsg');
+          throw Exception('Backend Error:\n$errorMsg');
+        } catch (e) {
+          if (e.toString().contains('Backend Error:')) {
+            print('⚠️ Rethrowing Backend Error');
+            rethrow;
+          }
+
+          print('❌ Failed to parse error JSON');
+          print('📄 Raw response: $decodedBody');
+          throw Exception('Backend Error 500:\n\n${bodyPreview}');
+        }
+      }
+
+      if (response.statusCode != 200) {
+        print('❌ HTTP ${response.statusCode}: Non-200 status');
+        print('🔍 Trying to parse error message...');
+
+        try {
+          final errorData = jsonDecode(decodedBody);
+          print('✅ Successfully parsed error JSON:');
+          print(errorData);
+
+          final errorMsg =
+              errorData['message'] ?? errorData['detail'] ?? 'Unknown error';
+
+          print('❌ Error Message: $errorMsg');
+          throw Exception('HTTP ${response.statusCode}:\n$errorMsg');
+        } catch (e) {
+          if (e.toString().contains('HTTP ${response.statusCode}:')) {
+            print('⚠️ Rethrowing HTTP Error');
+            rethrow;
+          }
+
+          print('❌ Failed to parse error JSON');
+          throw Exception('HTTP Error ${response.statusCode}:\n${bodyPreview}');
+        }
+      }
+
+      // ========================================
+      // STEP 6: Parse Success Response
+      // ========================================
+      print('\n--- STEP 6: Parsing Success Response ---');
+      print('✅ HTTP 200: Success');
+      print('🔍 Parsing JSON...');
+
+      final jsonData = jsonDecode(decodedBody);
+      print('✅ JSON parsed successfully');
+      print('📊 Response Data:');
+      print(jsonData);
+
+      // ========================================
+      // STEP 7: Check if Cat Detected
+      // ========================================
+      print('\n--- STEP 7: Checking Cat Detection ---');
+      print('🐱 is_cat: ${jsonData['is_cat']}');
+
+      if (jsonData['is_cat'] != true) {
+        print('❌ Not a cat!');
+        print('📝 Message: ${jsonData['message'] ?? 'ไม่พบแมวในภาพ'}');
+
+        setState(() {
+          _progress = 1.0;
+          _isProcessing = false;
+        });
+
+        _showError('😿 ${jsonData['message'] ?? 'ไม่พบแมวในภาพ'}');
         return;
       }
 
-      _showSuccessMessage('วิเคราะห์สำเร็จ 🐱');
-    } catch (e) {
+      print('✅ Cat detected!');
+
+      // ========================================
+      // STEP 8: Parse Cat Data
+      // ========================================
+      print('\n--- STEP 8: Parsing Cat Data ---');
+      print('🔍 Calling CatData.fromJson()...');
+
+      try {
+        final catData = CatData.fromJson(jsonData);
+        print('✅ CatData parsed successfully:');
+        print('   - Name: ${catData.name}');
+        print('   - Breed: ${catData.breed}');
+        print('   - Age: ${catData.age}');
+        print('   - Size: ${catData.sizeCategory}');
+        print('   - Confidence: ${catData.confidence}');
+
+        setState(() {
+          _progress = 1.0;
+          _isProcessing = false;
+          _analysisCat = catData;
+        });
+
+        print('📱 UI State: Processing = false, _analysisCat set');
+        print('✅ Analysis complete!');
+
+        _showSuccessMessage('วิเคราะห์สำเร็จ 🐱');
+        _loadRecommendedProducts();
+
+        print('\n========================================');
+        print('🎉 SUCCESS: Analysis completed');
+        print('========================================\n');
+      } catch (e) {
+        print('❌ Failed to parse CatData');
+        print('❌ Error: $e');
+        print('📄 JSON Data: $jsonData');
+        throw Exception('Failed to parse cat data: $e');
+      }
+    } catch (e, stackTrace) {
+      print('\n========================================');
+      print('💥 ERROR OCCURRED');
+      print('========================================');
+      print('❌ Error Type: ${e.runtimeType}');
+      print('❌ Error Message: $e');
+      print('📍 Stack Trace:');
+      print(stackTrace);
+      print('========================================\n');
+
       setState(() => _isProcessing = false);
-      _showError('วิเคราะห์ไม่สำเร็จ: $e');
+
+      // Format error message for user
+      String errorMessage = 'วิเคราะห์ไม่สำเร็จ';
+
+      if (e.toString().contains('Backend Error')) {
+        errorMessage = e.toString().replaceAll('Exception: ', '');
+      } else if (e.toString().contains('HTTP')) {
+        errorMessage = e.toString().replaceAll('Exception: ', '');
+      } else if (e.toString().contains('SocketException')) {
+        errorMessage =
+            'ไม่สามารถเชื่อมต่อ Backend ได้\n\nตรวจสอบ:\n• Backend ทำงานอยู่หรือไม่\n• อินเทอร์เน็ตเชื่อมต่อหรือไม่';
+      } else if (e.toString().contains('Upload failed')) {
+        errorMessage = 'อัปโหลดรูปภาพไม่สำเร็จ\n\nกรุณาลองอีกครั้ง';
+      } else if (e.toString().contains('Failed to parse')) {
+        errorMessage =
+            'Backend ตอบกลับในรูปแบบที่ไม่ถูกต้อง\n\nกรุณาติดต่อผู้ดูแลระบบ';
+      } else {
+        errorMessage = e.toString().replaceAll('Exception: ', '');
+      }
+
+      print('📱 Showing error to user: $errorMessage');
+      _showError(errorMessage);
     }
   }
 

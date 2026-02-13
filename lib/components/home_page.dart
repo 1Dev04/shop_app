@@ -30,24 +30,33 @@ class _HomePageState extends State<HomePage> {
   String? errorMessage;
 
   // ฟังก์ชันสำหรับหา Base URL ที่ถูกต้องตาม Platform
-  String getBaseUrl() {
-    // ✅ เปลี่ยนจาก 'dev' เป็น 'prod'
-    const String env = String.fromEnvironment('ENV', defaultValue: 'prod');
+String getBaseUrl() {
+  // prod / prod-v2 / local
+  const String env = String.fromEnvironment(
+    'ENV',
+    defaultValue: 'local',
+  );
 
-    if (env == 'prod') {
-      return 'https://catshop-backend-9pzq.onrender.com';
-    }
+  if (env == 'prod') {
+    return 'https://catshop-backend-9pzq.onrender.com';
+  }
 
-    if (kIsWeb) {
-      return 'http://localhost:8000';
-    }
+  if (env == 'prod-v2') {
+    return 'https://catshop-backend-v2.onrender.com';
+  }
 
-    if (Platform.isAndroid) {
-      return 'http://10.0.2.2:8000';
-    }
-
+  // ===== local =====
+  if (kIsWeb) {
     return 'http://localhost:8000';
   }
+
+  if (Platform.isAndroid) {
+    return 'http://10.0.2.2:8000';
+  }
+
+  return 'http://localhost:8000';
+}
+
 
   // ฟังก์ชันแปลงค่าเป็น double (รองรับทั้ง String และ number)
   double parseDouble(dynamic value) {

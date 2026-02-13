@@ -33,13 +33,21 @@ double _parseDouble(dynamic value) {
 // ============================================================================
 
 String getBaseUrl() {
-  // ✅ เปลี่ยนจาก 'dev' เป็น 'prod'
-  const String env = String.fromEnvironment('ENV', defaultValue: 'prod');
+  // prod / prod-v2 / local
+  const String env = String.fromEnvironment(
+    'ENV',
+    defaultValue: 'local',
+  );
 
   if (env == 'prod') {
     return 'https://catshop-backend-9pzq.onrender.com';
   }
 
+  if (env == 'prod-v2') {
+    return 'https://catshop-backend-v2.onrender.com';
+  }
+
+  // ===== local =====
   if (kIsWeb) {
     return 'http://localhost:8000';
   }
@@ -50,6 +58,7 @@ String getBaseUrl() {
 
   return 'http://localhost:8000';
 }
+
 
 class ApiConfig {
   static String get baseUrl => getBaseUrl();
@@ -1179,8 +1188,7 @@ class _ActionButtonsState extends State<_ActionButtons> {
 
   @override
   Widget build(BuildContext context) {
-    final languageProvider = Provider.of<LanguageProvider>(context);
-
+   
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [

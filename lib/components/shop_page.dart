@@ -49,13 +49,21 @@ class _ShopPageState extends State<ShopPage> {
   String errorMessageSeller = '';
 
 String getBaseUrl() {
-  // ✅ เปลี่ยนจาก 'dev' เป็น 'prod'
-  const String env = String.fromEnvironment('ENV', defaultValue: 'prod');
+  // prod / prod-v2 / local
+  const String env = String.fromEnvironment(
+    'ENV',
+    defaultValue: 'local',
+  );
 
   if (env == 'prod') {
     return 'https://catshop-backend-9pzq.onrender.com';
   }
 
+  if (env == 'prod-v2') {
+    return 'https://catshop-backend-v2.onrender.com';
+  }
+
+  // ===== local =====
   if (kIsWeb) {
     return 'http://localhost:8000';
   }
@@ -66,6 +74,7 @@ String getBaseUrl() {
 
   return 'http://localhost:8000';
 }
+
 
   @override
   void initState() {
@@ -106,7 +115,7 @@ String getBaseUrl() {
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-                final decodedBody = utf8.decode(response.bodyBytes);
+        final decodedBody = utf8.decode(response.bodyBytes);
         final data = json.decode(decodedBody);
         List<Map<String, dynamic>> parsedImages = [];
 

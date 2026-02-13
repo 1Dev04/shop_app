@@ -15,13 +15,21 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 
 String getBaseUrl() {
-  // ✅ เปลี่ยนจาก 'dev' เป็น 'prod'
-  const String env = String.fromEnvironment('ENV', defaultValue: 'prod');
+  // prod / prod-v2 / local
+  const String env = String.fromEnvironment(
+    'ENV',
+    defaultValue: 'local',
+  );
 
   if (env == 'prod') {
     return 'https://catshop-backend-9pzq.onrender.com';
   }
 
+  if (env == 'prod-v2') {
+    return 'https://catshop-backend-v2.onrender.com';
+  }
+
+  // ===== local =====
   if (kIsWeb) {
     return 'http://localhost:8000';
   }
