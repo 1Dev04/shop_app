@@ -32,7 +32,7 @@ void main() async {
   );
 
   await initializeCameras();
-  
+
   runApp(
     MultiProvider(
       providers: [
@@ -40,7 +40,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => FavoriteProvider()),
         ChangeNotifierProvider(create: (_) => LanguageProvider()),
       ],
-      child: MyApp(), 
+      child: MyApp(),
     ),
   );
 }
@@ -51,18 +51,16 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
-    
+
     return MaterialApp(
-      
       debugShowCheckedModeBanner: false,
       themeMode: themeProvider.themeMode,
       theme: AppThemes.lightTheme,
       darkTheme: AppThemes.darkTheme,
-      home: WelcomeScreen(), 
+      home: WelcomeScreen(),
     );
   }
 }
-
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -71,7 +69,7 @@ class WelcomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final languageProvider = Provider.of<LanguageProvider>(context);
-    
+
     return Scaffold(
       backgroundColor: themeProvider.themeMode == ThemeMode.dark
           ? Colors.black
@@ -114,7 +112,7 @@ class WelcomeScreen extends StatelessWidget {
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
-                Navigator.push(
+                Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(builder: (context) => authPage()),
                 );
@@ -123,9 +121,6 @@ class WelcomeScreen extends StatelessWidget {
                 languageProvider.translate(
                   en: "Get Started",
                   th: "เริ่มต้น",
-                ),
-                style: TextStyle(
-                  fontSize: 16,
                 ),
               ),
             )

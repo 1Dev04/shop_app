@@ -48,15 +48,33 @@ class _ShopPageState extends State<ShopPage> {
   String errorMessageLike = '';
   String errorMessageSeller = '';
 
-  String getBaseUrl() {
-    if (kIsWeb) {
-      return 'http://localhost:8000';
-    } else if (Platform.isAndroid) {
-      return 'http://10.0.2.2:8000';
-    } else {
-      return 'http://localhost:8000';
-    }
+String getBaseUrl() {
+  // prod / prod-v2 / local
+  const String env = String.fromEnvironment(
+    'ENV',
+    defaultValue: 'local',
+  );
+
+  if (env == 'prod') {
+    return 'https://catshop-backend-9pzq.onrender.com';
   }
+
+  if (env == 'prod-v2') {
+    return 'https://catshop-backend-v2.onrender.com';
+  }
+
+  // ===== local =====
+  if (kIsWeb) {
+    return 'http://localhost:8000';
+  }
+
+  if (Platform.isAndroid) {
+    return 'http://10.0.2.2:8000';
+  }
+
+  return 'http://localhost:8000';
+}
+
 
   @override
   void initState() {
@@ -97,7 +115,8 @@ class _ShopPageState extends State<ShopPage> {
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final decodedBody = utf8.decode(response.bodyBytes);
+        final data = json.decode(decodedBody);
         List<Map<String, dynamic>> parsedImages = [];
 
         if (data is List) {
@@ -163,7 +182,8 @@ class _ShopPageState extends State<ShopPage> {
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+                final decodedBody = utf8.decode(response.bodyBytes);
+        final data = json.decode(decodedBody);
         List<Map<String, dynamic>> parsedImages = [];
 
         if (data is List) {
@@ -234,7 +254,8 @@ class _ShopPageState extends State<ShopPage> {
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+                final decodedBody = utf8.decode(response.bodyBytes);
+        final data = json.decode(decodedBody);
         if (data is Map && data.containsKey('data')) {
           return data['data'];
         }

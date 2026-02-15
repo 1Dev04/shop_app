@@ -30,17 +30,33 @@ class _HomePageState extends State<HomePage> {
   String? errorMessage;
 
   // ฟังก์ชันสำหรับหา Base URL ที่ถูกต้องตาม Platform
-  String getBaseUrl() {
-    if (kIsWeb) {
-      return 'http://localhost:8000';
-    } else if (Platform.isAndroid) {
-      return 'http://10.0.2.2:8000'; // สำหรับ Android Emulator
-    } else if (Platform.isIOS) {
-      return 'http://localhost:8000'; // สำหรับ iOS Simulator
-    } else {
-      return 'http://localhost:8000';
-    }
+String getBaseUrl() {
+  // prod / prod-v2 / local
+  const String env = String.fromEnvironment(
+    'ENV',
+    defaultValue: 'local',
+  );
+
+  if (env == 'prod') {
+    return 'https://catshop-backend-9pzq.onrender.com';
   }
+
+  if (env == 'prod-v2') {
+    return 'https://catshop-backend-v2.onrender.com';
+  }
+
+  // ===== local =====
+  if (kIsWeb) {
+    return 'http://localhost:8000';
+  }
+
+  if (Platform.isAndroid) {
+    return 'http://10.0.2.2:8000';
+  }
+
+  return 'http://localhost:8000';
+}
+
 
   // ฟังก์ชันแปลงค่าเป็น double (รองรับทั้ง String และ number)
   double parseDouble(dynamic value) {
@@ -81,7 +97,8 @@ class _HomePageState extends State<HomePage> {
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final decodedBody = utf8.decode(response.bodyBytes);
+        final data = json.decode(decodedBody);
 
         List<Map<String, dynamic>> parsedImages = [];
 
@@ -161,8 +178,8 @@ class _HomePageState extends State<HomePage> {
       print('📦 Response body: ${response.body}'); // Debug
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-
+        final decodedBody = utf8.decode(response.bodyBytes);
+        final data = json.decode(decodedBody);
         // 🔥 ตรวจสอบว่าข้อมูลอยู่ใน key 'data' หรือไม่
         if (data is Map && data.containsKey('data')) {
           return data['data'];
@@ -726,7 +743,7 @@ class ItemDetailsCard extends StatelessWidget {
                             ),
                         ],
                       ),
-                       const SizedBox(height: 10),
+                      const SizedBox(height: 10),
                       //Add to Cart button
                       SizedBox(
                         width: double.infinity,

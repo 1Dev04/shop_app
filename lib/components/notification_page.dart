@@ -22,10 +22,7 @@ double _parseDouble(dynamic value) {
   if (value is int) return value.toDouble();
   if (value is String) {
     // ลบ " THB", "%", whitespace ออก ก่อน parse
-    final cleaned = value
-        .replaceAll('THB', '')
-        .replaceAll('%', '')
-        .trim();
+    final cleaned = value.replaceAll('THB', '').replaceAll('%', '').trim();
     return double.tryParse(cleaned) ?? 0.0;
   }
   return 0.0;
@@ -35,28 +32,57 @@ double _parseDouble(dynamic value) {
 // API Configuration
 // ============================================================================
 
-class ApiConfig {
-  static String get baseUrl {
-    if (kIsWeb) {
-      return 'http://localhost:8000';
-    } else if (Platform.isAndroid) {
-      return 'http://10.0.2.2:8000';
-    } else {
-      return 'http://localhost:8000';
-    }
+String getBaseUrl() {
+  // prod / prod-v2 / local
+  const String env = String.fromEnvironment(
+    'ENV',
+    defaultValue: 'local',
+  );
+
+  if (env == 'prod') {
+    return 'https://catshop-backend-9pzq.onrender.com';
   }
 
-  static const Duration apiTimeout = Duration(seconds: 30);
+  if (env == 'prod-v2') {
+    return 'https://catshop-backend-v2.onrender.com';
+  }
 
-  static Uri getMessagesUri() =>
-      Uri.parse('$baseUrl/api/notifications/messages');
-  static Uri getNewsUri() => Uri.parse('$baseUrl/api/notifications/news');
-  static Uri getMessageDetailUri(String id) =>
-      Uri.parse('$baseUrl/api/notifications/messages/$id');
-  static Uri getNewsDetailUri(String id) =>
-      Uri.parse('$baseUrl/api/notifications/news/$id');
+  // ===== local =====
+  if (kIsWeb) {
+    return 'http://localhost:8000';
+  }
+
+  if (Platform.isAndroid) {
+    return 'http://10.0.2.2:8000';
+  }
+
+  return 'http://localhost:8000';
 }
 
+
+class ApiConfig {
+  static String get baseUrl => getBaseUrl();
+
+  static const Duration apiTimeout = Duration(seconds: 10);
+
+  // Messages endpoints
+  static Uri getMessagesUri() {
+    return Uri.parse('$baseUrl/api/notifications/messages');
+  }
+
+  static Uri getMessageDetailUri(String id) {
+    return Uri.parse('$baseUrl/api/notifications/messages/$id');
+  }
+
+  // News endpoints
+  static Uri getNewsUri() {
+    return Uri.parse('$baseUrl/api/notifications/news');
+  }
+
+  static Uri getNewsDetailUri(String id) {
+    return Uri.parse('$baseUrl/api/notifications/news/$id');
+  }
+}
 // ============================================================================
 // Main Notification Page
 // ============================================================================
@@ -137,7 +163,10 @@ class _NotificationPageState extends State<NotificationPage> {
       if (!mounted) return;
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
+        final decodedBody = utf8.decode(response.bodyBytes);
+
+        final List<dynamic> data = json.decode(decodedBody);
+        
         setState(() {
           _messages =
               data.map((json) => NotificationItemMess.fromJson(json)).toList();
@@ -173,7 +202,9 @@ class _NotificationPageState extends State<NotificationPage> {
       if (!mounted) return;
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
+         final decodedBody = utf8.decode(response.bodyBytes);
+
+        final List<dynamic> data = json.decode(decodedBody);
         setState(() {
           _news =
               data.map((json) => NotificationItemNews.fromJson(json)).toList();
@@ -243,7 +274,8 @@ class _NotificationPageState extends State<NotificationPage> {
       Navigator.of(context).pop(); // ปิด loading
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final decodedBody = utf8.decode(response.bodyBytes);
+        final data = json.decode(decodedBody);
         final item = NotificationItemMess.fromJson(data);
         _showDetailPopup(context, item);
       } else {
@@ -261,6 +293,7 @@ class _NotificationPageState extends State<NotificationPage> {
       ));
     }
   }
+
 
   Future<void> _showNewsDetail(String id) async {
     final languageProvider =
@@ -281,7 +314,8 @@ class _NotificationPageState extends State<NotificationPage> {
       Navigator.of(context).pop();
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final decodedBody = utf8.decode(response.bodyBytes);
+        final data = json.decode(decodedBody);
         final item = NotificationItemNews.fromJson(data);
         _showDetailPopup(context, item);
       } else {
@@ -462,7 +496,8 @@ class _ErrorView extends StatelessWidget {
           ElevatedButton.icon(
             onPressed: onRetry,
             icon: const Icon(Icons.refresh),
-            label: Text(languageProvider.translate(en: 'Retry', th: 'ลองอีกครั้ง')),
+            label: Text(
+                languageProvider.translate(en: 'Retry', th: 'ลองอีกครั้ง')),
           ),
         ],
       ),
@@ -528,8 +563,7 @@ class _NotificationDetailCard extends StatelessWidget {
     final discountPercentRaw = item is NotificationItemMess
         ? (item as NotificationItemMess).discount_percent
         : '';
-    final discountPercentClean =
-        discountPercentRaw.replaceAll('%', '').trim();
+    final discountPercentClean = discountPercentRaw.replaceAll('%', '').trim();
 
     return Center(
       child: Container(
@@ -555,8 +589,7 @@ class _NotificationDetailCard extends StatelessWidget {
               children: [
                 // รูปภาพสินค้า
                 ClipRRect(
-                  borderRadius:
-                      BorderRadius.vertical(top: Radius.circular(20)),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                   child: CachedNetworkImage(
                     imageUrl: item.image_url,
                     width: double.infinity,
@@ -596,13 +629,13 @@ class _NotificationDetailCard extends StatelessWidget {
                         value: item.category,
                       ),
                       _DetailRow(
-                        label: languageProvider.translate(
-                            en: 'Size', th: 'ขนาด'),
+                        label:
+                            languageProvider.translate(en: 'Size', th: 'ขนาด'),
                         value: item.size_category,
                       ),
                       _DetailRow(
-                        label: languageProvider.translate(
-                            en: 'Gender', th: 'เพศ'),
+                        label:
+                            languageProvider.translate(en: 'Gender', th: 'เพศ'),
                         value: formatGender(item.gender, languageProvider),
                       ),
                       _DetailRow(
@@ -693,7 +726,7 @@ class _NotificationDetailCard extends StatelessWidget {
                         ],
                       ),
 
-                       const SizedBox(height: 10),
+                      const SizedBox(height: 10),
 
                       // ปุ่ม Add to Cart — แบบเดียวกับ HomePage
                       SizedBox(
@@ -719,8 +752,7 @@ class _NotificationDetailCard extends StatelessWidget {
                             style: const TextStyle(fontSize: 16),
                           ),
                           style: ElevatedButton.styleFrom(
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 16),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
                             backgroundColor: Colors.black,
                           ),
                         ),
@@ -1010,12 +1042,11 @@ class _ContentImage extends StatelessWidget {
         fit: BoxFit.cover,
         width: 180,
         height: 180,
-        placeholder: (context, url) =>
-            const CircularProgressIndicator.adaptive(
-              backgroundColor: Colors.white,
-              valueColor:
-                  AlwaysStoppedAnimation<Color>(Color.fromARGB(75, 50, 50, 50)),
-            ),
+        placeholder: (context, url) => const CircularProgressIndicator.adaptive(
+          backgroundColor: Colors.white,
+          valueColor:
+              AlwaysStoppedAnimation<Color>(Color.fromARGB(75, 50, 50, 50)),
+        ),
         errorWidget: (context, url, error) => Container(
           width: 180,
           height: 180,
@@ -1037,18 +1068,17 @@ class _ContentDetails extends StatelessWidget {
   Widget build(BuildContext context) {
     // เทียบราคาเป็น double เหมือน HomePage
     final price = _parseDouble(item.price);
-    final discountPrice = _parseDouble(
-        item is NotificationItemMess ? (item as NotificationItemMess).discount_price : '0');
+    final discountPrice = item is NotificationItemMess
+        ? _parseDouble((item as NotificationItemMess).discount_price)
+        : 0.0;
     final hasDiscount = discountPrice > 0 && discountPrice < price;
 
     final isMessage = item is NotificationItemMess;
 
     // clean discount_percent
-    final discountPercentRaw = isMessage
-        ? (item as NotificationItemMess).discount_percent
-        : '';
-    final discountPercentClean =
-        discountPercentRaw.replaceAll('%', '').trim();
+    final discountPercentRaw =
+        isMessage ? (item as NotificationItemMess).discount_percent : '';
+    final discountPercentClean = discountPercentRaw.replaceAll('%', '').trim();
 
     return Container(
       padding: const EdgeInsets.all(8),
@@ -1058,9 +1088,7 @@ class _ContentDetails extends StatelessWidget {
         children: [
           // Title
           Text(
-            isMessage
-                ? '${item.clothing_name} ลดพิเศษ!'
-                : item.clothing_name,
+            isMessage ? '${item.clothing_name} ลดพิเศษ!' : item.clothing_name,
             style: TextStyle(
               color: Theme.of(context).colorScheme.primary,
               fontSize: 22,
@@ -1160,10 +1188,9 @@ class _ActionButtonsState extends State<_ActionButtons> {
 
   @override
   Widget build(BuildContext context) {
-    final languageProvider = Provider.of<LanguageProvider>(context);
-
+   
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      mainAxisAlignment: MainAxisAlignment.start,
       children: [
         FloatingActionButton.small(
           onPressed: _isAddingToCart ? null : _handleAddToCart,
@@ -1187,14 +1214,10 @@ class _ActionButtonsState extends State<_ActionButtons> {
                       .foregroundColor,
                 ),
         ),
+        SizedBox(width: 10),
         ElevatedButton(
           onPressed: () => widget.onLearnMore(widget.itemId),
-          child: Text(
-            languageProvider.translate(
-              en: 'Learn More',
-              th: 'ดูเพิ่มเติม',
-            ),
-          ),
+          child: Icon(Icons.read_more_outlined, size: 30)
         ),
       ],
     );
@@ -1273,6 +1296,8 @@ class NotificationItemNews {
   final String category;
   final String size_category;
   final String price;
+  final String discount_price; // เพิ่มบรรทัดนี้
+  final String discount_percent; // เพิ่มบรรทัดนี้
   final String gender;
   final String clothing_like;
   final String clothing_seller;
@@ -1289,6 +1314,8 @@ class NotificationItemNews {
     required this.category,
     required this.size_category,
     required this.price,
+    required this.discount_price, // เพิ่มบรรทัดนี้
+    required this.discount_percent, // เพิ่มบรรทัดนี้
     required this.stock,
     required this.gender,
     required this.clothing_like,
@@ -1307,6 +1334,8 @@ class NotificationItemNews {
       category: json['category']?.toString() ?? '',
       size_category: json['size_category']?.toString() ?? '',
       price: json['price']?.toString() ?? '',
+      discount_price: json['discount_price']?.toString() ?? '',
+      discount_percent: json['discount_percent']?.toString() ?? '',
       stock: json['stock']?.toString() ?? '',
       gender: json['gender']?.toString() ?? '',
       clothing_like: json['clothing_like']?.toString() ?? '',
@@ -1377,8 +1406,6 @@ String _formatDate(String dateString, BuildContext context) {
     return dateString;
   }
 }
-
-
 
 String formatGender(String value, LanguageProvider lang) {
   switch (value) {

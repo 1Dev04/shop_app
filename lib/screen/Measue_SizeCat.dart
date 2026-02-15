@@ -1,3 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/provider/favorite_provider.dart';
 import 'package:flutter_application_1/provider/language_provider.dart';
@@ -17,6 +19,53 @@ import 'package:flutter_application_1/provider/theme_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:camera/camera.dart';
 
+Future<String?> _getFirebaseToken() async {
+  try {
+    final User? user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      print('❌ User not logged in');
+      return null;
+    }
+
+    // ดึง ID Token จาก Firebase (จะ refresh อัตโนมัติถ้าหมดอายุ)
+    final String? token = await user.getIdToken();
+
+    print('✅ Got Firebase token: ${token?.substring(0, 20)}...');
+    return token;
+  } catch (e) {
+    print('❌ Error getting Firebase token: $e');
+    return null;
+  }
+}
+
+// ฟังก์ชันสำหรับหา Base URL ที่ถูกต้องตาม Platform
+String getBaseUrl() {
+  // prod / prod-v2 / local
+  const String env = String.fromEnvironment(
+    'ENV',
+    defaultValue: 'local',
+  );
+
+  if (env == 'prod') {
+    return 'https://catshop-backend-9pzq.onrender.com';
+  }
+
+  if (env == 'prod-v2') {
+    return 'https://catshop-backend-v2.onrender.com';
+  }
+
+  // ===== local =====
+  if (kIsWeb) {
+    return 'http://localhost:8000';
+  }
+
+  if (Platform.isAndroid) {
+    return 'http://10.0.2.2:8000';
+  }
+
+  return 'http://localhost:8000';
+}
 
 class _CircleHolePainter extends CustomPainter {
   @override
@@ -40,7 +89,6 @@ class _CircleHolePainter extends CustomPainter {
 
     canvas.drawPath(finalPath, paint);
 
- 
     canvas.drawCircle(
       center,
       radius,
@@ -54,7 +102,6 @@ class _CircleHolePainter extends CustomPainter {
   @override
   bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
-
 
 class CatData {
   final String name;
@@ -114,6 +161,26 @@ class CatData {
   }
 }
 
+class VisionResult {
+  final bool isCat;
+  final double confidence;
+  final String message;
+
+  VisionResult({
+    required this.isCat,
+    required this.confidence,
+    required this.message,
+  });
+
+  factory VisionResult.fromJson(Map<String, dynamic> json) {
+    return VisionResult(
+      isCat: json['is_cat'] ?? false,
+      confidence: (json['confidence'] as num?)?.toDouble() ?? 0.0,
+      message: json['message'] ?? '',
+    );
+  }
+}
+
 class MeasureSizeCat extends StatefulWidget {
   const MeasureSizeCat({super.key});
 
@@ -129,7 +196,8 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
   double _progress = 0.0;
   String _progressLabel = 'Please wait...';
 
-  CatData? _detectedCat;
+  CatData? _analysisCat;
+
   List<ProductRecommendation> _recommendedProducts = [];
 
   // 🎥 Camera Live Detection Variables
@@ -141,7 +209,8 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
   static const String cloudinaryUploadPreset = 'cat_img_detect';
   static const String cloudinaryFolder = 'Fetch_Img_SizeCat';
 
-  static const String pythonBackendUrl = 'http://localhost:8000/api/cat/detect';
+  // Python Backend URL - แก้ไขเป็น /api/vision/analyze-cat
+  String get pythonBackendAnalysis => '${getBaseUrl()}/api/vision/analyze-cat';
 
   @override
   void initState() {
@@ -452,7 +521,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
 
           setState(() {
             _selectedImage = processedImage;
-            _detectedCat = null;
+            _analysisCat = null;
           });
 
           _showSuccessMessage('เลือกรูปภาพสำเร็จ');
@@ -532,8 +601,10 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
       final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200) {
-        final jsonMap = jsonDecode(response.body);
+        final decodedBody = utf8.decode(response.bodyBytes);
+        final jsonMap = jsonDecode(decodedBody);
         final imageUrl = jsonMap['secure_url'];
+
         print('✅ อัปโหลดสำเร็จ! URL: $imageUrl');
         return imageUrl;
       } else {
@@ -545,43 +616,32 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     }
   }
 
-  Future<CatData?> detectCatFromBackend(String imageUrl) async {
-    try {
-      print('🔄 กำลังส่งรูปไป Python Backend...');
+  Future<VisionResult> analysisCatFromBackend(String imageUrl) async {
+    final response = await http.post(
+      Uri.parse(pythonBackendAnalysis),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: jsonEncode({'image_url': imageUrl}),
+    );
 
-      final response = await http.post(
-        Uri.parse(pythonBackendUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode({'image_url': imageUrl}),
-      );
-
-      print('📊 Status Code: ${response.statusCode}');
-      print('📄 Response: ${response.body}');
-
-      if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body);
-
-        if (jsonData['error'] != null) {
-          throw Exception(jsonData['error']);
-        }
-
-        return CatData.fromJson(jsonData);
-      } else {
-        final errorMessage =
-            jsonDecode(response.body)['error'] ?? 'Unknown error';
-        throw Exception('Detection failed: $errorMessage');
-      }
-    } catch (e) {
-      print('❌ Error detecting from backend: $e');
-      rethrow;
-    }
+    final decodedBody = utf8.decode(response.bodyBytes);
+    final jsonData = jsonDecode(decodedBody);
+    return VisionResult.fromJson(jsonData);
   }
 
   Future<void> _analyzeCat() async {
-    if (_selectedImage == null) return;
+    print('\n========================================');
+    print('🚀 START: _analyzeCat() called');
+    print('========================================\n');
+
+    if (_selectedImage == null) {
+      print('❌ _selectedImage is null, returning...');
+      return;
+    }
+
+    print('✅ _selectedImage exists: ${_selectedImage!.path}');
 
     setState(() {
       _isProcessing = true;
@@ -589,56 +649,274 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
       _progressLabel = 'Uploading image...';
     });
 
+    print('📱 UI State: Processing = true, Progress = 0.1');
+
     try {
-      // 1️⃣ Upload
+      // ========================================
+      // STEP 1: Get Firebase Token
+      // ========================================
+      print('\n--- STEP 1: Getting Firebase Token ---');
+      final token = await _getFirebaseToken();
+
+      if (token == null || token.isEmpty) {
+        print('❌ Firebase token is null or empty');
+        setState(() => _isProcessing = false);
+        _showError('กรุณาเข้าสู่ระบบก่อนใช้งาน');
+        return;
+      }
+
+      print('✅ Firebase Token obtained');
+      print('🔑 Token (first 30 chars): ${token.substring(0, 30)}...');
+      print('🔑 Token length: ${token.length} characters');
+
+      // ========================================
+      // STEP 2: Upload to Cloudinary
+      // ========================================
+      print('\n--- STEP 2: Uploading to Cloudinary ---');
       final imageUrl = await _uploadToCloudinary(_selectedImage!);
-      if (imageUrl == null) throw Exception('Upload failed');
+
+      if (imageUrl == null) {
+        print('❌ Cloudinary upload failed (returned null)');
+        throw Exception('Upload failed');
+      }
+
+      print('✅ Cloudinary upload successful');
+      print('🖼️ Image URL: $imageUrl');
 
       setState(() {
         _progress = 0.4;
         _progressLabel = 'Detecting cat...';
       });
 
-      final analyzedData = CatData(
-        name: 'Cat_Orange',
-        breed: 'Persian',
-        age: 2,
-        weight: 3.5,
-        chestCm: 44.6,
-        boundingBox: [0.579235],
-        sizeCategory: 'Small',
-        confidence: 0.95,
-        imageUrl: imageUrl, // เก็บ URL จาก Cloudinary
-        detectedAt: DateTime.now(),
+      print('📱 UI State: Progress = 0.4');
+
+// ========================================
+// STEP 3: Call Backend API
+// ========================================
+      print('\n--- STEP 3: Calling Backend API ---');
+      print('📤 Backend URL: $pythonBackendAnalysis');
+      print('📤 Request Method: POST');
+      print('📤 Headers:');
+      print('   - Content-Type: application/json');
+      print('   - Accept: application/json');
+      print('   - Authorization: Bearer ${token.substring(0, 20)}...');
+      print('📤 Body: {"image_url": "$imageUrl"}');
+
+      final requestStartTime = DateTime.now();
+      print('⏱️ Request started at: $requestStartTime');
+
+// 🔥 เพิ่ม timeout 60 วินาที
+      final response = await http
+          .post(
+        Uri.parse(pythonBackendAnalysis),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'image_url': imageUrl}),
+      )
+          .timeout(
+        Duration(seconds: 60),
+        onTimeout: () {
+          throw TimeoutException('Backend ใช้เวลานานเกินไป (> 60 วินาที)\n\n'
+              'สาเหตุที่เป็นไปได้:\n'
+              '• Backend กำลังโหลด YOLO model\n'
+              '• รูปภาพใหญ่เกินไป\n'
+              '• Server ช้า\n\n'
+              'กรุณาลองใหม่อีกครั้ง');
+        },
       );
 
-      setState(() {
-        _progress = 0.8;
-        _progressLabel = 'Analyzing size...';
-      });
+      // ========================================
+      // STEP 4: Process Response
+      // ========================================
+      print('\n--- STEP 4: Processing Response ---');
+      print('📥 HTTP Status Code: ${response.statusCode}');
+      print('📥 Response Headers: ${response.headers}');
 
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Decode response body
+      final decodedBody = utf8.decode(response.bodyBytes);
+      final bodyPreview = decodedBody.length > 500
+          ? '${decodedBody.substring(0, 500)}...'
+          : decodedBody;
 
-      // 2️⃣ Detect จาก backend จริง
-      // final catData = await detectCatFromBackend(imageUrl);
+      print('📦 Response Body (preview):');
+      print(bodyPreview);
+      print('📦 Response Body Length: ${decodedBody.length} characters');
 
-      setState(() {
-        _progress = 1.0;
-        _isProcessing = false;
-        _detectedCat = analyzedData;
-      });
+      // ========================================
+      // STEP 5: Check HTTP Status
+      // ========================================
+      print('\n--- STEP 5: Checking HTTP Status ---');
 
-      _showSuccessMessage('วิเคราะห์สำเร็จ 🐱');
-    } catch (e) {
+      if (response.statusCode == 401) {
+        print('❌ HTTP 401: Unauthorized');
+        throw Exception('Session หมดอายุ กรุณาเข้าสู่ระบบใหม่');
+      }
+
+      if (response.statusCode == 500) {
+        print('❌ HTTP 500: Internal Server Error');
+        print('🔍 Trying to parse error message...');
+
+        try {
+          final errorData = jsonDecode(decodedBody);
+          print('✅ Successfully parsed error JSON:');
+          print(errorData);
+
+          final errorMsg = errorData['message'] ??
+              errorData['detail'] ??
+              errorData['error'] ??
+              'Internal Server Error';
+
+          print('❌ Backend Error Message: $errorMsg');
+          throw Exception('Backend Error:\n$errorMsg');
+        } catch (e) {
+          if (e.toString().contains('Backend Error:')) {
+            print('⚠️ Rethrowing Backend Error');
+            rethrow;
+          }
+
+          print('❌ Failed to parse error JSON');
+          print('📄 Raw response: $decodedBody');
+          throw Exception('Backend Error 500:\n\n${bodyPreview}');
+        }
+      }
+
+      if (response.statusCode != 200) {
+        print('❌ HTTP ${response.statusCode}: Non-200 status');
+        print('🔍 Trying to parse error message...');
+
+        try {
+          final errorData = jsonDecode(decodedBody);
+          print('✅ Successfully parsed error JSON:');
+          print(errorData);
+
+          final errorMsg =
+              errorData['message'] ?? errorData['detail'] ?? 'Unknown error';
+
+          print('❌ Error Message: $errorMsg');
+          throw Exception('HTTP ${response.statusCode}:\n$errorMsg');
+        } catch (e) {
+          if (e.toString().contains('HTTP ${response.statusCode}:')) {
+            print('⚠️ Rethrowing HTTP Error');
+            rethrow;
+          }
+
+          print('❌ Failed to parse error JSON');
+          throw Exception('HTTP Error ${response.statusCode}:\n${bodyPreview}');
+        }
+      }
+
+      // ========================================
+      // STEP 6: Parse Success Response
+      // ========================================
+      print('\n--- STEP 6: Parsing Success Response ---');
+      print('✅ HTTP 200: Success');
+      print('🔍 Parsing JSON...');
+
+      final jsonData = jsonDecode(decodedBody);
+      print('✅ JSON parsed successfully');
+      print('📊 Response Data:');
+      print(jsonData);
+
+      // ========================================
+      // STEP 7: Check if Cat Detected
+      // ========================================
+      print('\n--- STEP 7: Checking Cat Detection ---');
+      print('🐱 is_cat: ${jsonData['is_cat']}');
+
+      if (jsonData['is_cat'] != true) {
+        print('❌ Not a cat!');
+        print('📝 Message: ${jsonData['message'] ?? 'ไม่พบแมวในภาพ'}');
+
+        setState(() {
+          _progress = 1.0;
+          _isProcessing = false;
+        });
+
+        _showError('😿 ${jsonData['message'] ?? 'ไม่พบแมวในภาพ'}');
+        return;
+      }
+
+      print('✅ Cat detected!');
+
+      // ========================================
+      // STEP 8: Parse Cat Data
+      // ========================================
+      print('\n--- STEP 8: Parsing Cat Data ---');
+      print('🔍 Calling CatData.fromJson()...');
+
+      try {
+        final catData = CatData.fromJson(jsonData);
+        print('✅ CatData parsed successfully:');
+        print('   - Name: ${catData.name}');
+        print('   - Breed: ${catData.breed}');
+        print('   - Age: ${catData.age}');
+        print('   - Size: ${catData.sizeCategory}');
+        print('   - Confidence: ${catData.confidence}');
+
+        setState(() {
+          _progress = 1.0;
+          _isProcessing = false;
+          _analysisCat = catData;
+        });
+
+        print('📱 UI State: Processing = false, _analysisCat set');
+        print('✅ Analysis complete!');
+
+        _showSuccessMessage('วิเคราะห์สำเร็จ 🐱');
+        _loadRecommendedProducts();
+
+        print('\n========================================');
+        print('🎉 SUCCESS: Analysis completed');
+        print('========================================\n');
+      } catch (e) {
+        print('❌ Failed to parse CatData');
+        print('❌ Error: $e');
+        print('📄 JSON Data: $jsonData');
+        throw Exception('Failed to parse cat data: $e');
+      }
+    } catch (e, stackTrace) {
+      print('\n========================================');
+      print('💥 ERROR OCCURRED');
+      print('========================================');
+      print('❌ Error Type: ${e.runtimeType}');
+      print('❌ Error Message: $e');
+      print('📍 Stack Trace:');
+      print(stackTrace);
+      print('========================================\n');
+
       setState(() => _isProcessing = false);
-      _showError('วิเคราะห์ไม่สำเร็จ: $e');
+
+      // Format error message for user
+      String errorMessage = 'วิเคราะห์ไม่สำเร็จ';
+
+      if (e.toString().contains('Backend Error')) {
+        errorMessage = e.toString().replaceAll('Exception: ', '');
+      } else if (e.toString().contains('HTTP')) {
+        errorMessage = e.toString().replaceAll('Exception: ', '');
+      } else if (e.toString().contains('SocketException')) {
+        errorMessage =
+            'ไม่สามารถเชื่อมต่อ Backend ได้\n\nตรวจสอบ:\n• Backend ทำงานอยู่หรือไม่\n• อินเทอร์เน็ตเชื่อมต่อหรือไม่';
+      } else if (e.toString().contains('Upload failed')) {
+        errorMessage = 'อัปโหลดรูปภาพไม่สำเร็จ\n\nกรุณาลองอีกครั้ง';
+      } else if (e.toString().contains('Failed to parse')) {
+        errorMessage =
+            'Backend ตอบกลับในรูปแบบที่ไม่ถูกต้อง\n\nกรุณาติดต่อผู้ดูแลระบบ';
+      } else {
+        errorMessage = e.toString().replaceAll('Exception: ', '');
+      }
+
+      print('📱 Showing error to user: $errorMessage');
+      _showError(errorMessage);
     }
   }
 
   void _clearData() {
     setState(() {
       _selectedImage = null;
-      _detectedCat = null;
+      _analysisCat = null;
     });
 
     _showSuccessMessage('ลบข้อมูลแล้ว');
@@ -796,42 +1074,38 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
               // 🔑 Content Area
               Expanded(
                 child: SingleChildScrollView(
-                  physics: (_selectedImage == null && _detectedCat == null)
+                  physics: (_selectedImage == null && _analysisCat == null)
                       ? const NeverScrollableScrollPhysics() // 🔒 ล็อค
                       : const BouncingScrollPhysics(), // 🔓 ปลด
 
                   child: Column(
                     children: [
                       // หน้ากล้อง (แสดงเฉพาะตอนไม่มีรูป)
-                      if (_selectedImage == null && _detectedCat == null)
+                      if (_selectedImage == null && _analysisCat == null)
                         SizedBox(
                           height: 678,
                           child: _buildCameraPreview(),
                         ),
 
                       // หน้าแสดงรูป + ปุ่มวิเคราะห์
-                      if (_selectedImage != null && _detectedCat == null)
+                      if (_selectedImage != null && _analysisCat == null)
                         _buildImageWithAnalyzeSection(isDark),
 
                       // หน้าผลลัพธ์
-                      if (_detectedCat != null) _buildResultSection(isDark),
+                      if (_analysisCat != null) _buildResultSection(isDark),
                     ],
                   ),
                 ),
               ),
 
-            
               _buildBottomButtons(isDark),
             ],
           ),
-
-      
           if (_isProcessing) _buildProcessingOverlay(),
         ],
       ),
     );
   }
-
 
   Widget _buildImageWithAnalyzeSection(bool isDark) {
     final languageProvider = Provider.of<LanguageProvider>(context);
@@ -839,7 +1113,6 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
       padding: EdgeInsets.all(16),
       child: Column(
         children: [
-          
           Container(
             height: 300,
             decoration: BoxDecoration(
@@ -861,10 +1134,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
               ),
             ),
           ),
-
           SizedBox(height: 20),
-
-       
           Container(
             padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -877,7 +1147,6 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
             ),
             child: Row(
               children: [
-         
                 Container(
                   width: 100,
                   height: 120,
@@ -893,17 +1162,14 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                     child: Image.file(_selectedImage!, fit: BoxFit.cover),
                   ),
                 ),
-
                 SizedBox(width: 16),
-
-             
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildInfoRow(
                           languageProvider.translate(
-                              en: 'Cat color:', th: 'ชื่อ:'),
+                              en: 'Cat color:', th: 'สีแมว:'),
                           'N/A',
                           isDark),
                       SizedBox(height: 10),
@@ -928,9 +1194,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
               ],
             ),
           ),
-
           SizedBox(height: 16),
-
           Container(
             padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -959,9 +1223,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
               ],
             ),
           ),
-
           SizedBox(height: 16),
-
           Row(
             children: [
               Expanded(
@@ -1017,7 +1279,6 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     );
   }
 
-  
   Widget _buildResultSection(bool isDark) {
     final languageProvider = Provider.of<LanguageProvider>(context);
     return Padding(
@@ -1025,7 +1286,6 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-       
           Container(
             padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -1039,7 +1299,6 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-             
                 Container(
                   width: 100,
                   height: 120,
@@ -1052,9 +1311,9 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(10),
-                    child: _detectedCat?.imageUrl != null
+                    child: _analysisCat?.imageUrl != null
                         ? Image.network(
-                            _detectedCat!.imageUrl,
+                            _analysisCat!.imageUrl,
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
                               return Container(
@@ -1082,10 +1341,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                           ),
                   ),
                 ),
-
                 SizedBox(width: 16),
-
-               
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1093,13 +1349,13 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                       _buildInfoRow(
                           languageProvider.translate(
                               en: 'Cat Color:', th: 'สีแมว:'),
-                          _detectedCat?.name ?? 'N/A',
+                          _analysisCat?.name ?? 'N/A',
                           isDark),
                       SizedBox(height: 10),
                       _buildInfoRow(
                         languageProvider.translate(en: 'Age:', th: 'อายุ:'),
-                        _detectedCat?.age != null
-                            ? '${_detectedCat!.age} years'
+                        _analysisCat?.age != null
+                            ? '${_analysisCat!.age} years'
                             : 'N/A',
                         isDark,
                       ),
@@ -1107,21 +1363,19 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                       _buildInfoRow(
                           languageProvider.translate(
                               en: 'Breed:', th: 'พันธุ์:'),
-                          _detectedCat?.breed ?? 'N/A',
+                          _analysisCat?.breed ?? 'N/A',
                           isDark),
                       SizedBox(height: 10),
                       _buildInfoRow(
                           languageProvider.translate(en: 'Size:', th: 'ขนาด:'),
-                          _detectedCat?.sizeCategory ?? 'N/A',
+                          _analysisCat?.sizeCategory ?? 'N/A',
                           isDark),
                     ],
                   ),
                 ),
-
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                   
                     IconButton(
                       onPressed: () {
                         showModalBottomSheet(
@@ -1215,8 +1469,6 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                       tooltip: languageProvider.translate(
                           en: 'Edit Data', th: 'แก้ไขข้อมูล'),
                     ),
-
-                  
                     IconButton(
                       onPressed: () {
                         showDialog(
@@ -1237,7 +1489,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                                 onPressed: () {
                                   Navigator.pop(context);
                                   setState(() {
-                                    _detectedCat = null;
+                                    _analysisCat = null;
                                     _recommendedProducts = [];
                                     _selectedImage = null;
                                   });
@@ -1270,10 +1522,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
               ],
             ),
           ),
-
           SizedBox(height: 20),
-
-          
           Text(
             languageProvider.translate(
                 en: 'Recommended Products', th: 'สินค้าแนะนำ'),
@@ -1283,16 +1532,13 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
               color: isDark ? Colors.white : Colors.black87,
             ),
           ),
-
           SizedBox(height: 12),
-
-          
           Container(
             height: 450,
             padding: EdgeInsets.symmetric(horizontal: 1),
             child: Center(
               child: GridView.builder(
-                shrinkWrap: true, 
+                shrinkWrap: true,
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   crossAxisSpacing: 5,
@@ -1311,7 +1557,6 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
       ),
     );
   }
-
 
   Widget _buildInfoRow(String label, String value, bool isDark) {
     return Row(
@@ -1339,7 +1584,6 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     );
   }
 
- 
   Widget _buildProductCard(
       ProductRecommendation product, int index, bool isDark) {
     return Consumer<FavoriteProvider>(
@@ -1395,7 +1639,6 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                       onTap: () {
                         favoriteProvider.toggleFavorite(product);
 
-                     
                         if (!isFav) {
                           _showProductDialog(context, product, isDark);
                         } else {
@@ -1420,8 +1663,6 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                   ),
                 ],
               ),
-
-             
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Column(
@@ -1506,11 +1747,9 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     );
   }
 
-  
   Widget _buildBottomButtons(bool isDark) {
-   
-    if (_selectedImage != null || _detectedCat != null) {
-      return SizedBox.shrink(); 
+    if (_selectedImage != null || _analysisCat != null) {
+      return SizedBox.shrink();
     }
     final languageProvider = Provider.of<LanguageProvider>(context);
 
@@ -1596,7 +1835,6 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     );
   }
 
-
   Future<void> _captureFromLiveCamera() async {
     try {
       if (_cameraController == null ||
@@ -1610,18 +1848,16 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
       final processedImage = await _validateAndCompressGalleryImage(imageFile);
 
       if (processedImage != null) {
-        
         _detectTimer?.cancel();
         await _cameraController?.dispose();
         _cameraController = null;
 
         setState(() {
           _selectedImage = processedImage;
-          _detectedCat = null;
+          _analysisCat = null;
         });
 
         _showSuccessMessage('ถ่ายรูปสำเร็จ 📸');
-
       }
     } catch (e) {
       _showError('ถ่ายรูปไม่สำเร็จ: $e');

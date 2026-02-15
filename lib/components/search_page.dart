@@ -68,13 +68,30 @@ int _parseInt(dynamic value) {
 }
 
 String getBaseUrl() {
+  // prod / prod-v2 / local
+  const String env = String.fromEnvironment(
+    'ENV',
+    defaultValue: 'local',
+  );
+
+  if (env == 'prod') {
+    return 'https://catshop-backend-9pzq.onrender.com';
+  }
+
+  if (env == 'prod-v2') {
+    return 'https://catshop-backend-v2.onrender.com';
+  }
+
+  // ===== local =====
   if (kIsWeb) {
     return 'http://localhost:8000';
-  } else if (Platform.isAndroid) {
-    return 'http://10.0.2.2:8000';
-  } else {
-    return 'http://localhost:8000';
   }
+
+  if (Platform.isAndroid) {
+    return 'http://10.0.2.2:8000';
+  }
+
+  return 'http://localhost:8000';
 }
 
 // ============================================================================
@@ -107,7 +124,7 @@ class ClothingItem {
   final Map<String, dynamic> images;
   final String clothingName;
   final String description;
-  final dynamic category; // ✅ FIX: เปลี่ยนเป็น dynamic เพราะ API ส่งมาทั้ง String และ int
+  final dynamic category;
   final String? categoryNameEn;
   final String? categoryNameTh;
   final String sizeCategory;
@@ -151,7 +168,8 @@ class ClothingItem {
       sizeCategory: json['size_category'] ?? '',
       price: _parseDouble(json['price']),
       discountPrice: _parseDouble(json['discount_price']),
-      discountPercent: _parseInt(json['discount_percent']), // ✅ FIX: ใช้ _parseInt
+      discountPercent:
+          _parseInt(json['discount_percent']), // ✅ FIX: ใช้ _parseInt
       gender: _parseInt(json['gender']), // ✅ FIX: ใช้ _parseInt
       stock: _parseInt(json['stock']), // ✅ FIX: ใช้ _parseInt
       breed: json['breed'] ?? '',
@@ -236,7 +254,9 @@ class _SearchPageState extends State<SearchPage> {
           );
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
+        final decodedBody = utf8.decode(response.bodyBytes);
+
+        final List<dynamic> data = json.decode(decodedBody);
         setState(() {
           _autocompleteSuggestions =
               data.map((json) => SearchCategory.fromJson(json)).toList();
@@ -275,7 +295,8 @@ class _SearchPageState extends State<SearchPage> {
           );
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final decodedBody = utf8.decode(response.bodyBytes);
+        final data = json.decode(decodedBody);
         final List<dynamic> items = data['items'];
 
         setState(() {
@@ -346,8 +367,6 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Future<void> _fetchOutfitSuggestions(int itemId) async {
-    print('🔍 Fetching outfit suggestions for category ID: $itemId with gender: $_selectedGender');
-    
     setState(() {
       _isLoadingOutfits = true;
       _outfitSuggestions = [];
@@ -366,13 +385,11 @@ class _SearchPageState extends State<SearchPage> {
             const Duration(seconds: 5),
           );
 
-      print('📦 Response status: ${response.statusCode}');
-      print('📡 Raw response: ${response.body}');
-
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        print('✅ Received ${data.length} items from API');
-        
+        final decodedBody = utf8.decode(response.bodyBytes);
+
+        final List<dynamic> data = json.decode(decodedBody);
+
         if (data.isNotEmpty) {
           print('📦 First item raw: ${data[0]}');
         }
@@ -392,8 +409,9 @@ class _SearchPageState extends State<SearchPage> {
             _outfitSuggestions = parsedItems;
             _isLoadingOutfits = false;
           });
-          
-          print('✅ Successfully parsed ${_outfitSuggestions.length} outfit suggestions');
+
+          print(
+              '✅ Successfully parsed ${_outfitSuggestions.length} outfit suggestions');
         } catch (e) {
           print('❌ Error during parsing: $e');
           setState(() => _isLoadingOutfits = false);
@@ -454,8 +472,6 @@ class _SearchPageState extends State<SearchPage> {
     final languageProvider = Provider.of<LanguageProvider>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    print('🏗️ Building UI - isLoadingOutfits: $_isLoadingOutfits, outfitSuggestions: ${_outfitSuggestions.length}');
-
     return Scaffold(
       body: Column(
         children: [
@@ -480,12 +496,6 @@ class _SearchPageState extends State<SearchPage> {
 
   // ✅ FIX: แยก logic การแสดงผลออกมาเป็น method เพื่อให้อ่านง่ายขึ้น
   Widget _buildContentArea(LanguageProvider languageProvider, bool isDark) {
-    print('🏗️ Building content area:');
-    print('   _isLoadingOutfits: $_isLoadingOutfits');
-    print('   _outfitSuggestions.length: ${_outfitSuggestions.length}');
-    print('   _isLoadingResults: $_isLoadingResults');
-    print('   _searchResults.length: ${_searchResults.length}');
-
     if (_isLoadingOutfits) {
       print('   → Showing loading for outfits');
       return const Center(child: CircularProgressIndicator());
@@ -598,7 +608,7 @@ class _SearchPageState extends State<SearchPage> {
         ),
         const SizedBox(height: 20),
         Text(
-          languageProvider.translate(en: "Outfit Search", th: "ค้นหาชุด"),
+          languageProvider.translate(en: "Not Found", th: "ไม่พบข้อมูล"),
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -610,8 +620,8 @@ class _SearchPageState extends State<SearchPage> {
           padding: const EdgeInsets.symmetric(horizontal: 40),
           child: Text(
             languageProvider.translate(
-                en: "Find the perfect cat clothes for the occasion and season for your feline friend.",
-                th: "ค้นหาเสื้อผ้าแมวตามเทศกาลและฤดูกาลที่ใช่ สำหรับน้องเหมียวของคุณ"),
+                en: "There are no products available for this category.",
+                th: "ไม่มีสินค้าในหมวดหมู่นี้"),
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
@@ -776,12 +786,11 @@ class _SearchPageState extends State<SearchPage> {
                     }
                   });
                 },
-                
                 decoration: InputDecoration(
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(50),
                   ),
-                  hintText: '𓇼 ⋆.˚ 𓆉 𓆝 𓆡⋆.˚ 𓇼',
+                  hintText: 'ᓚ₍⑅^- .-^₎ -ᶻ 𝗓 𐰁',
                   prefixIcon: const Icon(Icons.search),
                   suffixIcon: _hasSelected
                       ? IconButton(
@@ -982,7 +991,7 @@ class _OutfitSuggestionCard extends StatelessWidget {
     final hasDiscount = item.discountPrice != null &&
         item.discountPrice! > 0 &&
         item.discountPrice! < item.price;
-  final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
       onTap: onTap,
@@ -990,15 +999,12 @@ class _OutfitSuggestionCard extends StatelessWidget {
         elevation: 2,
         margin: const EdgeInsets.only(bottom: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        color:  isDark
-                      ?  Colors.grey[700]
-                      : Colors.grey[100],
+        color: isDark ? Colors.grey[700] : Colors.grey[100],
         child: Padding(
           padding: const EdgeInsets.all(10.0),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: CachedNetworkImage(
@@ -1014,7 +1020,6 @@ class _OutfitSuggestionCard extends StatelessWidget {
 
               const SizedBox(width: 12),
 
-         
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1131,9 +1136,8 @@ class _OutfitSuggestionCard extends StatelessWidget {
               ),
 
               // ✅ Cart Button
-              
+
               FloatingActionButton.small(
-                
                 onPressed: () {
                   showTopSnackBar(
                     Overlay.of(context),
@@ -1147,9 +1151,7 @@ class _OutfitSuggestionCard extends StatelessWidget {
                 },
                 backgroundColor:
                     Theme.of(context).floatingActionButtonTheme.backgroundColor,
-              
                 child: Icon(
-                  
                   Icons.shopping_cart_outlined,
                   size: 24,
                   color: Theme.of(context)
@@ -1357,7 +1359,6 @@ class _ItemDetailCard extends StatelessWidget {
                         height: 60,
                         child: ElevatedButton.icon(
                           onPressed: () {
-                            Navigator.of(context).pop();
                             showTopSnackBar(
                               Overlay.of(context),
                               CustomSnackBar.success(
@@ -1438,109 +1439,83 @@ String _formatGender(int gender, LanguageProvider lang) {
   }
 }
 
-LinearGradient getTextGradient(String type, String name) {
-  if (name.contains('Everday')) {
-    return const LinearGradient(
-      colors: [
-        Color.fromARGB(255, 113, 131, 179),
-        Color.fromARGB(255, 131, 174, 254)
-      ],
-    );
-  }
+Color brighten(Color color, [double amount = 0.15]) {
+  final hsl = HSLColor.fromColor(color);
+  final hslBright = hsl.withLightness((hsl.lightness + amount).clamp(0.0, 1.0));
+  return hslBright.toColor();
+}
 
-  if (name.contains('LGBT')) {
-    return const LinearGradient(
-      colors: [
-        Color(0xFFFF5F6D),
-        Color(0xFFFFC371),
-        Color(0xFF47CACC),
-        Color(0xFF845EC2),
-      ],
-    );
-  }
-
-  if (name.contains('Cyber')) {
-    return const LinearGradient(
-      colors: [
-        Color(0xFFB721FF),
-        Color(0xFF21D4FD),
-      ],
-    );
-  }
-
-  if (name.contains('Chinese')) {
-    return const LinearGradient(
-      colors: [
-        Color(0xFFD31027),
-        Color(0xFFEA384D),
-      ],
-    );
-  }
-
-  if (name.contains('Loy')) {
-    return const LinearGradient(
-      colors: [
-        Color(0xFF2193B0),
-        Color(0xFF6DD5ED),
-      ],
-    );
-  }
-
-  if (name.contains('Songkran')) {
-    return const LinearGradient(
-      colors: [
-        Color(0xFF56CCF2),
-        Color(0xFF2F80ED),
-      ],
-    );
-  }
-
-  if (name.contains('Valentine')) {
-    return const LinearGradient(
-      colors: [
-        Color(0xFFFF758C),
-        Color(0xFFFF7EB3),
-      ],
-    );
-  }
-
-  if (name.contains('Christmas')) {
-    return const LinearGradient(
-      colors: [
-        Color.fromARGB(255, 255, 52, 52),
-        Color(0xFF38EF7D),
-      ],
-    );
-  }
-
-  if (name.contains('Winter')) {
-    return const LinearGradient(
-      colors: [
-        Color(0xFF83A4D4),
-        Color.fromARGB(255, 133, 242, 248),
-      ],
-    );
-  }
-
-  if (name.contains('Summer')) {
-    return const LinearGradient(
-      colors: [
-        Color(0xFFFFC371),
-        Color(0xFFFF5F6D),
-      ],
-    );
-  }
-
-  if (name.contains('Rainy')) {
-    return const LinearGradient(
-      colors: [
-        Color(0xFF4FACFE),
-        Color(0xFF00F2FE),
-      ],
-    );
-  }
-
-  return const LinearGradient(
-    colors: [Color(0xFFBDBDBD), Color(0xFFE0E0E0)],
+LinearGradient brightGradient(List<Color> colors) {
+  return LinearGradient(
+    colors: colors.map((c) => brighten(c)).toList(),
   );
+}
+
+
+final Map<String, List<Color>> gradientMap = {
+  'Every Day': [
+    const Color.fromARGB(255, 90, 102, 234),
+    const Color.fromARGB(255, 109, 118, 202),
+  ],
+  'Pride Month': [
+    const Color.fromARGB(255, 192, 92, 92),
+    const Color.fromARGB(255, 192, 182, 92),
+    const Color.fromARGB(255, 104, 200, 95),
+    const Color.fromARGB(255, 101, 137, 190),
+    const Color.fromARGB(255, 192, 92, 185),
+  ],
+  'Cyber': [
+    const Color.fromARGB(255, 69, 105, 188),
+    const Color.fromARGB(255, 48, 123, 118),
+  ],
+  'Chinese': [
+    const Color.fromARGB(255, 160, 35, 35),
+    const Color.fromARGB(255, 145, 137, 19),
+  ],
+  'Loy': [
+    const Color.fromARGB(255, 65, 172, 202),
+    const Color.fromARGB(255, 63, 65, 186),
+  ],
+  'Songkran': [
+    const Color.fromARGB(255, 27, 150, 180),
+    const Color.fromARGB(255, 45, 199, 132),
+  ],
+  'Valentine': [
+    const Color.fromARGB(255, 218, 86, 128),
+    const Color.fromARGB(255, 195, 58, 58),
+  ],
+  'Christmas': [
+    const Color.fromARGB(255, 36, 159, 54),
+    const Color.fromARGB(255, 169, 70, 70),
+  ],
+  'Winter': [
+    const Color.fromARGB(255, 79, 128, 152),
+    const Color.fromARGB(255, 40, 180, 183),
+  ],
+  'Summer': [
+    const Color.fromARGB(255, 183, 107, 66),
+    const Color.fromARGB(255, 185, 185, 63),
+  ],
+  'Rainy': [
+    const Color.fromARGB(255, 68, 109, 144),
+    const Color.fromARGB(255, 66, 109, 157),
+  ],
+  'Halloween': [
+    const Color.fromARGB(255, 166, 102, 66),
+    const Color.fromARGB(255, 184, 85, 85),
+  ],
+};
+
+
+LinearGradient getTextGradient(String type, String name) {
+  for (final entry in gradientMap.entries) {
+    if (name.contains(entry.key)) {
+      return brightGradient(entry.value);
+    }
+  }
+
+  return brightGradient([
+    const Color(0xFF424242),
+    const Color(0xFF616161),
+  ]);
 }
