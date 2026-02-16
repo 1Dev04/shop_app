@@ -30,33 +30,32 @@ class _HomePageState extends State<HomePage> {
   String? errorMessage;
 
   // ฟังก์ชันสำหรับหา Base URL ที่ถูกต้องตาม Platform
-String getBaseUrl() {
-  // prod / prod-v2 / local
-  const String env = String.fromEnvironment(
-    'ENV',
-    defaultValue: 'local',
-  );
+  String getBaseUrl() {
+    // prod / prod-v2 / local
+    const String env = String.fromEnvironment(
+      'ENV',
+      defaultValue: 'local',
+    );
 
-  if (env == 'prod') {
-    return 'https://catshop-backend-9pzq.onrender.com';
-  }
+    if (env == 'prod') {
+      return 'https://catshop-backend-9pzq.onrender.com';
+    }
 
-  if (env == 'prod-v2') {
-    return 'https://catshop-backend-v2.onrender.com';
-  }
+    if (env == 'prod-v2') {
+      return 'https://catshop-backend-v2.onrender.com';
+    }
 
-  // ===== local =====
-  if (kIsWeb) {
+    // ===== local =====
+    if (kIsWeb) {
+      return 'http://localhost:8000';
+    }
+
+    if (Platform.isAndroid) {
+      return 'http://10.0.2.2:8000';
+    }
+
     return 'http://localhost:8000';
   }
-
-  if (Platform.isAndroid) {
-    return 'http://10.0.2.2:8000';
-  }
-
-  return 'http://localhost:8000';
-}
-
 
   // ฟังก์ชันแปลงค่าเป็น double (รองรับทั้ง String และ number)
   double parseDouble(dynamic value) {
@@ -582,44 +581,50 @@ class ItemDetailsCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Positioned(
-                //   top: 6,
-                //   right: 6,
-                //   child: GestureDetector(
-                //     onTap: () {
-
-                //     },
-                //     child: Container(
-                //       padding: EdgeInsets.all(6),
-                //       decoration: BoxDecoration(
-                //         color: Colors.black.withOpacity(0.1),
-                //         shape: BoxShape.circle,
-                //       ),
-                //       child: Icon(
-                //         Icons.favorite,
-                //         color:  Colors.white,
-                //         size: 18,
-                //       ),
-                //     ),
-                //   ),
-                // ),
-                // รูปภาพสินค้า
-                ClipRRect(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                  child: CachedNetworkImage(
-                    imageUrl: itemDetails['image_url'] ?? '',
-                    width: double.infinity,
-                    height: 300,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                      height: 300,
-                      child: Center(child: CircularProgressIndicator()),
+                // ใช้ Stack เพื่อวางปุ่ม favorite ทับรูปภาพ
+                Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius:
+                          BorderRadius.vertical(top: Radius.circular(20)),
+                      child: CachedNetworkImage(
+                        imageUrl: itemDetails['image_url'] ?? '',
+                        width: double.infinity,
+                        height: 300,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          height: 300,
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          height: 300,
+                          child: Center(child: Icon(Icons.error)),
+                        ),
+                      ),
                     ),
-                    errorWidget: (context, url, error) => Container(
-                      height: 300,
-                      child: Center(child: Icon(Icons.error)),
+                    // ปุ่ม Favorite ทับมุมขวาบน
+                    Positioned(
+                      top: 16,
+                      right: 16,
+                      child: GestureDetector(
+                        onTap: () {
+                          // ใส่ logic favorite ตรงนี้
+                        },
+                        child: Container(
+                          padding: EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.5),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.favorite,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
 
                 Padding(

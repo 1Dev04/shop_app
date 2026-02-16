@@ -588,22 +588,51 @@ class _NotificationDetailCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // รูปภาพสินค้า
-                ClipRRect(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                  child: CachedNetworkImage(
-                    imageUrl: item.image_url,
-                    width: double.infinity,
-                    height: 300,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                      height: 300,
-                      child: const Center(child: CircularProgressIndicator()),
+            
+
+                Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius:
+                          BorderRadius.vertical(top: Radius.circular(20)),
+                      child: CachedNetworkImage(
+                       imageUrl: item.image_url ?? '',
+                        width: double.infinity,
+                        height: 300,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          height: 300,
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          height: 300,
+                          child: Center(child: Icon(Icons.error)),
+                        ),
+                      ),
                     ),
-                    errorWidget: (context, url, error) => Container(
-                      height: 300,
-                      child: const Center(child: Icon(Icons.error)),
+                    // ปุ่ม Favorite ทับมุมขวาบน
+                    Positioned(
+                      top: 16,
+                      right: 16,
+                      child: GestureDetector(
+                        onTap: () {
+                          // ใส่ logic favorite ตรงนี้
+                        },
+                        child: Container(
+                          padding: EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.5),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.favorite,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
 
                 Padding(

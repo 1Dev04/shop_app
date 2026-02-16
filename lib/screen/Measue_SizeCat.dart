@@ -1637,7 +1637,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                     right: 6,
                     child: GestureDetector(
                       onTap: () {
-                        favoriteProvider.toggleFavorite(product);
+                        favoriteProvider.toggleFavorite(index, product);
 
                         if (!isFav) {
                           _showProductDialog(context, product, isDark);

@@ -4,14 +4,14 @@ import 'package:flutter_application_1/provider/language_provider.dart';
 import 'package:flutter_application_1/provider/theme_provider.dart';
 import 'package:provider/provider.dart';
 
-class Basket extends StatefulWidget {
-  const Basket({super.key});
+class BasketPage extends StatefulWidget {
+  const BasketPage({super.key});
 
   @override
-  State<Basket> createState() => _BasketState();
+  State<BasketPage> createState() => _BasketPageState();
 }
 
-class _BasketState extends State<Basket> {
+class _BasketPageState extends State<BasketPage> {
 
 
   @override

@@ -9,7 +9,7 @@ import 'package:flutter_application_1/components/search_page.dart';
 import 'package:flutter_application_1/components/shop_page.dart';
 import 'package:flutter_application_1/provider/language_provider.dart';
 import 'package:flutter_application_1/provider/theme_provider.dart';
-import 'package:flutter_application_1/screen/%E0%B8%BABasket.dart';
+import 'package:flutter_application_1/screen/basket_page.dart';
 import 'package:provider/provider.dart';
 import '../screen/Measue_SizeCat.dart';
 
@@ -146,7 +146,7 @@ class _MyControllState extends State<MyControll> {
           IconButton(
               onPressed: () {
                 Navigator.push(
-                    context, MaterialPageRoute(builder: (context) => Basket()));
+                    context, MaterialPageRoute(builder: (context) => BasketPage()));
               },
               icon: Icon(
                 Icons.add_shopping_cart_sharp,
