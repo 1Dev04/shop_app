@@ -6,14 +6,14 @@ import 'package:flutter_application_1/provider/language_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-class FavoritePage extends StatefulWidget {
-  const FavoritePage({super.key});
+class FavouritePage extends StatefulWidget {
+  const FavouritePage({super.key});
 
   @override
-  State<FavoritePage> createState() => _FavoritePageState();
+  State<FavouritePage> createState() => _FavouritePageState();
 }
 
-class _FavoritePageState extends State<FavoritePage> {
+class _FavouritePageState extends State<FavouritePage> {
   int? _userId;
   bool _isInitialized = false;
 
@@ -94,14 +94,15 @@ class _FavoritePageState extends State<FavoritePage> {
                 ),
                 padding: EdgeInsets.all(15),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     // ไอคอนรายการโปรด
                     Icon(
-                      Icons.favorite,
+                      Icons.favorite_outline_rounded,
                       color: Colors.red,
                       size: 30,
                     ),
+                    SizedBox(width: 10,),
                     // จำนวนรายการ
                     Text(
                       languageProvider.translate(

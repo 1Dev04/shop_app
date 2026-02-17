@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -121,18 +124,33 @@ class BasketProvider with ChangeNotifier {
   double get totalPrice => _summary?.totalPrice ?? 0.0;
 
   // ฟังก์ชันหา Base URL
-  String getBaseUrl() {
-    const String env = String.fromEnvironment('ENV', defaultValue: 'local');
-    
-    if (env == 'prod') {
-      return 'https://catshop-backend-9pzq.onrender.com';
-    }
-    if (env == 'prod-v2') {
-      return 'https://catshop-backend-v2.onrender.com';
-    }
-    
-    return 'http://localhost:8000';
+String getBaseUrl() {
+  // prod / prod-v2 / local
+  const String env = String.fromEnvironment(
+    'ENV',
+    defaultValue: 'local',
+  );
+
+  if (env == 'prod') {
+    return 'https://catshop-backend-9pzq.onrender.com';
   }
+
+  if (env == 'prod-v2') {
+    return 'https://catshop-backend-v2.onrender.com';
+  }
+
+  // ===== local =====
+  if (kIsWeb) {
+    return 'http://localhost:10000';
+  }
+
+  if (Platform.isAndroid) {
+    return 'http://10.0.2.2:10000';
+  }
+
+  return 'http://localhost:10000';
+}
+
 
   // ============================================================================
   // API Methods

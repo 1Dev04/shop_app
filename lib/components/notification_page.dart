@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/api/service_fav_bask.dart';
 import 'package:flutter_application_1/provider/language_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -13,7 +14,7 @@ import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
 // ============================================================================
-// Helper: parse any dynamic → double safely
+// Helper
 // ============================================================================
 
 double _parseDouble(dynamic value) {
@@ -21,7 +22,6 @@ double _parseDouble(dynamic value) {
   if (value is double) return value;
   if (value is int) return value.toDouble();
   if (value is String) {
-    // ลบ " THB", "%", whitespace ออก ก่อน parse
     final cleaned = value.replaceAll('THB', '').replaceAll('%', '').trim();
     return double.tryParse(cleaned) ?? 0.0;
   }
@@ -33,56 +33,24 @@ double _parseDouble(dynamic value) {
 // ============================================================================
 
 String getBaseUrl() {
-  // prod / prod-v2 / local
-  const String env = String.fromEnvironment(
-    'ENV',
-    defaultValue: 'local',
-  );
-
-  if (env == 'prod') {
-    return 'https://catshop-backend-9pzq.onrender.com';
-  }
-
-  if (env == 'prod-v2') {
-    return 'https://catshop-backend-v2.onrender.com';
-  }
-
-  // ===== local =====
-  if (kIsWeb) {
-    return 'http://localhost:8000';
-  }
-
-  if (Platform.isAndroid) {
-    return 'http://10.0.2.2:8000';
-  }
-
-  return 'http://localhost:8000';
+  const String env = String.fromEnvironment('ENV', defaultValue: 'local');
+  if (env == 'prod') return 'https://catshop-backend-9pzq.onrender.com';
+  if (env == 'prod-v2') return 'https://catshop-backend-v2.onrender.com';
+  if (kIsWeb) return 'http://localhost:10000';
+  if (Platform.isAndroid) return 'http://10.0.2.2:10000';
+  return 'http://localhost:10000';
 }
-
 
 class ApiConfig {
   static String get baseUrl => getBaseUrl();
-
   static const Duration apiTimeout = Duration(seconds: 10);
 
-  // Messages endpoints
-  static Uri getMessagesUri() {
-    return Uri.parse('$baseUrl/api/notifications/messages');
-  }
-
-  static Uri getMessageDetailUri(String id) {
-    return Uri.parse('$baseUrl/api/notifications/messages/$id');
-  }
-
-  // News endpoints
-  static Uri getNewsUri() {
-    return Uri.parse('$baseUrl/api/notifications/news');
-  }
-
-  static Uri getNewsDetailUri(String id) {
-    return Uri.parse('$baseUrl/api/notifications/news/$id');
-  }
+  static Uri getMessagesUri() => Uri.parse('$baseUrl/api/notifications/messages');
+  static Uri getMessageDetailUri(String id) => Uri.parse('$baseUrl/api/notifications/messages/$id');
+  static Uri getNewsUri() => Uri.parse('$baseUrl/api/notifications/news');
+  static Uri getNewsDetailUri(String id) => Uri.parse('$baseUrl/api/notifications/news/$id');
 }
+
 // ============================================================================
 // Main Notification Page
 // ============================================================================
@@ -101,7 +69,7 @@ class _NotificationPageState extends State<NotificationPage> {
   PageController? _newsController;
 
   int _currentBannerIndex = 0;
-  int _currentContentType = 0; // 0: Messages, 1: News
+  int _currentContentType = 0;
 
   List<NotificationItemMess> _messages = [];
   List<NotificationItemNews> _news = [];
@@ -128,10 +96,7 @@ class _NotificationPageState extends State<NotificationPage> {
   }
 
   Future<void> _loadInitialData() async {
-    await Future.wait([
-      _fetchMessages(),
-      _fetchNews(),
-    ]);
+    await Future.wait([_fetchMessages(), _fetchNews()]);
   }
 
   @override
@@ -149,27 +114,21 @@ class _NotificationPageState extends State<NotificationPage> {
 
   Future<void> _fetchMessages() async {
     if (!mounted) return;
-
     setState(() {
       _isLoadingMessages = true;
       _messagesError = null;
     });
 
     try {
-      final response = await http
-          .get(ApiConfig.getMessagesUri())
-          .timeout(ApiConfig.apiTimeout);
-
+      final response =
+          await http.get(ApiConfig.getMessagesUri()).timeout(ApiConfig.apiTimeout);
       if (!mounted) return;
 
       if (response.statusCode == 200) {
         final decodedBody = utf8.decode(response.bodyBytes);
-
         final List<dynamic> data = json.decode(decodedBody);
-        
         setState(() {
-          _messages =
-              data.map((json) => NotificationItemMess.fromJson(json)).toList();
+          _messages = data.map((json) => NotificationItemMess.fromJson(json)).toList();
           _isLoadingMessages = false;
         });
       } else {
@@ -189,7 +148,6 @@ class _NotificationPageState extends State<NotificationPage> {
 
   Future<void> _fetchNews() async {
     if (!mounted) return;
-
     setState(() {
       _isLoadingNews = true;
       _newsError = null;
@@ -198,16 +156,13 @@ class _NotificationPageState extends State<NotificationPage> {
     try {
       final response =
           await http.get(ApiConfig.getNewsUri()).timeout(ApiConfig.apiTimeout);
-
       if (!mounted) return;
 
       if (response.statusCode == 200) {
-         final decodedBody = utf8.decode(response.bodyBytes);
-
+        final decodedBody = utf8.decode(response.bodyBytes);
         final List<dynamic> data = json.decode(decodedBody);
         setState(() {
-          _news =
-              data.map((json) => NotificationItemNews.fromJson(json)).toList();
+          _news = data.map((json) => NotificationItemNews.fromJson(json)).toList();
           _isLoadingNews = false;
         });
       } else {
@@ -227,17 +182,9 @@ class _NotificationPageState extends State<NotificationPage> {
 
   Future<void> _refreshData() async {
     if (_isRefreshing) return;
-
     setState(() => _isRefreshing = true);
-
-    await Future.wait([
-      _fetchMessages(),
-      _fetchNews(),
-    ]);
-
-    if (mounted) {
-      setState(() => _isRefreshing = false);
-    }
+    await Future.wait([_fetchMessages(), _fetchNews()]);
+    if (mounted) setState(() => _isRefreshing = false);
   }
 
   String _getErrorMessage(dynamic error) {
@@ -245,9 +192,8 @@ class _NotificationPageState extends State<NotificationPage> {
       return 'Request timeout. Please check your connection.';
     } else if (error.toString().contains('SocketException')) {
       return 'No internet connection';
-    } else {
-      return 'Error: ${error.toString()}';
     }
+    return 'Error: ${error.toString()}';
   }
 
   // ============================================================================
@@ -255,10 +201,8 @@ class _NotificationPageState extends State<NotificationPage> {
   // ============================================================================
 
   Future<void> _showMessageDetail(String id) async {
-    final languageProvider =
-        Provider.of<LanguageProvider>(context, listen: false);
+    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
 
-    // Loading dialog
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -269,9 +213,8 @@ class _NotificationPageState extends State<NotificationPage> {
       final response = await http
           .get(ApiConfig.getMessageDetailUri(id))
           .timeout(ApiConfig.apiTimeout);
-
       if (!mounted) return;
-      Navigator.of(context).pop(); // ปิด loading
+      Navigator.of(context).pop();
 
       if (response.statusCode == 200) {
         final decodedBody = utf8.decode(response.bodyBytes);
@@ -294,10 +237,8 @@ class _NotificationPageState extends State<NotificationPage> {
     }
   }
 
-
   Future<void> _showNewsDetail(String id) async {
-    final languageProvider =
-        Provider.of<LanguageProvider>(context, listen: false);
+    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
 
     showDialog(
       context: context,
@@ -309,7 +250,6 @@ class _NotificationPageState extends State<NotificationPage> {
       final response = await http
           .get(ApiConfig.getNewsDetailUri(id))
           .timeout(ApiConfig.apiTimeout);
-
       if (!mounted) return;
       Navigator.of(context).pop();
 
@@ -346,24 +286,14 @@ class _NotificationPageState extends State<NotificationPage> {
     );
   }
 
-  // ============================================================================
-  // Navigation
-  // ============================================================================
-
   void _navigateToBanner(int index) {
-    _bannerController?.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
+    _bannerController?.animateToPage(index,
+        duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
   }
 
   void _navigateToContentType(int index) {
-    _contentTypeController?.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
+    _contentTypeController?.animateToPage(index,
+        duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
   }
 
   // ============================================================================
@@ -381,8 +311,7 @@ class _NotificationPageState extends State<NotificationPage> {
             _BannerCarousel(
               controller: _bannerController!,
               currentIndex: _currentBannerIndex,
-              onPageChanged: (index) =>
-                  setState(() => _currentBannerIndex = index),
+              onPageChanged: (index) => setState(() => _currentBannerIndex = index),
             ),
             const SizedBox(height: 10),
             _BannerIndicators(
@@ -400,8 +329,7 @@ class _NotificationPageState extends State<NotificationPage> {
               height: 280,
               child: PageView(
                 controller: _contentTypeController,
-                onPageChanged: (index) =>
-                    setState(() => _currentContentType = index),
+                onPageChanged: (index) => setState(() => _currentContentType = index),
                 children: [
                   _buildMessagesTab(),
                   _buildNewsTab(),
@@ -416,22 +344,15 @@ class _NotificationPageState extends State<NotificationPage> {
 
   Widget _buildMessagesTab() {
     final languageProvider = Provider.of<LanguageProvider>(context);
-
-    if (_isLoadingMessages) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    if (_isLoadingMessages) return const Center(child: CircularProgressIndicator());
     if (_messagesError != null) {
       return _ErrorView(message: _messagesError!, onRetry: _fetchMessages);
     }
     if (_messages.isEmpty) {
       return Center(
-        child: Text(languageProvider.translate(
-          en: 'No messages available',
-          th: 'ไม่มีข้อความ',
-        )),
+        child: Text(languageProvider.translate(en: 'No messages available', th: 'ไม่มีข้อความ')),
       );
     }
-
     return _ContentList(
       controller: _messageController!,
       items: _messages,
@@ -441,22 +362,15 @@ class _NotificationPageState extends State<NotificationPage> {
 
   Widget _buildNewsTab() {
     final languageProvider = Provider.of<LanguageProvider>(context);
-
-    if (_isLoadingNews) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    if (_isLoadingNews) return const Center(child: CircularProgressIndicator());
     if (_newsError != null) {
       return _ErrorView(message: _newsError!, onRetry: _fetchNews);
     }
     if (_news.isEmpty) {
       return Center(
-        child: Text(languageProvider.translate(
-          en: 'No news available',
-          th: 'ไม่มีข่าว',
-        )),
+        child: Text(languageProvider.translate(en: 'No news available', th: 'ไม่มีข่าว')),
       );
     }
-
     return _ContentList(
       controller: _newsController!,
       items: _news,
@@ -486,18 +400,13 @@ class _ErrorView extends StatelessWidget {
           const SizedBox(height: 16),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Text(
-              message,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-            ),
+            child: Text(message, textAlign: TextAlign.center),
           ),
           const SizedBox(height: 16),
           ElevatedButton.icon(
             onPressed: onRetry,
             icon: const Icon(Icons.refresh),
-            label: Text(
-                languageProvider.translate(en: 'Retry', th: 'ลองอีกครั้ง')),
+            label: Text(languageProvider.translate(en: 'Retry', th: 'ลองอีกครั้ง')),
           ),
         ],
       ),
@@ -506,7 +415,7 @@ class _ErrorView extends StatelessWidget {
 }
 
 // ============================================================================
-// Detail Popup — แบบเดียวกับ HomePage ItemDetailsCard
+// ✅ Detail Popup — WITH Favourite & Basket
 // ============================================================================
 
 void _showDetailPopup(BuildContext context, dynamic item) {
@@ -523,17 +432,11 @@ void _showDetailPopup(BuildContext context, dynamic item) {
       const begin = Offset(0.0, -1.0);
       const end = Offset.zero;
       const curve = Curves.easeInOut;
-
       var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-      var offsetAnimation = animation.drive(tween);
-      var fadeAnimation = animation.drive(
-        Tween(begin: 0.0, end: 1.0).chain(CurveTween(curve: curve)),
-      );
-
       return SlideTransition(
-        position: offsetAnimation,
+        position: animation.drive(tween),
         child: FadeTransition(
-          opacity: fadeAnimation,
+          opacity: animation.drive(Tween(begin: 0.0, end: 1.0).chain(CurveTween(curve: curve))),
           child: child,
         ),
       );
@@ -542,251 +445,308 @@ void _showDetailPopup(BuildContext context, dynamic item) {
 }
 
 // ============================================================================
-// Notification Detail Card — คล้าย HomePage ItemDetailsCard
+// ✅ Notification Detail Card — WITH Favourite & Basket (Firebase UID)
 // ============================================================================
 
-class _NotificationDetailCard extends StatelessWidget {
-  final dynamic item; // NotificationItemMess หรือ NotificationItemNews
+class _NotificationDetailCard extends StatefulWidget {
+  final dynamic item;
 
   const _NotificationDetailCard({required this.item});
 
   @override
+  State<_NotificationDetailCard> createState() => _NotificationDetailCardState();
+}
+
+class _NotificationDetailCardState extends State<_NotificationDetailCard> {
+  bool _isFavourite = false;
+  bool _isProcessing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkFavouriteStatus();
+  }
+
+  // ✅ เช็ค Favourite — ไม่ส่ง userId
+  Future<void> _checkFavouriteStatus() async {
+    try {
+      final uuid = widget.item.uuid ?? '';
+      if (uuid.isEmpty) return;
+      final isFav = await FavouriteApiService().checkFavourite(clothingUuid: uuid);
+      if (mounted) setState(() => _isFavourite = isFav);
+    } catch (e) {
+      print('❌ Error checking favourite: $e');
+    }
+  }
+
+  // ✅ Toggle Favourite — ไม่ส่ง userId
+  Future<void> _toggleFavourite() async {
+    if (_isProcessing) return;
+    setState(() => _isProcessing = true);
+
+    try {
+      final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
+      final uuid = widget.item.uuid ?? '';
+
+      if (_isFavourite) {
+        await FavouriteApiService().removeFromFavourite(clothingUuid: uuid);
+        if (mounted) {
+          setState(() => _isFavourite = false);
+          showTopSnackBar(
+            Overlay.of(context),
+            CustomSnackBar.info(
+              message: languageProvider.translate(
+                en: 'Removed from favourites',
+                th: 'ลบออกจากรายการโปรดแล้ว',
+              ),
+            ),
+          );
+        }
+      } else {
+        await FavouriteApiService().addToFavourite(clothingUuid: uuid);
+        if (mounted) {
+          setState(() => _isFavourite = true);
+          showTopSnackBar(
+            Overlay.of(context),
+            CustomSnackBar.success(
+              message: languageProvider.translate(
+                en: 'Added to favourites!',
+                th: 'เพิ่มลงรายการโปรดแล้ว!',
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        showTopSnackBar(Overlay.of(context), CustomSnackBar.error(message: 'เกิดข้อผิดพลาด: $e'));
+      }
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
+  }
+
+  // ✅ Add to Basket — ไม่ส่ง userId
+  Future<void> _addToBasket() async {
+    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
+    try {
+      final uuid = widget.item.uuid ?? '';
+      await BasketApiService().addToBasket(clothingUuid: uuid);
+      if (mounted) {
+        Navigator.of(context).pop();
+        showTopSnackBar(
+          Overlay.of(context),
+          CustomSnackBar.success(
+            message: languageProvider.translate(
+              en: 'Added to cart successfully!',
+              th: 'เพิ่มลงตะกร้าสำเร็จ!',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        showTopSnackBar(Overlay.of(context), CustomSnackBar.error(message: 'เกิดข้อผิดพลาด: $e'));
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final languageProvider = Provider.of<LanguageProvider>(context);
-
-    // เทียบราคาเป็น double เหมือน HomePage
-    final price = _parseDouble(item.price);
-    final discountPrice = _parseDouble(item.discount_price);
+    final price = _parseDouble(widget.item.price);
+    final discountPrice = _parseDouble(
+      widget.item is NotificationItemMess
+          ? (widget.item as NotificationItemMess).discount_price
+          : (widget.item as NotificationItemNews).discount_price,
+    );
     final hasDiscount = discountPrice > 0 && discountPrice < price;
-
-    // discount_percent จาก API อาจมี "%" อยู่แล้ว ให้ clean
-    final discountPercentRaw = item is NotificationItemMess
-        ? (item as NotificationItemMess).discount_percent
-        : '';
+    final discountPercentRaw = widget.item is NotificationItemMess
+        ? (widget.item as NotificationItemMess).discount_percent
+        : (widget.item as NotificationItemNews).discount_percent;
     final discountPercentClean = discountPercentRaw.replaceAll('%', '').trim();
 
     return Center(
-      child: Container(
-        margin: const EdgeInsets.only(top: 50, left: 20, right: 20),
-        constraints: const BoxConstraints(maxHeight: 600),
-        decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
         child: Material(
-          color: Colors.transparent,
-          child: SingleChildScrollView(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          elevation: 10,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.85,
+              maxWidth: 400,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // รูปภาพสินค้า
-            
-
+                // รูปภาพ + ปุ่มหัวใจ
                 Stack(
                   children: [
                     ClipRRect(
-                      borderRadius:
-                          BorderRadius.vertical(top: Radius.circular(20)),
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                       child: CachedNetworkImage(
-                       imageUrl: item.image_url ?? '',
+                        imageUrl: widget.item.image_url ?? '',
                         width: double.infinity,
                         height: 300,
                         fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
+                        placeholder: (context, url) => const SizedBox(
                           height: 300,
                           child: Center(child: CircularProgressIndicator()),
                         ),
-                        errorWidget: (context, url, error) => Container(
+                        errorWidget: (context, url, error) => const SizedBox(
                           height: 300,
                           child: Center(child: Icon(Icons.error)),
                         ),
                       ),
                     ),
-                    // ปุ่ม Favorite ทับมุมขวาบน
+                    // ✅ ปุ่มหัวใจ — Firebase UID
                     Positioned(
                       top: 16,
                       right: 16,
                       child: GestureDetector(
-                        onTap: () {
-                          // ใส่ logic favorite ตรงนี้
-                        },
+                        onTap: _isProcessing ? null : _toggleFavourite,
                         child: Container(
-                          padding: EdgeInsets.all(8),
+                          padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.5),
+                            color: _isFavourite
+                                ? Colors.red.withOpacity(0.8)
+                                : Colors.black.withOpacity(0.5),
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(
-                            Icons.favorite,
-                            color: Colors.white,
-                            size: 24,
-                          ),
+                          child: _isProcessing
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                )
+                              : Icon(
+                                  _isFavourite ? Icons.favorite : Icons.favorite_border,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
                         ),
                       ),
                     ),
                   ],
                 ),
 
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // ชื่อสินค้า
-                      Text(
-                        item.clothing_name,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-
-                      const SizedBox(height: 5),
-
-                      // Detail rows
-                      _DetailRow(
-                        label: languageProvider.translate(
-                            en: 'Category', th: 'หมวดหมู่'),
-                        value: item.category,
-                      ),
-                      _DetailRow(
-                        label:
-                            languageProvider.translate(en: 'Size', th: 'ขนาด'),
-                        value: item.size_category,
-                      ),
-                      _DetailRow(
-                        label:
-                            languageProvider.translate(en: 'Gender', th: 'เพศ'),
-                        value: formatGender(item.gender, languageProvider),
-                      ),
-                      _DetailRow(
-                        label: languageProvider.translate(
-                            en: 'Stock', th: 'สต็อก'),
-                        value: item.stock,
-                      ),
-                      _DetailRow(
-                        label: languageProvider.translate(
-                            en: 'Breed', th: 'สายพันธุ์'),
-                        value: item.breed,
-                      ),
-
-                      // รายละเอียด
-                      if (item.description.isNotEmpty)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 8),
-                            Text(
-                              languageProvider.translate(
-                                  en: 'Description', th: 'รายละเอียด'),
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              item.description,
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey[700],
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                          ],
-                        ),
-
-                      // ราคา — เทียบเป็น double เหมือน HomePage
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
+                // Content ที่เลื่อนได้
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // ราคาเดิม (ขีดฆ่า)
-                          if (hasDiscount)
-                            Text(
-                              '฿${price.toStringAsFixed(0)}',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                color: Colors.grey,
-                                decoration: TextDecoration.lineThrough,
-                                decorationThickness: 2,
-                              ),
-                            ),
-                          if (hasDiscount) const SizedBox(width: 10),
-
-                          // ราคาหลัง discount หรือราคาปกติ
                           Text(
-                            hasDiscount
-                                ? '฿${discountPrice.toStringAsFixed(0)}'
-                                : '฿${price.toStringAsFixed(0)}',
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: hasDiscount ? Colors.red : Colors.black,
-                            ),
+                            widget.item.clothing_name ?? '',
+                            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                           ),
-                          if (hasDiscount) const SizedBox(width: 10),
-
-                          // Badge % ลด
-                          if (hasDiscount && discountPercentClean.isNotEmpty)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.red,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                '-$discountPercentClean%',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w900,
+                          const SizedBox(height: 5),
+                          _DetailRow(
+                            label: languageProvider.translate(en: 'Category', th: 'หมวดหมู่'),
+                            value: widget.item.category ?? '',
+                          ),
+                          _DetailRow(
+                            label: languageProvider.translate(en: 'Size', th: 'ขนาด'),
+                            value: widget.item.size_category ?? '',
+                          ),
+                          _DetailRow(
+                            label: languageProvider.translate(en: 'Gender', th: 'เพศ'),
+                            value: formatGender(widget.item.gender ?? '', languageProvider),
+                          ),
+                          _DetailRow(
+                            label: languageProvider.translate(en: 'Stock', th: 'สต็อก'),
+                            value: widget.item.stock ?? '',
+                          ),
+                          _DetailRow(
+                            label: languageProvider.translate(en: 'Breed', th: 'สายพันธุ์'),
+                            value: widget.item.breed ?? '',
+                          ),
+                          if ((widget.item.description ?? '').isNotEmpty)
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(height: 8),
+                                Text(
+                                  languageProvider.translate(en: 'Description', th: 'รายละเอียด'),
+                                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  widget.item.description ?? '',
+                                  style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+                                ),
+                                const SizedBox(height: 16),
+                              ],
+                            ),
+                          Row(
+                            children: [
+                              if (hasDiscount)
+                                Text(
+                                  '฿${price.toStringAsFixed(0)}',
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.grey,
+                                    decoration: TextDecoration.lineThrough,
+                                    decorationThickness: 2,
+                                  ),
+                                ),
+                              if (hasDiscount) const SizedBox(width: 10),
+                              Text(
+                                hasDiscount
+                                    ? '฿${discountPrice.toStringAsFixed(0)}'
+                                    : '฿${price.toStringAsFixed(0)}',
+                                style: TextStyle(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                  color: hasDiscount ? Colors.red : Colors.black,
                                 ),
                               ),
+                              if (hasDiscount) const SizedBox(width: 10),
+                              if (hasDiscount && discountPercentClean.isNotEmpty)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    '-$discountPercentClean%',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          // ✅ ปุ่ม Add to Cart — เรียก API จริง
+                          SizedBox(
+                            width: double.infinity,
+                            height: 60,
+                            child: ElevatedButton.icon(
+                              onPressed: _addToBasket,
+                              icon: const Icon(Icons.add_shopping_cart_sharp),
+                              label: Text(
+                                languageProvider.translate(en: 'Add to Cart', th: 'เพิ่มลงตะกร้า'),
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                backgroundColor: Colors.black,
+                              ),
                             ),
+                          ),
                         ],
                       ),
-
-                      const SizedBox(height: 10),
-
-                      // ปุ่ม Add to Cart — แบบเดียวกับ HomePage
-                      SizedBox(
-                        width: double.infinity,
-                        height: 60,
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            showTopSnackBar(
-                              Overlay.of(context),
-                              CustomSnackBar.success(
-                                message: languageProvider.translate(
-                                  en: 'Added to cart successfully!',
-                                  th: 'เพิ่มลงตะกร้าสำเร็จ!',
-                                ),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.add_shopping_cart_sharp),
-                          label: Text(
-                            languageProvider.translate(
-                                en: 'Add to Cart', th: 'เพิ่มลงตะกร้า'),
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            backgroundColor: Colors.black,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ],
@@ -811,7 +771,6 @@ class _DetailRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (value.isEmpty) return const SizedBox.shrink();
-
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -831,10 +790,7 @@ class _DetailRow extends StatelessWidget {
           Expanded(
             child: Text(
               value,
-              style: TextStyle(
-                fontSize: 14,
-                color: Theme.of(context).colorScheme.secondary,
-              ),
+              style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.secondary),
             ),
           ),
         ],
@@ -867,18 +823,13 @@ class _BannerCarousel extends StatelessWidget {
         itemCount: NotificationData.bannerImages.length,
         onPageChanged: onPageChanged,
         itemBuilder: (context, index) {
-          return Container(
-            color: Theme.of(context).textTheme.bodyLarge?.color,
-            child: CachedNetworkImage(
-              imageUrl: NotificationData.bannerImages[index],
-              fit: BoxFit.cover,
-              width: double.infinity,
-              height: double.infinity,
-              placeholder: (context, url) =>
-                  const Center(child: CircularProgressIndicator()),
-              errorWidget: (context, url, error) =>
-                  const Center(child: Icon(Icons.error)),
-            ),
+          return CachedNetworkImage(
+            imageUrl: NotificationData.bannerImages[index],
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+            placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
+            errorWidget: (context, url, error) => const Center(child: Icon(Icons.error)),
           );
         },
       ),
@@ -929,10 +880,7 @@ class _ContentTypeTabs extends StatelessWidget {
   final int currentType;
   final ValueChanged<int> onTabChanged;
 
-  const _ContentTypeTabs({
-    required this.currentType,
-    required this.onTabChanged,
-  });
+  const _ContentTypeTabs({required this.currentType, required this.onTabChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -960,11 +908,7 @@ class _TabButton extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _TabButton({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
+  const _TabButton({required this.label, required this.isSelected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -1021,10 +965,7 @@ class _ContentList extends StatelessWidget {
       itemCount: items.length,
       scrollDirection: Axis.vertical,
       itemBuilder: (context, index) {
-        return _ContentCard(
-          item: items[index],
-          onLearnMore: onLearnMore,
-        );
+        return _ContentCard(item: items[index], onLearnMore: onLearnMore);
       },
     );
   }
@@ -1046,11 +987,9 @@ class _ContentCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       child: Row(
         children: [
-          _ContentImage(imageUrl: item.image_url),
+          _ContentImage(imageUrl: item.image_url ?? ''),
           const SizedBox(width: 10),
-          Expanded(
-            child: _ContentDetails(item: item, onLearnMore: onLearnMore),
-          ),
+          Expanded(child: _ContentDetails(item: item, onLearnMore: onLearnMore)),
         ],
       ),
     );
@@ -1073,8 +1012,7 @@ class _ContentImage extends StatelessWidget {
         height: 180,
         placeholder: (context, url) => const CircularProgressIndicator.adaptive(
           backgroundColor: Colors.white,
-          valueColor:
-              AlwaysStoppedAnimation<Color>(Color.fromARGB(75, 50, 50, 50)),
+          valueColor: AlwaysStoppedAnimation<Color>(Color.fromARGB(75, 50, 50, 50)),
         ),
         errorWidget: (context, url, error) => Container(
           width: 180,
@@ -1095,16 +1033,12 @@ class _ContentDetails extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // เทียบราคาเป็น double เหมือน HomePage
     final price = _parseDouble(item.price);
     final discountPrice = item is NotificationItemMess
         ? _parseDouble((item as NotificationItemMess).discount_price)
         : 0.0;
     final hasDiscount = discountPrice > 0 && discountPrice < price;
-
     final isMessage = item is NotificationItemMess;
-
-    // clean discount_percent
     final discountPercentRaw =
         isMessage ? (item as NotificationItemMess).discount_percent : '';
     final discountPercentClean = discountPercentRaw.replaceAll('%', '').trim();
@@ -1115,9 +1049,8 @@ class _ContentDetails extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Title
           Text(
-            isMessage ? '${item.clothing_name} ลดพิเศษ!' : item.clothing_name,
+            isMessage ? '${item.clothing_name} ลดพิเศษ!' : item.clothing_name ?? '',
             style: TextStyle(
               color: Theme.of(context).colorScheme.primary,
               fontSize: 22,
@@ -1126,14 +1059,11 @@ class _ContentDetails extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-
           const SizedBox(height: 8),
-
-          // Date + Discount badge
           Row(
             children: [
               Text(
-                _formatDate(item.create_at, context),
+                _formatDate(item.create_at ?? '', context),
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 14,
@@ -1143,8 +1073,7 @@ class _ContentDetails extends StatelessWidget {
               if (hasDiscount && discountPercentClean.isNotEmpty) ...[
                 const SizedBox(width: 8),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.red,
                     borderRadius: BorderRadius.circular(6),
@@ -1161,14 +1090,8 @@ class _ContentDetails extends StatelessWidget {
               ],
             ],
           ),
-
           const Spacer(),
-
-          // Action buttons
-          _ActionButtons(
-            itemId: item.id,
-            onLearnMore: onLearnMore,
-          ),
+          _ActionButtons(itemId: item.id ?? '', onLearnMore: onLearnMore),
         ],
       ),
     );
@@ -1176,17 +1099,14 @@ class _ContentDetails extends StatelessWidget {
 }
 
 // ============================================================================
-// Action Buttons (Card)
+// ✅ Action Buttons — WITH real basket API
 // ============================================================================
 
 class _ActionButtons extends StatefulWidget {
   final String itemId;
   final Function(String) onLearnMore;
 
-  const _ActionButtons({
-    required this.itemId,
-    required this.onLearnMore,
-  });
+  const _ActionButtons({required this.itemId, required this.onLearnMore});
 
   @override
   State<_ActionButtons> createState() => _ActionButtonsState();
@@ -1195,33 +1115,37 @@ class _ActionButtons extends StatefulWidget {
 class _ActionButtonsState extends State<_ActionButtons> {
   bool _isAddingToCart = false;
 
+  // ✅ Add to Basket — ไม่ส่ง userId (Firebase UID)
+  // หมายเหตุ: card list ไม่มี uuid โดยตรง — ให้กด "Learn More" แล้วเพิ่มจาก detail popup แทน
   Future<void> _handleAddToCart() async {
     setState(() => _isAddingToCart = true);
-    await Future.delayed(const Duration(seconds: 1));
-    if (!mounted) return;
-    setState(() => _isAddingToCart = false);
 
-    final languageProvider =
-        Provider.of<LanguageProvider>(context, listen: false);
+    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
 
-    showTopSnackBar(
-      Overlay.of(context),
-      CustomSnackBar.success(
-        message: languageProvider.translate(
-          en: 'Added to cart!',
-          th: 'เพิ่มลงตะกร้าแล้ว!',
+    try {
+      // uuid ต้องมาจาก item ที่ list ส่งมา (ถ้า API ส่ง uuid มาใน list ด้วย)
+      // ถ้าไม่มี uuid ใน list → redirect ไปกด Learn More แทน
+      showTopSnackBar(
+        Overlay.of(context),
+        CustomSnackBar.info(
+          message: languageProvider.translate(
+            en: 'Tap "Learn More" to add to cart',
+            th: 'กด "ดูเพิ่มเติม" เพื่อเพิ่มลงตะกร้า',
+          ),
         ),
-      ),
-    );
+      );
+    } finally {
+      if (mounted) setState(() => _isAddingToCart = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-   
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
         FloatingActionButton.small(
+          heroTag: 'notif_cart_${widget.itemId}',
           onPressed: _isAddingToCart ? null : _handleAddToCart,
           backgroundColor: _isAddingToCart
               ? Colors.grey
@@ -1238,15 +1162,13 @@ class _ActionButtonsState extends State<_ActionButtons> {
               : Icon(
                   Icons.shopping_cart_outlined,
                   size: 30,
-                  color: Theme.of(context)
-                      .floatingActionButtonTheme
-                      .foregroundColor,
+                  color: Theme.of(context).floatingActionButtonTheme.foregroundColor,
                 ),
         ),
-        SizedBox(width: 10),
+        const SizedBox(width: 10),
         ElevatedButton(
           onPressed: () => widget.onLearnMore(widget.itemId),
-          child: Icon(Icons.read_more_outlined, size: 30)
+          child: const Icon(Icons.read_more_outlined, size: 30),
         ),
       ],
     );
@@ -1259,6 +1181,7 @@ class _ActionButtonsState extends State<_ActionButtons> {
 
 class NotificationItemMess {
   final String id;
+  final String? uuid;
   final String image_url;
   final String images;
   final String clothing_name;
@@ -1277,6 +1200,7 @@ class NotificationItemMess {
 
   const NotificationItemMess({
     required this.id,
+    this.uuid,
     required this.image_url,
     required this.images,
     required this.clothing_name,
@@ -1297,6 +1221,7 @@ class NotificationItemMess {
   factory NotificationItemMess.fromJson(Map<String, dynamic> json) {
     return NotificationItemMess(
       id: json['id']?.toString() ?? '',
+      uuid: json['uuid']?.toString(),
       image_url: json['image_url']?.toString() ?? '',
       images: json['images']?.toString() ?? '',
       clothing_name: json['clothing_name']?.toString() ?? '',
@@ -1318,6 +1243,7 @@ class NotificationItemMess {
 
 class NotificationItemNews {
   final String id;
+  final String? uuid;
   final String image_url;
   final String images;
   final String clothing_name;
@@ -1325,8 +1251,8 @@ class NotificationItemNews {
   final String category;
   final String size_category;
   final String price;
-  final String discount_price; // เพิ่มบรรทัดนี้
-  final String discount_percent; // เพิ่มบรรทัดนี้
+  final String discount_price;
+  final String discount_percent;
   final String gender;
   final String clothing_like;
   final String clothing_seller;
@@ -1336,6 +1262,7 @@ class NotificationItemNews {
 
   const NotificationItemNews({
     required this.id,
+    this.uuid,
     required this.image_url,
     required this.images,
     required this.clothing_name,
@@ -1343,8 +1270,8 @@ class NotificationItemNews {
     required this.category,
     required this.size_category,
     required this.price,
-    required this.discount_price, // เพิ่มบรรทัดนี้
-    required this.discount_percent, // เพิ่มบรรทัดนี้
+    required this.discount_price,
+    required this.discount_percent,
     required this.stock,
     required this.gender,
     required this.clothing_like,
@@ -1356,6 +1283,7 @@ class NotificationItemNews {
   factory NotificationItemNews.fromJson(Map<String, dynamic> json) {
     return NotificationItemNews(
       id: json['id']?.toString() ?? '',
+      uuid: json['uuid']?.toString(),
       image_url: json['image_url']?.toString() ?? '',
       images: json['images']?.toString() ?? '',
       clothing_name: json['clothing_name']?.toString() ?? '',
@@ -1391,13 +1319,9 @@ class NotificationData {
 
 String _formatDate(String dateString, BuildContext context) {
   if (dateString.isEmpty) return '';
-
-  final languageProvider =
-      Provider.of<LanguageProvider>(context, listen: false);
-
+  final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
   try {
     DateTime dateTime;
-
     if (dateString.contains('T')) {
       dateTime = DateTime.parse(dateString);
     } else if (dateString.contains('-') && dateString.length >= 10) {
@@ -1405,10 +1329,8 @@ String _formatDate(String dateString, BuildContext context) {
     } else {
       return dateString;
     }
-
     final now = DateTime.now();
     final difference = now.difference(dateTime);
-
     if (difference.inMinutes < 1) {
       return languageProvider.translate(en: 'Just now', th: 'เมื่อสักครู่');
     } else if (difference.inMinutes < 60) {

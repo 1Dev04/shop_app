@@ -57,15 +57,16 @@ String getBaseUrl() {
 
   // ===== local =====
   if (kIsWeb) {
-    return 'http://localhost:8000';
+    return 'http://localhost:10000';
   }
 
   if (Platform.isAndroid) {
-    return 'http://10.0.2.2:8000';
+    return 'http://10.0.2.2:10000';
   }
 
-  return 'http://localhost:8000';
+  return 'http://localhost:10000';
 }
+
 
 class _CircleHolePainter extends CustomPainter {
   @override

@@ -1,4 +1,4 @@
-// ----SearchPage with Gender Filter Buttons (FIXED)--------------------------------------------------------------------------
+// ----SearchPage with Favourite & Basket Integration (Firebase UID - Fixed)--------------------------------------------------------------------------
 
 import 'dart:async';
 import 'dart:convert';
@@ -7,6 +7,7 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/api/service_fav_bask.dart';
 import 'package:flutter_application_1/provider/language_provider.dart';
 
 import 'package:http/http.dart' as http;
@@ -57,7 +58,6 @@ double _parseDouble(dynamic value) {
   return 0.0;
 }
 
-// ✅ FIX: Helper function to parse int safely
 int _parseInt(dynamic value) {
   if (value == null) return 0;
   if (value is int) return value;
@@ -68,7 +68,6 @@ int _parseInt(dynamic value) {
 }
 
 String getBaseUrl() {
-  // prod / prod-v2 / local
   const String env = String.fromEnvironment(
     'ENV',
     defaultValue: 'local',
@@ -82,16 +81,15 @@ String getBaseUrl() {
     return 'https://catshop-backend-v2.onrender.com';
   }
 
-  // ===== local =====
   if (kIsWeb) {
-    return 'http://localhost:8000';
+    return 'http://localhost:10000';
   }
 
   if (Platform.isAndroid) {
-    return 'http://10.0.2.2:8000';
+    return 'http://10.0.2.2:10000';
   }
 
-  return 'http://localhost:8000';
+  return 'http://localhost:10000';
 }
 
 // ============================================================================
@@ -120,6 +118,7 @@ class SearchCategory {
 
 class ClothingItem {
   final int id;
+  final String uuid;
   final String imageUrl;
   final Map<String, dynamic> images;
   final String clothingName;
@@ -137,6 +136,7 @@ class ClothingItem {
 
   ClothingItem({
     required this.id,
+    required this.uuid,
     required this.imageUrl,
     required this.images,
     required this.clothingName,
@@ -155,23 +155,23 @@ class ClothingItem {
 
   factory ClothingItem.fromJson(Map<String, dynamic> json) {
     return ClothingItem(
-      id: _parseInt(json['id']), // ✅ FIX: ใช้ _parseInt
+      id: _parseInt(json['id']),
+      uuid: json['uuid']?.toString() ?? '',
       imageUrl: json['image_url'] ?? '',
       images: json['images'] is String
           ? jsonDecode(json['images'])
           : json['images'] ?? {},
       clothingName: json['clothing_name'] ?? '',
       description: json['description'] ?? '',
-      category: json['category'], // ✅ FIX: เก็บค่าเป็น dynamic
+      category: json['category'],
       categoryNameEn: json['category_name_en'],
       categoryNameTh: json['category_name_th'],
       sizeCategory: json['size_category'] ?? '',
       price: _parseDouble(json['price']),
       discountPrice: _parseDouble(json['discount_price']),
-      discountPercent:
-          _parseInt(json['discount_percent']), // ✅ FIX: ใช้ _parseInt
-      gender: _parseInt(json['gender']), // ✅ FIX: ใช้ _parseInt
-      stock: _parseInt(json['stock']), // ✅ FIX: ใช้ _parseInt
+      discountPercent: _parseInt(json['discount_percent']),
+      gender: _parseInt(json['gender']),
+      stock: _parseInt(json['stock']),
       breed: json['breed'] ?? '',
     );
   }
@@ -191,6 +191,9 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> {
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
+
+  // ✅ ลบ _userId ออก — ใช้ Firebase UID ผ่าน service โดยตรง (เหมือน home_page)
+  final BasketApiService _basketApi = BasketApiService();
 
   List<SearchCategory> _autocompleteSuggestions = [];
   List<ClothingItem> _searchResults = [];
@@ -213,6 +216,7 @@ class _SearchPageState extends State<SearchPage> {
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
+    _fetchAutocompleteSuggestions('');
   }
 
   @override
@@ -228,18 +232,8 @@ class _SearchPageState extends State<SearchPage> {
 
   void _onSearchChanged() {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
-
     final query = _searchController.text.trim();
-
-    if (query.length < 1) {
-      setState(() {
-        _autocompleteSuggestions = [];
-        _showSuggestions = false;
-      });
-      return;
-    }
-
-    _debounce = Timer(const Duration(milliseconds: 500), () {
+    _debounce = Timer(const Duration(milliseconds: 300), () {
       _fetchAutocompleteSuggestions(query);
     });
   }
@@ -247,16 +241,17 @@ class _SearchPageState extends State<SearchPage> {
   Future<void> _fetchAutocompleteSuggestions(String query) async {
     try {
       final baseUrl = getBaseUrl();
-      final url = '$baseUrl/api/search/autocomplete?query=$query';
+      final url = query.isEmpty
+          ? '$baseUrl/api/search/autocomplete'
+          : '$baseUrl/api/search/autocomplete?query=$query';
 
-      final response = await http.get(Uri.parse(url)).timeout(
-            const Duration(seconds: 5),
-          );
+      final response =
+          await http.get(Uri.parse(url)).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final decodedBody = utf8.decode(response.bodyBytes);
-
         final List<dynamic> data = json.decode(decodedBody);
+
         setState(() {
           _autocompleteSuggestions =
               data.map((json) => SearchCategory.fromJson(json)).toList();
@@ -264,7 +259,7 @@ class _SearchPageState extends State<SearchPage> {
         });
       }
     } catch (e) {
-      print('Error fetching autocomplete: $e');
+      print('❌ Error fetching autocomplete: $e');
     }
   }
 
@@ -290,9 +285,8 @@ class _SearchPageState extends State<SearchPage> {
       final queryString = params.join('&');
       final url = '$baseUrl/api/search/clothing?$queryString';
 
-      final response = await http.get(Uri.parse(url)).timeout(
-            const Duration(seconds: 10),
-          );
+      final response =
+          await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final decodedBody = utf8.decode(response.bodyBytes);
@@ -321,7 +315,6 @@ class _SearchPageState extends State<SearchPage> {
       _hasSelected = true;
       _showSuggestions = false;
       _autocompleteSuggestions.clear();
-
       _searchController.text = category.name;
 
       if (category.categoryType == 'gender') {
@@ -379,50 +372,61 @@ class _SearchPageState extends State<SearchPage> {
         url += '?gender=$_selectedGender';
       }
 
-      print('📡 Calling API: $url');
-
-      final response = await http.get(Uri.parse(url)).timeout(
-            const Duration(seconds: 5),
-          );
+      final response =
+          await http.get(Uri.parse(url)).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final decodedBody = utf8.decode(response.bodyBytes);
-
         final List<dynamic> data = json.decode(decodedBody);
 
-        if (data.isNotEmpty) {
-          print('📦 First item raw: ${data[0]}');
-        }
-
         try {
-          final parsedItems = data.map((json) {
-            try {
-              return ClothingItem.fromJson(json);
-            } catch (e) {
-              print('❌ Error parsing item: $e');
-              print('📦 Problematic item: $json');
-              rethrow;
-            }
-          }).toList();
+          final parsedItems =
+              data.map((json) => ClothingItem.fromJson(json)).toList();
 
           setState(() {
             _outfitSuggestions = parsedItems;
             _isLoadingOutfits = false;
           });
-
-          print(
-              '✅ Successfully parsed ${_outfitSuggestions.length} outfit suggestions');
         } catch (e) {
-          print('❌ Error during parsing: $e');
           setState(() => _isLoadingOutfits = false);
         }
       } else {
-        print('❌ API returned error: ${response.statusCode}');
         setState(() => _isLoadingOutfits = false);
       }
     } catch (e) {
       setState(() => _isLoadingOutfits = false);
-      print('❌ Error fetching outfit suggestions: $e');
+    }
+  }
+
+  // ✅ ============================================================================
+  // ✅ Add to Basket - ไม่ต้องส่ง userId (ใช้ Firebase UID เหมือน home_page)
+  // ✅ ============================================================================
+
+  Future<void> _addToBasket(ClothingItem item) async {
+    try {
+      // ✅ ไม่ต้องส่ง userId — เหมือน home_page.dart
+      await _basketApi.addToBasket(
+        clothingUuid: item.uuid,
+        quantity: 1,
+      );
+
+      if (mounted) {
+        showTopSnackBar(
+          Overlay.of(context),
+          CustomSnackBar.success(
+            message: 'Added to basket!',
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        showTopSnackBar(
+          Overlay.of(context),
+          CustomSnackBar.error(
+            message: 'Failed to add to basket: $e',
+          ),
+        );
+      }
     }
   }
 
@@ -438,7 +442,11 @@ class _SearchPageState extends State<SearchPage> {
       barrierColor: Colors.black54,
       transitionDuration: const Duration(milliseconds: 400),
       pageBuilder: (context, animation, secondaryAnimation) {
-        return _ItemDetailCard(item: item);
+        return _ItemDetailCard(
+          item: item,
+          // ✅ ลบ userId ออก — ใช้ Firebase UID ผ่าน service
+          onAddToBasket: () => _addToBasket(item),
+        );
       },
       transitionBuilder: (context, animation, secondaryAnimation, child) {
         const begin = Offset(0.0, -1.0);
@@ -475,48 +483,35 @@ class _SearchPageState extends State<SearchPage> {
     return Scaffold(
       body: Column(
         children: [
-          // Results or Outfit Suggestions or Empty State
           Expanded(
             child: _buildContentArea(languageProvider, isDark),
           ),
-
-          // Pagination Controls
           if (_searchResults.isNotEmpty && _outfitSuggestions.isEmpty)
             _buildPaginationControls(languageProvider),
-
-          // Gender Filter Buttons
           if (_showGenderFilters) _buildGenderFilterButtons(languageProvider),
-
-          // Search Bar with Autocomplete
           _buildSearchBar(languageProvider),
         ],
       ),
     );
   }
 
-  // ✅ FIX: แยก logic การแสดงผลออกมาเป็น method เพื่อให้อ่านง่ายขึ้น
   Widget _buildContentArea(LanguageProvider languageProvider, bool isDark) {
     if (_isLoadingOutfits) {
-      print('   → Showing loading for outfits');
       return const Center(child: CircularProgressIndicator());
     }
 
     if (_outfitSuggestions.isNotEmpty) {
-      print('   → Showing outfit suggestions list');
       return _buildOutfitSuggestionsList(languageProvider);
     }
 
     if (_isLoadingResults) {
-      print('   → Showing loading for results');
       return const Center(child: CircularProgressIndicator());
     }
 
     if (_searchResults.isEmpty) {
-      print('   → Showing empty state');
       return _buildEmptyState(languageProvider, isDark);
     }
 
-    print('   → Showing search results grid');
     return _buildSearchResultsGrid();
   }
 
@@ -653,16 +648,14 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  // ✅ FIX: ปรับปรุง outfit suggestions list ให้คล้าย ShopPage มากขึ้น
   Widget _buildOutfitSuggestionsList(LanguageProvider languageProvider) {
     return Column(
       children: [
-        // Header
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.lightbulb_outline,
                 color: Colors.orange,
                 size: 24,
@@ -689,8 +682,6 @@ class _SearchPageState extends State<SearchPage> {
             ],
           ),
         ),
-
-        // ✅ FIX: ใช้ ListView แทน Expanded เพื่อให้ scroll ได้ดีขึ้น
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -700,6 +691,7 @@ class _SearchPageState extends State<SearchPage> {
               return _OutfitSuggestionCard(
                 item: item,
                 onTap: () => _showItemDetail(item),
+                onAddToBasket: () => _addToBasket(item),
               );
             },
           ),
@@ -713,7 +705,6 @@ class _SearchPageState extends State<SearchPage> {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          // Autocomplete Suggestions
           if (_showSuggestions &&
               _autocompleteSuggestions.isNotEmpty &&
               !_hasSelected)
@@ -765,7 +756,6 @@ class _SearchPageState extends State<SearchPage> {
                 },
               ),
             ),
-
           Stack(
             alignment: Alignment.centerLeft,
             children: [
@@ -886,7 +876,7 @@ class _GenderFilterChip extends StatelessWidget {
 }
 
 // ============================================================================
-// Result Card Widget (Grid)
+// Result Card Widget
 // ============================================================================
 
 class _ResultCard extends StatelessWidget {
@@ -909,7 +899,6 @@ class _ResultCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image
             Expanded(
               child: ClipRRect(
                 borderRadius:
@@ -924,8 +913,6 @@ class _ResultCard extends StatelessWidget {
                 ),
               ),
             ),
-
-            // Info
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Column(
@@ -976,14 +963,19 @@ class _ResultCard extends StatelessWidget {
 }
 
 // ============================================================================
-// Outfit Suggestion Card Widget (Vertical List) - ✅ ปรับปรุงให้คล้าย ShopPage
+// Outfit Suggestion Card Widget
 // ============================================================================
 
 class _OutfitSuggestionCard extends StatelessWidget {
   final ClothingItem item;
   final VoidCallback onTap;
+  final VoidCallback onAddToBasket;
 
-  const _OutfitSuggestionCard({required this.item, required this.onTap});
+  const _OutfitSuggestionCard({
+    required this.item,
+    required this.onTap,
+    required this.onAddToBasket,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1017,14 +1009,11 @@ class _OutfitSuggestionCard extends StatelessWidget {
                   errorWidget: (context, url, error) => const Icon(Icons.error),
                 ),
               ),
-              
               const SizedBox(width: 12),
-
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Gender + Size
                     Row(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
@@ -1036,7 +1025,7 @@ class _OutfitSuggestionCard extends StatelessWidget {
                             color: _getGenderColor(item.gender),
                           ),
                         ),
-                        SizedBox(width: 30),
+                        const SizedBox(width: 30),
                         Text(
                           item.sizeCategory,
                           style: TextStyle(
@@ -1047,10 +1036,7 @@ class _OutfitSuggestionCard extends StatelessWidget {
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 6),
-
-                    // ชื่อสินค้า
                     Text(
                       item.clothingName,
                       style: TextStyle(
@@ -1061,10 +1047,7 @@ class _OutfitSuggestionCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-
                     const SizedBox(height: 6),
-
-                    // Stock
                     Row(
                       children: [
                         Icon(
@@ -1082,10 +1065,7 @@ class _OutfitSuggestionCard extends StatelessWidget {
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 8),
-
-                    // ✅ ราคา + ส่วนลด - คล้าย ShopPage
                     Row(
                       children: [
                         if (hasDiscount)
@@ -1134,21 +1114,9 @@ class _OutfitSuggestionCard extends StatelessWidget {
                   ],
                 ),
               ),
-
-              // ✅ Cart Button
-
               FloatingActionButton.small(
-                onPressed: () {
-                  showTopSnackBar(
-                    Overlay.of(context),
-                    CustomSnackBar.success(
-                      message: languageProvider.translate(
-                        en: 'Added to cart!',
-                        th: 'เพิ่มลงตะกร้าแล้ว!',
-                      ),
-                    ),
-                  );
-                },
+                heroTag: 'basket_${item.uuid}',
+                onPressed: onAddToBasket,
                 backgroundColor:
                     Theme.of(context).floatingActionButtonTheme.backgroundColor,
                 child: Icon(
@@ -1180,235 +1148,321 @@ class _OutfitSuggestionCard extends StatelessWidget {
   }
 }
 
-// ============================================================================
-// Item Detail Card (Popup)
-// ============================================================================
+// ✅ ============================================================================
+// ✅ Item Detail Card - Firebase UID (ไม่ต้องส่ง userId)
+// ✅ ============================================================================
 
-class _ItemDetailCard extends StatelessWidget {
+class _ItemDetailCard extends StatefulWidget {
   final ClothingItem item;
+  // ✅ ลบ userId ออก — ใช้ Firebase UID ผ่าน service โดยตรง
+  final VoidCallback onAddToBasket;
 
-  const _ItemDetailCard({required this.item});
+  const _ItemDetailCard({
+    required this.item,
+    required this.onAddToBasket,
+  });
+
+  @override
+  State<_ItemDetailCard> createState() => _ItemDetailCardState();
+}
+
+class _ItemDetailCardState extends State<_ItemDetailCard> {
+  bool _isFavourite = false;
+  bool _isProcessing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkFavouriteStatus();
+  }
+
+  // ✅ เช็คสถานะ — ไม่ต้องส่ง userId (เหมือน home_page)
+  Future<void> _checkFavouriteStatus() async {
+    try {
+      final isFav = await FavouriteApiService().checkFavourite(
+        clothingUuid: widget.item.uuid,
+      );
+
+      if (mounted) {
+        setState(() => _isFavourite = isFav);
+      }
+    } catch (e) {
+      print('❌ Error checking favourite: $e');
+    }
+  }
+
+  // ✅ Toggle — ไม่ต้องส่ง userId (เหมือน home_page)
+  Future<void> _toggleFavourite() async {
+    if (_isProcessing) return;
+    setState(() => _isProcessing = true);
+
+    try {
+      final languageProvider =
+          Provider.of<LanguageProvider>(context, listen: false);
+
+      if (_isFavourite) {
+        await FavouriteApiService().removeFromFavourite(
+          clothingUuid: widget.item.uuid,
+        );
+
+        if (mounted) {
+          setState(() => _isFavourite = false);
+          showTopSnackBar(
+            Overlay.of(context),
+            CustomSnackBar.info(
+              message: languageProvider.translate(
+                en: 'Removed from favourites',
+                th: 'ลบออกจากรายการโปรดแล้ว',
+              ),
+            ),
+          );
+        }
+      } else {
+        await FavouriteApiService().addToFavourite(
+          clothingUuid: widget.item.uuid,
+        );
+
+        if (mounted) {
+          setState(() => _isFavourite = true);
+          showTopSnackBar(
+            Overlay.of(context),
+            CustomSnackBar.success(
+              message: languageProvider.translate(
+                en: 'Added to favourites!',
+                th: 'เพิ่มลงรายการโปรดแล้ว!',
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        showTopSnackBar(
+          Overlay.of(context),
+          CustomSnackBar.error(message: 'เกิดข้อผิดพลาด: $e'),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessing = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final languageProvider = Provider.of<LanguageProvider>(context);
-    final hasDiscount = item.discountPrice != null &&
-        item.discountPrice! > 0 &&
-        item.discountPrice! < item.price;
+    final hasDiscount = widget.item.discountPrice != null &&
+        widget.item.discountPrice! > 0 &&
+        widget.item.discountPrice! < widget.item.price;
 
     return Center(
-      child: Container(
-        margin: const EdgeInsets.only(top: 50, left: 20, right: 20),
-        constraints: const BoxConstraints(maxHeight: 600),
-        decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
         child: Material(
-          color: Colors.transparent,
-          child: SingleChildScrollView(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          elevation: 10,
+          child: ConstrainedBox(
+            // ✅ ใช้ pattern เดียวกับ home_page — ไม่ยืดเกินจอ
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.85,
+              maxWidth: 400,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // รูปภาพสินค้า
-              
+                // รูปภาพ + ปุ่มหัวใจ (ไม่เลื่อน)
                 Stack(
                   children: [
                     ClipRRect(
-                      borderRadius:
-                          BorderRadius.vertical(top: Radius.circular(20)),
+                      borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(20)),
                       child: CachedNetworkImage(
-                        imageUrl: item.imageUrl,
+                        imageUrl: widget.item.imageUrl,
                         width: double.infinity,
                         height: 300,
                         fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
+                        placeholder: (context, url) => const SizedBox(
                           height: 300,
                           child: Center(child: CircularProgressIndicator()),
                         ),
-                        errorWidget: (context, url, error) => Container(
+                        errorWidget: (context, url, error) => const SizedBox(
                           height: 300,
                           child: Center(child: Icon(Icons.error)),
                         ),
                       ),
                     ),
-                    // ปุ่ม Favorite ทับมุมขวาบน
+                    // ✅ ปุ่มหัวใจ — เหมือน home_page
                     Positioned(
                       top: 16,
                       right: 16,
                       child: GestureDetector(
-                        onTap: () {
-                          // ใส่ logic favorite ตรงนี้
-                        },
+                        onTap: _isProcessing ? null : _toggleFavourite,
                         child: Container(
-                          padding: EdgeInsets.all(8),
+                          padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.5),
+                            color: _isFavourite
+                                ? Colors.red.withOpacity(0.8)
+                                : Colors.black.withOpacity(0.5),
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(
-                            Icons.favorite,
-                            color: Colors.white,
-                            size: 24,
-                          ),
+                          child: _isProcessing
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white),
+                                  ),
+                                )
+                              : Icon(
+                                  _isFavourite
+                                      ? Icons.favorite
+                                      : Icons.favorite_border,
+                                  color: _isFavourite
+                                      ? Colors.white
+                                      : Colors.white,
+                                  size: 24,
+                                ),
                         ),
                       ),
                     ),
                   ],
                 ),
 
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // ชื่อสินค้า
-                      Text(
-                        item.clothingName,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-
-                      const SizedBox(height: 5),
-
-                      // Detail rows
-                      _DetailRow(
-                        label: languageProvider.translate(
-                            en: 'Category', th: 'หมวดหมู่'),
-                        value: item.category?.toString() ?? '',
-                      ),
-                      _DetailRow(
-                        label:
-                            languageProvider.translate(en: 'Size', th: 'ขนาด'),
-                        value: item.sizeCategory,
-                      ),
-                      _DetailRow(
-                        label:
-                            languageProvider.translate(en: 'Gender', th: 'เพศ'),
-                        value: _formatGender(item.gender, languageProvider),
-                      ),
-                      _DetailRow(
-                        label: languageProvider.translate(
-                            en: 'Stock', th: 'สต็อก'),
-                        value: item.stock.toString(),
-                      ),
-                      _DetailRow(
-                        label: languageProvider.translate(
-                            en: 'Breed', th: 'สายพันธุ์'),
-                        value: item.breed,
-                      ),
-
-                      // รายละเอียด
-                      if (item.description.isNotEmpty)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              languageProvider.translate(
-                                  en: 'Description', th: 'รายละเอียด'),
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              item.description,
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey[700],
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                          ],
-                        ),
-
-                      // ราคา
-                      Row(
+                // ✅ Content ที่เลื่อนได้ — เหมือน home_page
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (hasDiscount)
-                            Text(
-                              '฿${item.price.toStringAsFixed(0)}',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                color: Colors.grey,
-                                decoration: TextDecoration.lineThrough,
-                                decorationThickness: 2,
-                              ),
-                            ),
-                          if (hasDiscount) const SizedBox(width: 10),
                           Text(
-                            hasDiscount
-                                ? '฿${item.discountPrice!.toStringAsFixed(0)}'
-                                : '฿${item.price.toStringAsFixed(0)}',
-                            style: TextStyle(
-                              fontSize: 28,
+                            widget.item.clothingName,
+                            style: const TextStyle(
+                              fontSize: 24,
                               fontWeight: FontWeight.bold,
-                              color: hasDiscount ? Colors.red : Colors.black,
                             ),
                           ),
-                          if (hasDiscount) const SizedBox(width: 10),
-                          if (hasDiscount && item.discountPercent != null)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.red,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                '-${item.discountPercent}%',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w900,
+                          const SizedBox(height: 5),
+                          _DetailRow(
+                            label: languageProvider.translate(
+                                en: 'Category', th: 'หมวดหมู่'),
+                            value: widget.item.category?.toString() ?? '',
+                          ),
+                          _DetailRow(
+                            label: languageProvider.translate(
+                                en: 'Size', th: 'ขนาด'),
+                            value: widget.item.sizeCategory,
+                          ),
+                          _DetailRow(
+                            label: languageProvider.translate(
+                                en: 'Gender', th: 'เพศ'),
+                            value: _formatGender(
+                                widget.item.gender, languageProvider),
+                          ),
+                          _DetailRow(
+                            label: languageProvider.translate(
+                                en: 'Stock', th: 'สต็อก'),
+                            value: widget.item.stock.toString(),
+                          ),
+                          _DetailRow(
+                            label: languageProvider.translate(
+                                en: 'Breed', th: 'สายพันธุ์'),
+                            value: widget.item.breed,
+                          ),
+                          if (widget.item.description.isNotEmpty)
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  languageProvider.translate(
+                                      en: 'Description', th: 'รายละเอียด'),
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  widget.item.description,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey[700],
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                              ],
+                            ),
+                          Row(
+                            children: [
+                              if (hasDiscount)
+                                Text(
+                                  '฿${widget.item.price.toStringAsFixed(0)}',
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.grey,
+                                    decoration: TextDecoration.lineThrough,
+                                    decorationThickness: 2,
+                                  ),
+                                ),
+                              if (hasDiscount) const SizedBox(width: 10),
+                              Text(
+                                hasDiscount
+                                    ? '฿${widget.item.discountPrice!.toStringAsFixed(0)}'
+                                    : '฿${widget.item.price.toStringAsFixed(0)}',
+                                style: TextStyle(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                  color:
+                                      hasDiscount ? Colors.red : Colors.black,
                                 ),
                               ),
+                              if (hasDiscount) const SizedBox(width: 10),
+                              if (hasDiscount &&
+                                  widget.item.discountPercent != null)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    '-${widget.item.discountPercent}%',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 60,
+                            child: ElevatedButton.icon(
+                              onPressed: widget.onAddToBasket,
+                              icon: const Icon(Icons.add_shopping_cart_sharp),
+                              label: Text(
+                                languageProvider.translate(
+                                    en: 'Add to Basket', th: 'เพิ่มลงตะกร้า'),
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                backgroundColor: Colors.black,
+                              ),
                             ),
+                          ),
                         ],
                       ),
-
-                      const SizedBox(height: 10),
-
-                      // ปุ่ม Add to Cart
-                      SizedBox(
-                        width: double.infinity,
-                        height: 60,
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            showTopSnackBar(
-                              Overlay.of(context),
-                              CustomSnackBar.success(
-                                message: languageProvider.translate(
-                                  en: 'Added to cart successfully!',
-                                  th: 'เพิ่มลงตะกร้าสำเร็จ!',
-                                ),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.add_shopping_cart_sharp),
-                          label: Text(
-                            languageProvider.translate(
-                                en: 'Add to Cart', th: 'เพิ่มลงตะกร้า'),
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            backgroundColor: Colors.black,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ],
@@ -1420,6 +1474,10 @@ class _ItemDetailCard extends StatelessWidget {
   }
 }
 
+// ============================================================================
+// Detail Row Widget
+// ============================================================================
+
 class _DetailRow extends StatelessWidget {
   final String label;
   final String value;
@@ -1430,17 +1488,30 @@ class _DetailRow extends StatelessWidget {
   Widget build(BuildContext context) {
     if (value.isEmpty) return const SizedBox.shrink();
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 80,
+            width: 100,
             child: Text(
               '$label:',
-              style: const TextStyle(fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
           ),
-          Expanded(child: Text(value)),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(context).colorScheme.secondary,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -1468,7 +1539,8 @@ String _formatGender(int gender, LanguageProvider lang) {
 
 Color brighten(Color color, [double amount = 0.15]) {
   final hsl = HSLColor.fromColor(color);
-  final hslBright = hsl.withLightness((hsl.lightness + amount).clamp(0.0, 1.0));
+  final hslBright =
+      hsl.withLightness((hsl.lightness + amount).clamp(0.0, 1.0));
   return hslBright.toColor();
 }
 
@@ -1477,7 +1549,6 @@ LinearGradient brightGradient(List<Color> colors) {
     colors: colors.map((c) => brighten(c)).toList(),
   );
 }
-
 
 final Map<String, List<Color>> gradientMap = {
   'Every Day': [
@@ -1532,7 +1603,6 @@ final Map<String, List<Color>> gradientMap = {
     const Color.fromARGB(255, 184, 85, 85),
   ],
 };
-
 
 LinearGradient getTextGradient(String type, String name) {
   for (final entry in gradientMap.entries) {

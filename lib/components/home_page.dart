@@ -1,10 +1,11 @@
-// ----HomePage (Fixed)--------------------------------------------------------------------------
+// ----HomePage (Fixed with Firebase UID + Working Favourite)--------------------------------------------------------------------------
 
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_application_1/api/service_fav_bask.dart';
 import 'package:flutter_application_1/provider/language_provider.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
@@ -29,13 +30,8 @@ class _HomePageState extends State<HomePage> {
   bool isLoading = true;
   String? errorMessage;
 
-  // ฟังก์ชันสำหรับหา Base URL ที่ถูกต้องตาม Platform
   String getBaseUrl() {
-    // prod / prod-v2 / local
-    const String env = String.fromEnvironment(
-      'ENV',
-      defaultValue: 'local',
-    );
+    const String env = String.fromEnvironment('ENV', defaultValue: 'local');
 
     if (env == 'prod') {
       return 'https://catshop-backend-9pzq.onrender.com';
@@ -45,19 +41,17 @@ class _HomePageState extends State<HomePage> {
       return 'https://catshop-backend-v2.onrender.com';
     }
 
-    // ===== local =====
     if (kIsWeb) {
-      return 'http://localhost:8000';
+      return 'http://localhost:10000';
     }
 
     if (Platform.isAndroid) {
-      return 'http://10.0.2.2:8000';
+      return 'http://10.0.2.2:10000';
     }
 
-    return 'http://localhost:8000';
+    return 'http://localhost:10000';
   }
 
-  // ฟังก์ชันแปลงค่าเป็น double (รองรับทั้ง String และ number)
   double parseDouble(dynamic value) {
     if (value == null) return 0.0;
     if (value is double) return value;
@@ -81,7 +75,6 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-  // ดึงข้อมูลจาก API
   Future<void> fetchAdvertisements() async {
     try {
       final baseUrl = getBaseUrl();
@@ -107,7 +100,6 @@ class _HomePageState extends State<HomePage> {
 
             return {
               ...item,
-              // 🔥 แปลง images จาก String → Map
               'images': rawImages is String ? jsonDecode(rawImages) : rawImages,
             };
           }).toList();
@@ -157,13 +149,10 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // ดึงข้อมูลรายละเอียดสินค้า
   Future<Map<String, dynamic>?> fetchItemDetails(int itemId) async {
     try {
       final baseUrl = getBaseUrl();
       final url = '$baseUrl/api/home-advertiment/$itemId';
-
-      print('🔍 Fetching details from: $url'); // Debug
 
       final response = await http.get(
         Uri.parse(url),
@@ -173,20 +162,16 @@ class _HomePageState extends State<HomePage> {
         },
       ).timeout(const Duration(seconds: 10));
 
-      print('📡 Response status: ${response.statusCode}'); // Debug
-      print('📦 Response body: ${response.body}'); // Debug
-
       if (response.statusCode == 200) {
         final decodedBody = utf8.decode(response.bodyBytes);
         final data = json.decode(decodedBody);
-        // 🔥 ตรวจสอบว่าข้อมูลอยู่ใน key 'data' หรือไม่
+
         if (data is Map && data.containsKey('data')) {
           return data['data'];
         }
 
         return data;
       } else {
-        print('❌ Error: ${response.statusCode} - ${response.body}');
         return null;
       }
     } catch (e) {
@@ -195,9 +180,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // แสดง Popup รายละเอียดสินค้า
   void showItemDetailsPopup(int itemId) async {
-    // แสดง loading dialog
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -208,7 +191,6 @@ class _HomePageState extends State<HomePage> {
 
     final itemDetails = await fetchItemDetails(itemId);
 
-    // ปิด loading dialog
     Navigator.of(context).pop();
 
     if (itemDetails != null) {
@@ -223,7 +205,6 @@ class _HomePageState extends State<HomePage> {
           return ItemDetailsCard(itemDetails: itemDetails);
         },
         transitionBuilder: (context, animation, secondaryAnimation, child) {
-          // Slide from top + Fade animation
           const begin = Offset(0.0, -1.0);
           const end = Offset.zero;
           const curve = Curves.easeInOut;
@@ -249,7 +230,6 @@ class _HomePageState extends State<HomePage> {
         },
       );
     } else {
-      // แสดง error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('ไม่สามารถโหลดข้อมูลได้'),
@@ -283,7 +263,6 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final languageProvider = Provider.of<LanguageProvider>(context);
 
-    // แสดง Loading
     if (isLoading) {
       return Scaffold(
         body: Center(
@@ -292,7 +271,6 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
-    // แสดง Error
     if (errorMessage != null) {
       return Scaffold(
         body: Center(
@@ -322,7 +300,6 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
-    // แสดงข้อมูลว่าง
     if (images.isEmpty) {
       return Scaffold(
         body: Center(
@@ -331,7 +308,6 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
-    // แสดงข้อมูลปกติ
     return Scaffold(
       body: GestureDetector(
         onPanDown: (_) {
@@ -349,11 +325,9 @@ class _HomePageState extends State<HomePage> {
         child: PageView.builder(
           controller: _pageController,
           scrollDirection: Axis.vertical,
-          itemCount: images.length * 1000, // infinite scroll
+          itemCount: null,
           itemBuilder: (context, index) {
             final item = images[index % images.length];
-
-            // 🔥 แก้ไข: แปลง discount_price เป็น double ก่อนเปรียบเทียบ
             final discountPrice = parseDouble(item['discount_price']);
             final hasDiscount = discountPrice > 0;
 
@@ -393,8 +367,6 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
-
-                // ส่วนแสดงราคา
                 Positioned(
                   bottom: 130,
                   left: 20,
@@ -402,7 +374,6 @@ class _HomePageState extends State<HomePage> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // ราคาปกติ (ถ้ามีส่วนลดจะขีดฆ่า)
                       if (hasDiscount)
                         Text(
                           '฿${item['price']?.toString() ?? ''}',
@@ -421,8 +392,6 @@ class _HomePageState extends State<HomePage> {
                             ],
                           ),
                         ),
-
-                      // ราคาหลังหักส่วนลด
                       if (hasDiscount) SizedBox(width: 10),
                       Text(
                         hasDiscount
@@ -443,8 +412,6 @@ class _HomePageState extends State<HomePage> {
                           ],
                         ),
                       ),
-
-                      // แสดง % ส่วนลด
                       if (hasDiscount) SizedBox(width: 10),
                       if (hasDiscount)
                         Container(
@@ -474,10 +441,33 @@ class _HomePageState extends State<HomePage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           FloatingActionButton.small(
-                            onPressed: () {},
+                            onPressed: () async {
+                              try {
+                                // ✅ ไม่ต้องส่ง userId
+                                await BasketApiService().addToBasket(
+                                  clothingUuid: item['uuid'],
+                                );
+
+                                showTopSnackBar(
+                                  Overlay.of(context),
+                                  CustomSnackBar.success(
+                                    message: languageProvider.translate(
+                                      en: 'Added to cart!',
+                                      th: 'เพิ่มลงตะกร้าแล้ว!',
+                                    ),
+                                  ),
+                                );
+                              } catch (e) {
+                                showTopSnackBar(
+                                  Overlay.of(context),
+                                  CustomSnackBar.error(
+                                    message: 'เกิดข้อผิดพลาด',
+                                  ),
+                                );
+                              }
+                            },
                             child: Icon(
                               Icons.shopping_cart_outlined,
                               size: 30,
@@ -492,7 +482,6 @@ class _HomePageState extends State<HomePage> {
                           SizedBox(width: 5),
                           ElevatedButton(
                             onPressed: () {
-                              // 🔥 แปลง id เป็น int
                               final itemId =
                                   int.tryParse(item['id']?.toString() ?? '0') ??
                                       0;
@@ -531,8 +520,11 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-// Widget สำหรับแสดง Popup รายละเอียดสินค้า
-class ItemDetailsCard extends StatelessWidget {
+// ============================================================================
+// Item Details Card with Firebase UID
+// ============================================================================
+
+class ItemDetailsCard extends StatefulWidget {
   final Map<String, dynamic> itemDetails;
 
   const ItemDetailsCard({
@@ -540,7 +532,14 @@ class ItemDetailsCard extends StatelessWidget {
     required this.itemDetails,
   });
 
-  // ฟังก์ชันแปลงค่าเป็น double
+  @override
+  State<ItemDetailsCard> createState() => _ItemDetailsCardState();
+}
+
+class _ItemDetailsCardState extends State<ItemDetailsCard> {
+  bool _isFavourite = false;
+  bool _isProcessing = false;
+
   double parseDouble(dynamic value) {
     if (value == null) return 0.0;
     if (value is double) return value;
@@ -552,43 +551,115 @@ class ItemDetailsCard extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    // 🔥 แก้ไข: แปลง discount_price เป็น double ก่อนเปรียบเทียบ
-    final discountPrice = parseDouble(itemDetails['discount_price']);
-    final languageProvider = Provider.of<LanguageProvider>(context);
+  void initState() {
+    super.initState();
+    _checkFavouriteStatus();
+  }
 
+  // ✅ เช็คสถานะ Favourite (ใช้ firebase_uid จาก Firebase Auth โดยอัตโนมัติ)
+  Future<void> _checkFavouriteStatus() async {
+    try {
+      final isFav = await FavouriteApiService().checkFavourite(
+        clothingUuid: widget.itemDetails['uuid'],
+      );
+
+      if (mounted) {
+        setState(() => _isFavourite = isFav);
+      }
+    } catch (e) {
+      print('❌ Error checking favourite: $e');
+    }
+  }
+
+  // ✅ Toggle Favourite (ใช้ firebase_uid แทน userId)
+  Future<void> _toggleFavourite() async {
+    if (_isProcessing) return;
+    setState(() => _isProcessing = true);
+
+    try {
+      final languageProvider =
+          Provider.of<LanguageProvider>(context, listen: false);
+
+      if (_isFavourite) {
+        // ✅ ลบ - ไม่ต้องส่ง userId
+        await FavouriteApiService().removeFromFavourite(
+          clothingUuid: widget.itemDetails['uuid'],
+        );
+
+        if (mounted) {
+          setState(() => _isFavourite = false);
+          showTopSnackBar(
+            Overlay.of(context),
+            CustomSnackBar.success(
+              message: languageProvider.translate(
+                en: 'Removed from favourites',
+                th: 'ลบออกจากรายการโปรดแล้ว',
+              ),
+            ),
+          );
+        }
+      } else {
+        // ✅ เพิ่ม - ไม่ต้องส่ง userId
+        await FavouriteApiService().addToFavourite(
+          clothingUuid: widget.itemDetails['uuid'],
+        );
+
+        if (mounted) {
+          setState(() => _isFavourite = true);
+          showTopSnackBar(
+            Overlay.of(context),
+            CustomSnackBar.success(
+              message: languageProvider.translate(
+                en: 'Added to favourites!',
+                th: 'เพิ่มลงรายการโปรดแล้ว!',
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        showTopSnackBar(
+          Overlay.of(context),
+          CustomSnackBar.error(message: 'เกิดข้อผิดพลาด: $e'),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessing = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final discountPrice = parseDouble(widget.itemDetails['discount_price']);
+    final languageProvider = Provider.of<LanguageProvider>(context);
     final hasDiscount = discountPrice > 0;
 
     return Center(
-      child: Container(
-        margin: const EdgeInsets.only(top: 50, left: 20, right: 20),
-        constraints: const BoxConstraints(maxHeight: 600),
-        decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
         child: Material(
-          color: Colors.transparent,
-          child: SingleChildScrollView(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          elevation: 10,
+          child: ConstrainedBox(
+            // ✅ แก้ไขให้ไม่ยืดเกินจอ
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.85,
+              maxWidth: 350,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ใช้ Stack เพื่อวางปุ่ม favorite ทับรูปภาพ
+                // ✅ รูป + หัวใจ (ไม่เลื่อน)
                 Stack(
                   children: [
                     ClipRRect(
                       borderRadius:
                           BorderRadius.vertical(top: Radius.circular(20)),
                       child: CachedNetworkImage(
-                        imageUrl: itemDetails['image_url'] ?? '',
+                        imageUrl: widget.itemDetails['image_url'] ?? '',
                         width: double.infinity,
                         height: 300,
                         fit: BoxFit.cover,
@@ -602,183 +673,207 @@ class ItemDetailsCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    // ปุ่ม Favorite ทับมุมขวาบน
+                    // ✅ ปุ่มหัวใจ
                     Positioned(
                       top: 16,
                       right: 16,
                       child: GestureDetector(
-                        onTap: () {
-                          // ใส่ logic favorite ตรงนี้
-                        },
+                        onTap: _isProcessing ? null : _toggleFavourite,
                         child: Container(
                           padding: EdgeInsets.all(8),
                           decoration: BoxDecoration(
                             color: Colors.black.withOpacity(0.5),
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(
-                            Icons.favorite,
-                            color: Colors.white,
-                            size: 24,
-                          ),
+                          child: _isProcessing
+                              ? SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : Icon(
+                                  _isFavourite
+                                      ? Icons.favorite
+                                      : Icons.favorite_border,
+                                  color: _isFavourite ? Colors.red : Colors.white,
+                                  size: 24,
+                                ),
                         ),
                       ),
                     ),
                   ],
                 ),
 
-                Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // ชื่อสินค้า
-                      Text(
-                        itemDetails['clothing_name'] ?? '',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-
-                      SizedBox(height: 5),
-
-                      _DetailRow(
-                        label: languageProvider.translate(
-                          en: 'Category',
-                          th: 'หมวดหมู่',
-                        ),
-                        value: itemDetails['category'],
-                      ),
-                      _DetailRow(
-                        label: languageProvider.translate(
-                          en: 'Size',
-                          th: 'ขนาด',
-                        ),
-                        value: itemDetails['size_category'],
-                      ),
-                      _DetailRow(
-                        label: languageProvider.translate(
-                          en: 'Gender',
-                          th: 'เพศ',
-                        ),
-                        value: formatGender(
-                            itemDetails['gender'], languageProvider),
-                      ),
-                      _DetailRow(
-                        label: languageProvider.translate(
-                          en: 'Stock',
-                          th: 'สต็อก',
-                        ),
-                        value: itemDetails['stock']?.toString() ?? '',
-                      ),
-                      _DetailRow(
-                        label: languageProvider.translate(
-                          en: 'Breed',
-                          th: 'สายพันธุ์',
-                        ),
-                        value: itemDetails['breed'],
-                      ),
-
-                      // รายละเอียดสินค้า
-                      if (itemDetails['description'] != null)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'รายละเอียด',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              itemDetails['description'] ?? '',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey[700],
-                              ),
-                            ),
-                            SizedBox(height: 16),
-                          ],
-                        ),
-
-                      // ราคา
-                      Row(
+                // ✅ Content ที่เลื่อนได้
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (hasDiscount)
-                            Text(
-                              '฿${itemDetails['price']?.toString() ?? ''}',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.grey,
-                                decoration: TextDecoration.lineThrough,
-                                decorationThickness: 2,
-                              ),
-                            ),
-                          if (hasDiscount) SizedBox(width: 10),
                           Text(
-                            hasDiscount
-                                ? '฿${discountPrice.toStringAsFixed(0)}'
-                                : '฿${itemDetails['price']?.toString() ?? ''}',
+                            widget.itemDetails['clothing_name'] ?? '',
                             style: TextStyle(
-                              fontSize: 28,
+                              fontSize: 24,
                               fontWeight: FontWeight.bold,
-                              color: hasDiscount ? Colors.red : Colors.black,
                             ),
                           ),
-                          if (hasDiscount) SizedBox(width: 10),
-                          if (hasDiscount)
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.red,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                '-${itemDetails['discount_percent']?.toString() ?? '0'}',
+                          SizedBox(height: 5),
+                          _DetailRow(
+                            label: languageProvider.translate(
+                              en: 'Category',
+                              th: 'หมวดหมู่',
+                            ),
+                            value: widget.itemDetails['category'],
+                          ),
+                          _DetailRow(
+                            label: languageProvider.translate(
+                              en: 'Size',
+                              th: 'ขนาด',
+                            ),
+                            value: widget.itemDetails['size_category'],
+                          ),
+                          _DetailRow(
+                            label: languageProvider.translate(
+                              en: 'Gender',
+                              th: 'เพศ',
+                            ),
+                            value: formatGender(
+                                widget.itemDetails['gender'], languageProvider),
+                          ),
+                          _DetailRow(
+                            label: languageProvider.translate(
+                              en: 'Stock',
+                              th: 'สต็อก',
+                            ),
+                            value: widget.itemDetails['stock']?.toString() ?? '',
+                          ),
+                          _DetailRow(
+                            label: languageProvider.translate(
+                              en: 'Breed',
+                              th: 'สายพันธุ์',
+                            ),
+                            value: widget.itemDetails['breed'],
+                          ),
+                          if (widget.itemDetails['description'] != null)
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'รายละเอียด',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  widget.itemDetails['description'] ?? '',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey[700],
+                                  ),
+                                ),
+                                SizedBox(height: 16),
+                              ],
+                            ),
+                          Row(
+                            children: [
+                              if (hasDiscount)
+                                Text(
+                                  '฿${widget.itemDetails['price']?.toString() ?? ''}',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.grey,
+                                    decoration: TextDecoration.lineThrough,
+                                    decorationThickness: 2,
+                                  ),
+                                ),
+                              if (hasDiscount) SizedBox(width: 10),
+                              Text(
+                                hasDiscount
+                                    ? '฿${discountPrice.toStringAsFixed(0)}'
+                                    : '฿${widget.itemDetails['price']?.toString() ?? ''}',
                                 style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w900,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                  color: hasDiscount ? Colors.red : Colors.black,
                                 ),
                               ),
+                              if (hasDiscount) SizedBox(width: 10),
+                              if (hasDiscount)
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    '-${widget.itemDetails['discount_percent']?.toString() ?? '0'}',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 60,
+                            child: ElevatedButton.icon(
+                              onPressed: () async {
+                                try {
+                                  // ✅ ไม่ต้องส่ง userId
+                                  await BasketApiService().addToBasket(
+                                    clothingUuid: widget.itemDetails['uuid'],
+                                  );
+
+                                  Navigator.of(context).pop();
+
+                                  showTopSnackBar(
+                                    Overlay.of(context),
+                                    CustomSnackBar.success(
+                                      message: languageProvider.translate(
+                                        en: 'Added to cart successfully!',
+                                        th: 'เพิ่มลงตะกร้าสำเร็จ!',
+                                      ),
+                                    ),
+                                  );
+                                } catch (e) {
+                                  showTopSnackBar(
+                                    Overlay.of(context),
+                                    CustomSnackBar.error(
+                                      message: 'เกิดข้อผิดพลาด',
+                                    ),
+                                  );
+                                }
+                              },
+                              icon: const Icon(Icons.add_shopping_cart_sharp),
+                              label: Text(
+                                languageProvider.translate(
+                                    en: 'Add to Cart', th: 'เพิ่มลงตะกร้า'),
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                backgroundColor: Colors.black,
+                              ),
                             ),
+                          ),
                         ],
                       ),
-                      const SizedBox(height: 10),
-                      //Add to Cart button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 60,
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            showTopSnackBar(
-                              Overlay.of(context),
-                              CustomSnackBar.success(
-                                message: languageProvider.translate(
-                                  en: 'Added to cart successfully!',
-                                  th: 'เพิ่มลงตะกร้าสำเร็จ!',
-                                ),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.add_shopping_cart_sharp),
-                          label: Text(
-                            languageProvider.translate(
-                                en: 'Add to Cart', th: 'เพิ่มลงตะกร้า'),
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            backgroundColor: Colors.black,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ],
@@ -833,10 +928,6 @@ class _DetailRow extends StatelessWidget {
     );
   }
 }
-
-// ============================================================================
-// Helper: format gender
-// ============================================================================
 
 String formatGender(int value, LanguageProvider lang) {
   switch (value) {
