@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'dart:io';
-import 'package:firebase_auth/firebase_auth.dart'; // ✅ เพิ่มนี้
+import 'package:firebase_auth/firebase_auth.dart';
 
 // ============================================================================
 // Helper - Base URL
@@ -22,7 +22,6 @@ String getBaseUrl() {
     return 'https://catshop-backend-v2.onrender.com';
   }
 
-  // local
   if (kIsWeb) {
     return 'http://localhost:10000';
   }
@@ -39,10 +38,13 @@ String getBaseUrl() {
 // ============================================================================
 
 Future<String> getFirebaseUid() async {
+  print('🔑 [Auth] Getting Firebase UID...');
   final user = FirebaseAuth.instance.currentUser;
   if (user == null) {
+    print('❌ [Auth] User not logged in!');
     throw Exception('User not logged in');
   }
+  print('✅ [Auth] Firebase UID: ${user.uid.substring(0, 10)}...');
   return user.uid;
 }
 
@@ -52,7 +54,7 @@ Future<String> getFirebaseUid() async {
 
 class BasketItem {
   final int basketId;
-  final String firebaseUid; // ✅ เปลี่ยนจาก userId
+  final String firebaseUid;
   final String clothingUuid;
   final int quantity;
   final String clothingName;
@@ -139,13 +141,14 @@ class BasketSummary {
 
 class FavouriteItem {
   final int favouriteId;
-  final String firebaseUid; // ✅ เปลี่ยนจาก userId
+  final String firebaseUid;
   final String clothingUuid;
   final String clothingName;
   final double price;
   final double? discountPrice;
   final int stock;
   final String imageUrl;
+  final String images;
   final String category;
   final String sizeCategory;
   final int gender;
@@ -162,6 +165,7 @@ class FavouriteItem {
     this.discountPrice,
     required this.stock,
     required this.imageUrl,
+    required this.images,
     required this.category,
     required this.sizeCategory,
     required this.gender,
@@ -180,6 +184,7 @@ class FavouriteItem {
       discountPrice: _parseDouble(json['discount_price']),
       stock: json['stock'] ?? 0,
       imageUrl: json['image_url'] ?? '',
+      images: json['images'] ?? '',
       category: json['category']?.toString() ?? '',
       sizeCategory: json['size_category'] ?? '',
       gender: json['gender'] ?? 0,
@@ -205,66 +210,84 @@ class FavouriteItem {
 class BasketApiService {
   final String baseUrl = getBaseUrl();
 
-  // ✅ GET: ดึงรายการตะกร้าทั้งหมด (ใช้ firebase_uid จาก Firebase Auth)
+  // ✅ GET: ดึงรายการตะกร้าทั้งหมด
   Future<Map<String, dynamic>> getBasket() async {
+    print('\n🛒 [BasketApi] getBasket() - START');
     try {
       final firebaseUid = await getFirebaseUid();
+
       final url = Uri.parse('$baseUrl/api/get/person-baskets/$firebaseUid');
+      print('📤 [BasketApi] GET $url');
+
       final response = await http.get(url).timeout(const Duration(seconds: 10));
+      print('📥 [BasketApi] Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final decodedBody = utf8.decode(response.bodyBytes);
         final data = json.decode(decodedBody);
+        print('✅ [BasketApi] Items: ${data['items'].length}');
 
         final items = (data['items'] as List)
             .map((json) => BasketItem.fromJson(json))
             .toList();
 
         final summary = BasketSummary.fromJson(data['summary']);
+        print(
+            '✅ [BasketApi] Total: ${summary.totalItems} items, ฿${summary.totalPrice}');
 
-        return {
-          'items': items,
-          'summary': summary,
-        };
+        return {'items': items, 'summary': summary};
       } else {
+        print('❌ [BasketApi] Failed: ${response.statusCode}');
         throw Exception('Failed to load basket: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error getting basket: $e');
+      print('❌ [BasketApi] Error: $e');
       rethrow;
     }
   }
 
   // ✅ GET: ดึงจำนวนสินค้าในตะกร้า
   Future<Map<String, int>> getBasketCount() async {
+    print('\n📊 [BasketApi] getBasketCount() - START');
     try {
       final firebaseUid = await getFirebaseUid();
-      final url = Uri.parse('$baseUrl/api/get/person-baskets/count/$firebaseUid');
+      final url =
+          Uri.parse('$baseUrl/api/get/person-baskets/count/$firebaseUid');
+      print('📤 [BasketApi] GET $url');
+
       final response = await http.get(url).timeout(const Duration(seconds: 5));
+      print('📥 [BasketApi] Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        print(
+            '✅ [BasketApi] Count: ${data['total_items']} items, ${data['total_quantity']} qty');
         return {
           'total_items': data['total_items'],
           'total_quantity': data['total_quantity'],
         };
       } else {
+        print('❌ [BasketApi] Failed: ${response.statusCode}');
         throw Exception('Failed to load basket count');
       }
     } catch (e) {
-      print('Error getting basket count: $e');
+      print('❌ [BasketApi] Error: $e');
       rethrow;
     }
   }
 
-  // ✅ POST: เพิ่มสินค้าลงตะกร้า (ไม่ต้องส่ง userId)
+  // ✅ POST: เพิ่มสินค้าลงตะกร้า
   Future<Map<String, dynamic>> addToBasket({
     required String clothingUuid,
     int quantity = 1,
   }) async {
+    print('\n➕ [BasketApi] addToBasket() - START');
+    print('📦 [BasketApi] Item: $clothingUuid, Qty: $quantity');
     try {
       final firebaseUid = await getFirebaseUid();
       final url = Uri.parse('$baseUrl/api/post/person-baskets');
+      print('📤 [BasketApi] POST $url');
+
       final response = await http
           .post(
             url,
@@ -277,14 +300,19 @@ class BasketApiService {
           )
           .timeout(const Duration(seconds: 10));
 
+      print('📥 [BasketApi] Status: ${response.statusCode}');
+
       if (response.statusCode == 200) {
         final decodedBody = utf8.decode(response.bodyBytes);
-        return json.decode(decodedBody);
+        final data = json.decode(decodedBody);
+        print('✅ [BasketApi] Added successfully');
+        return data;
       } else {
+        print('❌ [BasketApi] Failed: ${response.statusCode}');
         throw Exception('Failed to add to basket: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error adding to basket: $e');
+      print('❌ [BasketApi] Error: $e');
       rethrow;
     }
   }
@@ -294,9 +322,13 @@ class BasketApiService {
     required String clothingUuid,
     required int quantity,
   }) async {
+    print('\n🔄 [BasketApi] updateQuantity() - START');
+    print('📦 [BasketApi] Item: $clothingUuid, New Qty: $quantity');
     try {
       final firebaseUid = await getFirebaseUid();
       final url = Uri.parse('$baseUrl/api/put/person-baskets/quantity');
+      print('📤 [BasketApi] PUT $url');
+
       final response = await http
           .put(
             url,
@@ -309,14 +341,19 @@ class BasketApiService {
           )
           .timeout(const Duration(seconds: 10));
 
+      print('📥 [BasketApi] Status: ${response.statusCode}');
+
       if (response.statusCode == 200) {
         final decodedBody = utf8.decode(response.bodyBytes);
-        return json.decode(decodedBody);
+        final data = json.decode(decodedBody);
+        print('✅ [BasketApi] Updated successfully');
+        return data;
       } else {
+        print('❌ [BasketApi] Failed: ${response.statusCode}');
         throw Exception('Failed to update quantity: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error updating quantity: $e');
+      print('❌ [BasketApi] Error: $e');
       rethrow;
     }
   }
@@ -325,9 +362,13 @@ class BasketApiService {
   Future<Map<String, dynamic>> removeFromBasket({
     required String clothingUuid,
   }) async {
+    print('\n🗑️ [BasketApi] removeFromBasket() - START');
+    print('📦 [BasketApi] Item: $clothingUuid');
     try {
       final firebaseUid = await getFirebaseUid();
       final url = Uri.parse('$baseUrl/api/del/person-baskets');
+      print('📤 [BasketApi] DELETE $url');
+
       final response = await http
           .delete(
             url,
@@ -339,33 +380,47 @@ class BasketApiService {
           )
           .timeout(const Duration(seconds: 10));
 
+      print('📥 [BasketApi] Status: ${response.statusCode}');
+
       if (response.statusCode == 200) {
         final decodedBody = utf8.decode(response.bodyBytes);
-        return json.decode(decodedBody);
+        final data = json.decode(decodedBody);
+        print('✅ [BasketApi] Removed successfully');
+        return data;
       } else {
+        print('❌ [BasketApi] Failed: ${response.statusCode}');
         throw Exception('Failed to remove from basket: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error removing from basket: $e');
+      print('❌ [BasketApi] Error: $e');
       rethrow;
     }
   }
 
   // ✅ DELETE: ล้างตะกร้าทั้งหมด
   Future<Map<String, dynamic>> clearBasket() async {
+    print('\n🧹 [BasketApi] clearBasket() - START');
     try {
       final firebaseUid = await getFirebaseUid();
-      final url = Uri.parse('$baseUrl/api/del/person-baskets/clear/$firebaseUid');
-      final response = await http.delete(url).timeout(const Duration(seconds: 10));
+      final url =
+          Uri.parse('$baseUrl/api/del/person-baskets/clear/$firebaseUid');
+      print('📤 [BasketApi] DELETE $url');
+
+      final response =
+          await http.delete(url).timeout(const Duration(seconds: 10));
+      print('📥 [BasketApi] Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final decodedBody = utf8.decode(response.bodyBytes);
-        return json.decode(decodedBody);
+        final data = json.decode(decodedBody);
+        print('✅ [BasketApi] Cleared successfully');
+        return data;
       } else {
+        print('❌ [BasketApi] Failed: ${response.statusCode}');
         throw Exception('Failed to clear basket: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error clearing basket: $e');
+      print('❌ [BasketApi] Error: $e');
       rethrow;
     }
   }
@@ -380,50 +435,67 @@ class FavouriteApiService {
 
   // ✅ GET: ดึงรายการโปรดทั้งหมด
   Future<List<FavouriteItem>> getFavourites() async {
+    print('\n❤️ [FavouriteApi] getFavourites() - START');
     try {
       final firebaseUid = await getFirebaseUid();
       final url = Uri.parse('$baseUrl/api/get/person-favourite/$firebaseUid');
+      print('📤 [FavouriteApi] GET $url');
+
       final response = await http.get(url).timeout(const Duration(seconds: 10));
+      print('📥 [FavouriteApi] Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final decodedBody = utf8.decode(response.bodyBytes);
         final List<dynamic> data = json.decode(decodedBody);
+        print('✅ [FavouriteApi] Items: ${data.length}');
         return data.map((json) => FavouriteItem.fromJson(json)).toList();
       } else {
+        print('❌ [FavouriteApi] Failed: ${response.statusCode}');
         throw Exception('Failed to load favourites: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error getting favourites: $e');
+      print('❌ [FavouriteApi] Error: $e');
       rethrow;
     }
   }
 
   // ✅ GET: ดึงจำนวนรายการโปรด
   Future<int> getFavouriteCount() async {
+    print('\n📊 [FavouriteApi] getFavouriteCount() - START');
     try {
       final firebaseUid = await getFirebaseUid();
-      final url = Uri.parse('$baseUrl/api/get/person-favourite/count/$firebaseUid');
+      final url =
+          Uri.parse('$baseUrl/api/get/person-favourite/count/$firebaseUid');
+      print('📤 [FavouriteApi] GET $url');
+
       final response = await http.get(url).timeout(const Duration(seconds: 5));
+      print('📥 [FavouriteApi] Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        print('✅ [FavouriteApi] Count: ${data['total']}');
         return data['total'];
       } else {
+        print('❌ [FavouriteApi] Failed: ${response.statusCode}');
         throw Exception('Failed to load favourite count');
       }
     } catch (e) {
-      print('Error getting favourite count: $e');
+      print('❌ [FavouriteApi] Error: $e');
       rethrow;
     }
   }
 
-  // ✅ POST: เพิ่มสินค้าเข้ารายการโปรด (ไม่ต้องส่ง userId)
+  // ✅ POST: เพิ่มสินค้าเข้ารายการโปรด
   Future<Map<String, dynamic>> addToFavourite({
     required String clothingUuid,
   }) async {
+    print('\n➕ [FavouriteApi] addToFavourite() - START');
+    print('📦 [FavouriteApi] Item: $clothingUuid');
     try {
       final firebaseUid = await getFirebaseUid();
       final url = Uri.parse('$baseUrl/api/post/person-favourite');
+      print('📤 [FavouriteApi] POST $url');
+
       final response = await http
           .post(
             url,
@@ -435,14 +507,19 @@ class FavouriteApiService {
           )
           .timeout(const Duration(seconds: 10));
 
+      print('📥 [FavouriteApi] Status: ${response.statusCode}');
+
       if (response.statusCode == 200) {
         final decodedBody = utf8.decode(response.bodyBytes);
-        return json.decode(decodedBody);
+        final data = json.decode(decodedBody);
+        print('✅ [FavouriteApi] Added successfully');
+        return data;
       } else {
+        print('❌ [FavouriteApi] Failed: ${response.statusCode}');
         throw Exception('Failed to add to favourite: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error adding to favourite: $e');
+      print('❌ [FavouriteApi] Error: $e');
       rethrow;
     }
   }
@@ -451,9 +528,13 @@ class FavouriteApiService {
   Future<Map<String, dynamic>> removeFromFavourite({
     required String clothingUuid,
   }) async {
+    print('\n🗑️ [FavouriteApi] removeFromFavourite() - START');
+    print('📦 [FavouriteApi] Item: $clothingUuid');
     try {
       final firebaseUid = await getFirebaseUid();
       final url = Uri.parse('$baseUrl/api/del/person-favourite');
+      print('📤 [FavouriteApi] DELETE $url');
+
       final response = await http
           .delete(
             url,
@@ -465,15 +546,20 @@ class FavouriteApiService {
           )
           .timeout(const Duration(seconds: 10));
 
+      print('📥 [FavouriteApi] Status: ${response.statusCode}');
+
       if (response.statusCode == 200) {
         final decodedBody = utf8.decode(response.bodyBytes);
-        return json.decode(decodedBody);
+        final data = json.decode(decodedBody);
+        print('✅ [FavouriteApi] Removed successfully');
+        return data;
       } else {
+        print('❌ [FavouriteApi] Failed: ${response.statusCode}');
         throw Exception(
             'Failed to remove from favourite: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error removing from favourite: $e');
+      print('❌ [FavouriteApi] Error: $e');
       rethrow;
     }
   }
@@ -482,20 +568,28 @@ class FavouriteApiService {
   Future<bool> checkFavourite({
     required String clothingUuid,
   }) async {
+    print('\n🔍 [FavouriteApi] checkFavourite() - START');
+    print('📦 [FavouriteApi] Item: $clothingUuid');
     try {
       final firebaseUid = await getFirebaseUid();
       final url = Uri.parse(
           '$baseUrl/api/get/check-favourite/$firebaseUid/$clothingUuid');
+      print('📤 [FavouriteApi] GET $url');
+
       final response = await http.get(url).timeout(const Duration(seconds: 5));
+      print('📥 [FavouriteApi] Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        return data['is_favourite'] ?? false;
+        final isFav = data['is_favourite'] ?? false;
+        print('✅ [FavouriteApi] Is Favourite: $isFav');
+        return isFav;
       } else {
+        print('❌ [FavouriteApi] Failed: ${response.statusCode}');
         throw Exception('Failed to check favourite');
       }
     } catch (e) {
-      print('Error checking favourite: $e');
+      print('❌ [FavouriteApi] Error: $e');
       return false;
     }
   }

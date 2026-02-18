@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/api/service_fav_bask.dart';
+import 'package:flutter_application_1/api/service_fav_backet.dart';
+
 import 'package:flutter_application_1/provider/language_provider.dart';
 import 'package:flutter_application_1/provider/theme_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -564,8 +565,26 @@ class _BasketItemCard extends StatelessWidget {
                         onPressed: isDeleting
                             ? null
                             : () {
-                                if (item.quantity < item.stock) {
+                                if (item.quantity < item.stock &&
+                                    item.quantity < 8) {
                                   onQuantityChanged(item.quantity + 1);
+                                } else if (item.quantity >= 8) {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      backgroundColor: isDark ? Colors.black : Colors.white,
+                                      title: Text('จำกัดจำนวน'),
+                                      content: Text(
+                                          'สามารถซื้อสินค้าได้สูงสุด 8 ชิ้นต่อรายการ'),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context),
+                                          child: Text('โอเค'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
                                 }
                               },
                         color: isDark ? Colors.white : Colors.black87,

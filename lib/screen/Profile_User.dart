@@ -29,18 +29,22 @@ class _ProfileState extends State<Profile> {
   }
 
   void showLogAlertExit(BuildContext context) {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+
     showDialog(
+      
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
             title: const Text("Are you sure you want to log out?"),
-            
+            backgroundColor: isDark ? Colors.grey[900] : Colors.white,
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
                 child: Text("Cancel"),
               ),
               ElevatedButton(
+                
                 onPressed: () async {
                   Navigator.of(context).pop();
                   await signOut();

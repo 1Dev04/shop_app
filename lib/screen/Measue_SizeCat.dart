@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/provider/favorite_provider.dart';
+import 'package:flutter_application_1/api/service_fav_backet.dart';
 import 'package:flutter_application_1/provider/language_provider.dart';
 
 import 'dart:io';
@@ -13,9 +13,7 @@ import 'dart:convert';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:provider/provider.dart';
-
 import 'package:flutter_application_1/provider/theme_provider.dart';
-
 import 'package:image_picker/image_picker.dart';
 import 'package:camera/camera.dart';
 
@@ -28,9 +26,7 @@ Future<String?> _getFirebaseToken() async {
       return null;
     }
 
-    // ดึง ID Token จาก Firebase (จะ refresh อัตโนมัติถ้าหมดอายุ)
     final String? token = await user.getIdToken();
-
     print('✅ Got Firebase token: ${token?.substring(0, 20)}...');
     return token;
   } catch (e) {
@@ -39,13 +35,8 @@ Future<String?> _getFirebaseToken() async {
   }
 }
 
-// ฟังก์ชันสำหรับหา Base URL ที่ถูกต้องตาม Platform
 String getBaseUrl() {
-  // prod / prod-v2 / local
-  const String env = String.fromEnvironment(
-    'ENV',
-    defaultValue: 'local',
-  );
+  const String env = String.fromEnvironment('ENV', defaultValue: 'local');
 
   if (env == 'prod') {
     return 'https://catshop-backend-9pzq.onrender.com';
@@ -55,7 +46,6 @@ String getBaseUrl() {
     return 'https://catshop-backend-v2.onrender.com';
   }
 
-  // ===== local =====
   if (kIsWeb) {
     return 'http://localhost:10000';
   }
@@ -66,7 +56,6 @@ String getBaseUrl() {
 
   return 'http://localhost:10000';
 }
-
 
 class _CircleHolePainter extends CustomPainter {
   @override
@@ -108,17 +97,13 @@ class CatData {
   final String name;
   final String? breed;
   final int? age;
-
   final double weight;
   final String sizeCategory;
-
   final double chestCm;
   final double? neckCm;
   final double? bodyLengthCm;
-
   final double confidence;
   final List<double> boundingBox;
-
   final String imageUrl;
   final String? thumbnailUrl;
   final DateTime detectedAt;
@@ -182,6 +167,9 @@ class VisionResult {
   }
 }
 
+// ✅ ใช้ ProductRecommendation จาก service_fav_bask.dart แล้ว
+// ไม่ต้องประกาศซ้ำ
+
 class MeasureSizeCat extends StatefulWidget {
   const MeasureSizeCat({super.key});
 
@@ -191,6 +179,8 @@ class MeasureSizeCat extends StatefulWidget {
 
 class _MeasureSizeCatState extends State<MeasureSizeCat> {
   final ImagePicker _picker = ImagePicker();
+  final FavouriteApiService _favouriteApi = FavouriteApiService(); // ✅ เพิ่ม
+  final BasketApiService _basketApi = BasketApiService(); // ✅ เพิ่ม
 
   File? _selectedImage;
   bool _isProcessing = false;
@@ -199,18 +189,15 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
 
   CatData? _analysisCat;
 
-  List<ProductRecommendation> _recommendedProducts = [];
+  List<Map<String, dynamic>> _recommendedProducts = []; // ✅ เปลี่ยนเป็น Map
 
-  // 🎥 Camera Live Detection Variables
   CameraController? _cameraController;
   Timer? _detectTimer;
 
-  // Cloudinary Config
   static const String cloudinaryCloudName = 'dag73dhpl';
   static const String cloudinaryUploadPreset = 'cat_img_detect';
   static const String cloudinaryFolder = 'Fetch_Img_SizeCat';
 
-  // Python Backend URL - แก้ไขเป็น /api/vision/analyze-cat
   String get pythonBackendAnalysis => '${getBaseUrl()}/api/vision/analyze-cat';
 
   @override
@@ -252,250 +239,48 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     }
   }
 
+  // ✅ แก้ไขให้ใช้ Map แทน ProductRecommendation class
   void _loadRecommendedProducts() {
     setState(() {
       _recommendedProducts = [
-        ProductRecommendation(
-          id: '1',
-          name: 'Cat Clothing Set A',
-          price: '\$25',
-          imageUrl:
+        {
+          'id': '1',
+          'name': 'Cat Clothing Set A',
+          'price': '\$25',
+          'imageUrl':
               'https://via.placeholder.com/150/FF6347/FFFFFF?text=Product+1',
-          detailUrl: 'https://example.com/product1',
-        ),
-        ProductRecommendation(
-          id: '2',
-          name: 'Cute Cat Sweater',
-          price: '\$30',
-          imageUrl:
+        },
+        {
+          'id': '2',
+          'name': 'Cute Cat Sweater',
+          'price': '\$30',
+          'imageUrl':
               'https://via.placeholder.com/150/4682B4/FFFFFF?text=Product+2',
-          detailUrl: 'https://example.com/product2',
-        ),
-        ProductRecommendation(
-          id: '3',
-          name: 'Winter Cat Outfit',
-          price: '\$28',
-          imageUrl:
+        },
+        {
+          'id': '3',
+          'name': 'Winter Cat Outfit',
+          'price': '\$28',
+          'imageUrl':
               'https://via.placeholder.com/150/32CD32/FFFFFF?text=Product+3',
-          detailUrl: 'https://example.com/product3',
-        ),
-        ProductRecommendation(
-          id: '4',
-          name: 'Premium Cat Dress',
-          price: '\$35',
-          imageUrl:
+        },
+        {
+          'id': '4',
+          'name': 'Premium Cat Dress',
+          'price': '\$35',
+          'imageUrl':
               'https://via.placeholder.com/150/FFD700/FFFFFF?text=Product+4',
-          detailUrl: 'https://example.com/product4',
-        ),
+        },
       ];
     });
   }
 
-  // 🎥 Live Detection (mock ตอนนี้)
   void _startLiveDetect() {
     _detectTimer = Timer.periodic(
       Duration(milliseconds: 400),
       (_) async {
         if (!mounted || _cameraController == null) return;
         if (!_cameraController!.value.isInitialized) return;
-        // TODO: Replace with actual backend detection
-        // final catDetected = await detectCatFromLiveCamera();
-      },
-    );
-  }
-
-// เพิ่ม method แสดง Dialog
-  void _showProductDialog(
-      BuildContext context, ProductRecommendation product, bool isDark) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (BuildContext context) {
-        final languageProvider = Provider.of<LanguageProvider>(context);
-        return Dialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          child: Container(
-            width: MediaQuery.of(context).size.width * 0.9,
-            constraints: BoxConstraints(maxWidth: 400, minWidth: 320),
-            padding: EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: isDark ? Colors.grey[900] : Colors.white,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Header
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    SizedBox(width: 32),
-                    Text(
-                      languageProvider.translate(
-                          en: 'Added to Favorites', th: 'เพิ่มในรายการโปรด'),
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.black87,
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.close,
-                          color: isDark ? Colors.white70 : Colors.black54,
-                          size: 24),
-                      onPressed: () => Navigator.pop(context),
-                      padding: EdgeInsets.zero,
-                      constraints: BoxConstraints(),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 20),
-
-                // รูปภาพ
-                Container(
-                  height: 220,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    color: isDark ? Colors.grey[800] : Colors.grey[200],
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 10,
-                        offset: Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: Image.network(
-                          product.imageUrl,
-                          width: double.infinity,
-                          height: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Center(
-                              child: Icon(Icons.shopping_bag,
-                                  size: 60,
-                                  color: isDark
-                                      ? Colors.grey[600]
-                                      : Colors.grey[400]),
-                            );
-                          },
-                        ),
-                      ),
-                      Positioned(
-                        top: 12,
-                        right: 12,
-                        child: Container(
-                          padding: EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child:
-                              Icon(Icons.favorite, color: Colors.red, size: 26),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 20),
-
-                // ชื่อสินค้า
-                Text(
-                  product.name,
-                  style: TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black87,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: 10),
-
-                // ราคา
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    languageProvider.translate(
-                        en: 'Price: ${product.price}',
-                        th: 'ราคา: ${product.price}'),
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.orange,
-                    ),
-                  ),
-                ),
-                SizedBox(height: 24),
-
-                // ปุ่ม
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          _showInfoMessage('Coming Soon!');
-                        },
-                        style: ElevatedButton.styleFrom(
-                          padding: EdgeInsets.symmetric(vertical: 16),
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
-                          elevation: 2,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Text(
-                            languageProvider.translate(en: 'Buy', th: 'ซื้อ'),
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold)),
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      flex: 1,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          _showInfoMessage('Opening details...');
-                        },
-                        style: ElevatedButton.styleFrom(
-                          padding: EdgeInsets.symmetric(vertical: 16),
-                          backgroundColor:
-                              isDark ? Colors.grey[700] : Colors.grey[300],
-                          foregroundColor:
-                              isDark ? Colors.white : Colors.black87,
-                          elevation: 1,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Text(
-                            languageProvider.translate(
-                                en: 'More', th: 'เพิ่มเติม'),
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold)),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
       },
     );
   }
@@ -515,7 +300,6 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
             await _validateAndCompressGalleryImage(imageFile);
 
         if (processedImage != null) {
-          // 🔥 ปิดกล้องทันทีหลังเลือกรูป
           _detectTimer?.cancel();
           await _cameraController?.dispose();
           _cameraController = null;
@@ -543,7 +327,6 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
         return null;
       }
 
-      // Resize to 1024x1024
       final maxSize = 1024;
       if (image.width > maxSize || image.height > maxSize) {
         image = img.copyResize(
@@ -553,17 +336,14 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
         );
       }
 
-      // Compress to JPEG (quality 70)
       final compressedBytes = img.encodeJpg(image, quality: 70);
 
-      // Check Size (<500KB)
       if (compressedBytes.length > 500 * 1024) {
         _showError(
             'รูปใหญ่เกินไป (${(compressedBytes.length / 1024).toStringAsFixed(0)} KB)');
         return null;
       }
 
-      // Save to Temp
       final tempDir = await getTemporaryDirectory();
       final tempFile = File(
         '${tempDir.path}/cat_gallery_${DateTime.now().millisecondsSinceEpoch}.jpg',
@@ -633,16 +413,9 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
   }
 
   Future<void> _analyzeCat() async {
-    print('\n========================================');
-    print('🚀 START: _analyzeCat() called');
-    print('========================================\n');
-
     if (_selectedImage == null) {
-      print('❌ _selectedImage is null, returning...');
       return;
     }
-
-    print('✅ _selectedImage exists: ${_selectedImage!.path}');
 
     setState(() {
       _isProcessing = true;
@@ -650,63 +423,26 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
       _progressLabel = 'Uploading image...';
     });
 
-    print('📱 UI State: Processing = true, Progress = 0.1');
-
     try {
-      // ========================================
-      // STEP 1: Get Firebase Token
-      // ========================================
-      print('\n--- STEP 1: Getting Firebase Token ---');
       final token = await _getFirebaseToken();
 
       if (token == null || token.isEmpty) {
-        print('❌ Firebase token is null or empty');
         setState(() => _isProcessing = false);
         _showError('กรุณาเข้าสู่ระบบก่อนใช้งาน');
         return;
       }
 
-      print('✅ Firebase Token obtained');
-      print('🔑 Token (first 30 chars): ${token.substring(0, 30)}...');
-      print('🔑 Token length: ${token.length} characters');
-
-      // ========================================
-      // STEP 2: Upload to Cloudinary
-      // ========================================
-      print('\n--- STEP 2: Uploading to Cloudinary ---');
       final imageUrl = await _uploadToCloudinary(_selectedImage!);
 
       if (imageUrl == null) {
-        print('❌ Cloudinary upload failed (returned null)');
         throw Exception('Upload failed');
       }
-
-      print('✅ Cloudinary upload successful');
-      print('🖼️ Image URL: $imageUrl');
 
       setState(() {
         _progress = 0.4;
         _progressLabel = 'Detecting cat...';
       });
 
-      print('📱 UI State: Progress = 0.4');
-
-// ========================================
-// STEP 3: Call Backend API
-// ========================================
-      print('\n--- STEP 3: Calling Backend API ---');
-      print('📤 Backend URL: $pythonBackendAnalysis');
-      print('📤 Request Method: POST');
-      print('📤 Headers:');
-      print('   - Content-Type: application/json');
-      print('   - Accept: application/json');
-      print('   - Authorization: Bearer ${token.substring(0, 20)}...');
-      print('📤 Body: {"image_url": "$imageUrl"}');
-
-      final requestStartTime = DateTime.now();
-      print('⏱️ Request started at: $requestStartTime');
-
-// 🔥 เพิ่ม timeout 60 วินาที
       final response = await http
           .post(
         Uri.parse(pythonBackendAnalysis),
@@ -720,117 +456,45 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
           .timeout(
         Duration(seconds: 60),
         onTimeout: () {
-          throw TimeoutException('Backend ใช้เวลานานเกินไป (> 60 วินาที)\n\n'
-              'สาเหตุที่เป็นไปได้:\n'
-              '• Backend กำลังโหลด YOLO model\n'
-              '• รูปภาพใหญ่เกินไป\n'
-              '• Server ช้า\n\n'
-              'กรุณาลองใหม่อีกครั้ง');
+          throw TimeoutException('Backend ใช้เวลานานเกินไป (> 60 วินาที)');
         },
       );
 
-      // ========================================
-      // STEP 4: Process Response
-      // ========================================
-      print('\n--- STEP 4: Processing Response ---');
-      print('📥 HTTP Status Code: ${response.statusCode}');
-      print('📥 Response Headers: ${response.headers}');
-
-      // Decode response body
       final decodedBody = utf8.decode(response.bodyBytes);
-      final bodyPreview = decodedBody.length > 500
-          ? '${decodedBody.substring(0, 500)}...'
-          : decodedBody;
-
-      print('📦 Response Body (preview):');
-      print(bodyPreview);
-      print('📦 Response Body Length: ${decodedBody.length} characters');
-
-      // ========================================
-      // STEP 5: Check HTTP Status
-      // ========================================
-      print('\n--- STEP 5: Checking HTTP Status ---');
 
       if (response.statusCode == 401) {
-        print('❌ HTTP 401: Unauthorized');
         throw Exception('Session หมดอายุ กรุณาเข้าสู่ระบบใหม่');
       }
 
       if (response.statusCode == 500) {
-        print('❌ HTTP 500: Internal Server Error');
-        print('🔍 Trying to parse error message...');
-
         try {
           final errorData = jsonDecode(decodedBody);
-          print('✅ Successfully parsed error JSON:');
-          print(errorData);
-
           final errorMsg = errorData['message'] ??
               errorData['detail'] ??
               errorData['error'] ??
               'Internal Server Error';
-
-          print('❌ Backend Error Message: $errorMsg');
           throw Exception('Backend Error:\n$errorMsg');
         } catch (e) {
-          if (e.toString().contains('Backend Error:')) {
-            print('⚠️ Rethrowing Backend Error');
-            rethrow;
-          }
-
-          print('❌ Failed to parse error JSON');
-          print('📄 Raw response: $decodedBody');
-          throw Exception('Backend Error 500:\n\n${bodyPreview}');
+          if (e.toString().contains('Backend Error:')) rethrow;
+          throw Exception('Backend Error 500');
         }
       }
 
       if (response.statusCode != 200) {
-        print('❌ HTTP ${response.statusCode}: Non-200 status');
-        print('🔍 Trying to parse error message...');
-
         try {
           final errorData = jsonDecode(decodedBody);
-          print('✅ Successfully parsed error JSON:');
-          print(errorData);
-
           final errorMsg =
               errorData['message'] ?? errorData['detail'] ?? 'Unknown error';
-
-          print('❌ Error Message: $errorMsg');
           throw Exception('HTTP ${response.statusCode}:\n$errorMsg');
         } catch (e) {
-          if (e.toString().contains('HTTP ${response.statusCode}:')) {
-            print('⚠️ Rethrowing HTTP Error');
-            rethrow;
-          }
-
-          print('❌ Failed to parse error JSON');
-          throw Exception('HTTP Error ${response.statusCode}:\n${bodyPreview}');
+          if (e.toString().contains('HTTP ${response.statusCode}:')) rethrow;
+          throw Exception('HTTP Error ${response.statusCode}');
         }
       }
 
-      // ========================================
-      // STEP 6: Parse Success Response
-      // ========================================
-      print('\n--- STEP 6: Parsing Success Response ---');
-      print('✅ HTTP 200: Success');
-      print('🔍 Parsing JSON...');
-
       final jsonData = jsonDecode(decodedBody);
-      print('✅ JSON parsed successfully');
-      print('📊 Response Data:');
-      print(jsonData);
-
-      // ========================================
-      // STEP 7: Check if Cat Detected
-      // ========================================
-      print('\n--- STEP 7: Checking Cat Detection ---');
-      print('🐱 is_cat: ${jsonData['is_cat']}');
 
       if (jsonData['is_cat'] != true) {
-        print('❌ Not a cat!');
-        print('📝 Message: ${jsonData['message'] ?? 'ไม่พบแมวในภาพ'}');
-
         setState(() {
           _progress = 1.0;
           _isProcessing = false;
@@ -840,57 +504,19 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
         return;
       }
 
-      print('✅ Cat detected!');
+      final catData = CatData.fromJson(jsonData);
 
-      // ========================================
-      // STEP 8: Parse Cat Data
-      // ========================================
-      print('\n--- STEP 8: Parsing Cat Data ---');
-      print('🔍 Calling CatData.fromJson()...');
+      setState(() {
+        _progress = 1.0;
+        _isProcessing = false;
+        _analysisCat = catData;
+      });
 
-      try {
-        final catData = CatData.fromJson(jsonData);
-        print('✅ CatData parsed successfully:');
-        print('   - Name: ${catData.name}');
-        print('   - Breed: ${catData.breed}');
-        print('   - Age: ${catData.age}');
-        print('   - Size: ${catData.sizeCategory}');
-        print('   - Confidence: ${catData.confidence}');
-
-        setState(() {
-          _progress = 1.0;
-          _isProcessing = false;
-          _analysisCat = catData;
-        });
-
-        print('📱 UI State: Processing = false, _analysisCat set');
-        print('✅ Analysis complete!');
-
-        _showSuccessMessage('วิเคราะห์สำเร็จ 🐱');
-        _loadRecommendedProducts();
-
-        print('\n========================================');
-        print('🎉 SUCCESS: Analysis completed');
-        print('========================================\n');
-      } catch (e) {
-        print('❌ Failed to parse CatData');
-        print('❌ Error: $e');
-        print('📄 JSON Data: $jsonData');
-        throw Exception('Failed to parse cat data: $e');
-      }
-    } catch (e, stackTrace) {
-      print('\n========================================');
-      print('💥 ERROR OCCURRED');
-      print('========================================');
-      print('❌ Error Type: ${e.runtimeType}');
-      print('❌ Error Message: $e');
-      print('📍 Stack Trace:');
-      print(stackTrace);
-      print('========================================\n');
-
+      _showSuccessMessage('วิเคราะห์สำเร็จ 🐱');
+      _loadRecommendedProducts();
+    } catch (e) {
       setState(() => _isProcessing = false);
 
-      // Format error message for user
       String errorMessage = 'วิเคราะห์ไม่สำเร็จ';
 
       if (e.toString().contains('Backend Error')) {
@@ -898,18 +524,13 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
       } else if (e.toString().contains('HTTP')) {
         errorMessage = e.toString().replaceAll('Exception: ', '');
       } else if (e.toString().contains('SocketException')) {
-        errorMessage =
-            'ไม่สามารถเชื่อมต่อ Backend ได้\n\nตรวจสอบ:\n• Backend ทำงานอยู่หรือไม่\n• อินเทอร์เน็ตเชื่อมต่อหรือไม่';
+        errorMessage = 'ไม่สามารถเชื่อมต่อ Backend ได้';
       } else if (e.toString().contains('Upload failed')) {
-        errorMessage = 'อัปโหลดรูปภาพไม่สำเร็จ\n\nกรุณาลองอีกครั้ง';
-      } else if (e.toString().contains('Failed to parse')) {
-        errorMessage =
-            'Backend ตอบกลับในรูปแบบที่ไม่ถูกต้อง\n\nกรุณาติดต่อผู้ดูแลระบบ';
+        errorMessage = 'อัปโหลดรูปภาพไม่สำเร็จ';
       } else {
         errorMessage = e.toString().replaceAll('Exception: ', '');
       }
 
-      print('📱 Showing error to user: $errorMessage');
       _showError(errorMessage);
     }
   }
@@ -921,8 +542,6 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     });
 
     _showSuccessMessage('ลบข้อมูลแล้ว');
-
-    // 🔥 เปิดกล้องใหม่
     _initCamera();
   }
 
@@ -950,7 +569,6 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     );
   }
 
-  // 🎥 Build Circular Overlay สำหรับ Live Detection
   Widget _buildCircularOverlay() {
     return CustomPaint(
       painter: _CircleHolePainter(),
@@ -966,8 +584,8 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     return Stack(
       fit: StackFit.expand,
       children: [
-        CameraPreview(_cameraController!), // กล้อง
-        _buildCircularOverlay(), // วงกลมกลางจอ
+        CameraPreview(_cameraController!),
+        _buildCircularOverlay(),
       ],
     );
   }
@@ -1000,8 +618,6 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                     },
                   ),
                 ),
-
-                // 🔥 รูปแมวจริง
                 Container(
                   width: 145,
                   height: 145,
@@ -1072,33 +688,25 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
         children: [
           Column(
             children: [
-              // 🔑 Content Area
               Expanded(
                 child: SingleChildScrollView(
                   physics: (_selectedImage == null && _analysisCat == null)
-                      ? const NeverScrollableScrollPhysics() // 🔒 ล็อค
-                      : const BouncingScrollPhysics(), // 🔓 ปลด
-
+                      ? const NeverScrollableScrollPhysics()
+                      : const BouncingScrollPhysics(),
                   child: Column(
                     children: [
-                      // หน้ากล้อง (แสดงเฉพาะตอนไม่มีรูป)
                       if (_selectedImage == null && _analysisCat == null)
                         SizedBox(
                           height: 678,
                           child: _buildCameraPreview(),
                         ),
-
-                      // หน้าแสดงรูป + ปุ่มวิเคราะห์
                       if (_selectedImage != null && _analysisCat == null)
                         _buildImageWithAnalyzeSection(isDark),
-
-                      // หน้าผลลัพธ์
                       if (_analysisCat != null) _buildResultSection(isDark),
                     ],
                   ),
                 ),
               ),
-
               _buildBottomButtons(isDark),
             ],
           ),
@@ -1585,12 +1193,16 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     );
   }
 
+  // ✅ แก้ไข _buildProductCard ให้ใช้ Map และเพิ่ม Buy button
   Widget _buildProductCard(
-      ProductRecommendation product, int index, bool isDark) {
-    return Consumer<FavoriteProvider>(
-      builder: (context, favoriteProvider, child) {
-        final isFav = favoriteProvider.isFavorite(product.id);
-        final languageProvider = Provider.of<LanguageProvider>(context);
+      Map<String, dynamic> product, int index, bool isDark) {
+    final languageProvider = Provider.of<LanguageProvider>(context);
+    
+    return FutureBuilder<bool>(
+      future: _favouriteApi.checkFavourite(clothingUuid: product['id']),
+      builder: (context, snapshot) {
+        final isFav = snapshot.data ?? false;
+        
         return Container(
           width: 160,
           margin: EdgeInsets.only(right: 12),
@@ -1618,7 +1230,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                       borderRadius:
                           BorderRadius.vertical(top: Radius.circular(14)),
                       child: Image.network(
-                        product.imageUrl,
+                        product['imageUrl'],
                         width: double.infinity,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
@@ -1637,16 +1249,23 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                     top: 6,
                     right: 6,
                     child: GestureDetector(
-                      onTap: () {
-                        favoriteProvider.toggleFavorite(index, product);
-
-                        if (!isFav) {
-                          _showProductDialog(context, product, isDark);
-                        } else {
+                      onTap: () async {
+                        if (isFav) {
+                          await _favouriteApi.removeFromFavourite(
+                            clothingUuid: product['id'],
+                          );
                           _showSuccessMessage(languageProvider.translate(
-                              en: 'Removed from favorites',
-                              th: 'ลบออกจากรายการโปรด'));
+                              en: 'Removed from favourites',
+                              th: 'ลบออกจากรายการโปรดแล้ว'));
+                        } else {
+                          await _favouriteApi.addToFavourite(
+                            clothingUuid: product['id'],
+                          );
+                          _showSuccessMessage(languageProvider.translate(
+                              en: 'Added to favourites!',
+                              th: 'เพิ่มลงรายการโปรดแล้ว!'));
                         }
+                        setState(() {}); // Refresh UI
                       },
                       child: Container(
                         padding: EdgeInsets.all(6),
@@ -1670,7 +1289,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      product.name,
+                      product['name'],
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -1682,8 +1301,8 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                     SizedBox(height: 4),
                     Text(
                       languageProvider.translate(
-                          en: 'Price: ${product.price}',
-                          th: 'ราคา: ${product.price}'),
+                          en: 'Price: ${product['price']}',
+                          th: 'ราคา: ${product['price']}'),
                       style: TextStyle(
                         fontSize: 12,
                         color: isDark ? Colors.orange[300] : Colors.orange[700],
@@ -1695,9 +1314,27 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                       children: [
                         Expanded(
                           child: ElevatedButton(
-                            onPressed: () => _showInfoMessage(
-                                languageProvider.translate(
-                                    en: 'Coming Soon!', th: 'เร็วๆ นี้')),
+                            onPressed: () async {
+                              // ✅ เพิ่มลงตะกร้า
+                              try {
+                                await _basketApi.addToBasket(
+                                  clothingUuid: product['id'],
+                                );
+                                _showSuccessMessage(
+                                  languageProvider.translate(
+                                    en: 'Added to cart!',
+                                    th: 'เพิ่มลงตะกร้าแล้ว!',
+                                  ),
+                                );
+                              } catch (e) {
+                                _showError(
+                                  languageProvider.translate(
+                                    en: 'Failed to add to cart',
+                                    th: 'เพิ่มลงตะกร้าไม่สำเร็จ',
+                                  ),
+                                );
+                              }
+                            },
                             style: ElevatedButton.styleFrom(
                               padding: EdgeInsets.symmetric(vertical: 6),
                               backgroundColor: Colors.green,

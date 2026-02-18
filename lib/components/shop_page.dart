@@ -7,7 +7,8 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/api/service_fav_bask.dart';
+import 'package:flutter_application_1/api/service_fav_backet.dart';
+
 import 'package:flutter_application_1/provider/language_provider.dart';
 import 'package:flutter_application_1/screen/all_products.dart';
 
@@ -700,6 +701,14 @@ class _ShopItemDetailsCardState extends State<_ShopItemDetailsCard> {
     final discountPercentClean =
         (widget.itemDetails['discount_percent']?.toString() ?? '').replaceAll('%', '').trim();
 
+        // ✅ Safe parse images ทุกกรณี
+    final rawImages = widget.itemDetails['images'];
+    final Map<String, dynamic> imagesMap = rawImages is String
+        ? Map<String, dynamic>.from(jsonDecode(rawImages))
+        : rawImages is Map
+            ? Map<String, dynamic>.from(rawImages)
+            : {};
+
     return Center(
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
@@ -708,7 +717,7 @@ class _ShopItemDetailsCardState extends State<_ShopItemDetailsCard> {
           elevation: 10,
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.85,
+              maxHeight: MediaQuery.of(context).size.height * 0.75,
               maxWidth: 400,
             ),
             child: Column(
@@ -716,58 +725,88 @@ class _ShopItemDetailsCardState extends State<_ShopItemDetailsCard> {
               children: [
                 // รูปภาพ + ปุ่มหัวใจ
                 Stack(
-                  children: [
-                    ClipRRect(
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                      child: CachedNetworkImage(
-                        imageUrl: widget.itemDetails['image_url'] ?? '',
-                        width: double.infinity,
-                        height: 300,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => const SizedBox(
+                    children: [
+                      ClipRRect(
+                        borderRadius:
+                            const BorderRadius.vertical(top: Radius.circular(20)),
+                        child: SizedBox(
                           height: 300,
-                          child: Center(child: CircularProgressIndicator()),
-                        ),
-                        errorWidget: (context, url, error) => const SizedBox(
-                          height: 300,
-                          child: Center(child: Icon(Icons.error)),
-                        ),
-                      ),
-                    ),
-                    // ✅ ปุ่มหัวใจ — Firebase UID
-                    Positioned(
-                      top: 16,
-                      right: 16,
-                      child: GestureDetector(
-                        onTap: _isProcessing ? null : _toggleFavourite,
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: _isFavourite
-                                ? Colors.red.withOpacity(0.8)
-                                : Colors.black.withOpacity(0.5),
-                            shape: BoxShape.circle,
-                          ),
-                          child: _isProcessing
-                              ? const SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor:
-                                        AlwaysStoppedAnimation<Color>(Colors.white),
-                                  ),
-                                )
-                              : Icon(
-                                  _isFavourite ? Icons.favorite : Icons.favorite_border,
-                                  color: Colors.white,
-                                  size: 24,
+                          child: PageView(
+                            children: [
+                              // รูปหลัก
+                              CachedNetworkImage(
+                                imageUrl: widget.itemDetails['image_url'] ?? '',
+                                width: double.infinity,
+                                height: 300,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) => const SizedBox(
+                                  height: 300,
+                                  child: Center(child: CircularProgressIndicator()),
                                 ),
+                                errorWidget: (context, url, error) =>
+                                    const SizedBox(
+                                  height: 300,
+                                  child: Center(child: Icon(Icons.error)),
+                                ),
+                              ),
+                              // รูปเสื้อผ้า
+                              CachedNetworkImage(
+                                imageUrl: imagesMap['image_clothing'] ?? '',
+                                width: double.infinity,
+                                height: 300,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) => const SizedBox(
+                                  height: 300,
+                                  child: Center(child: CircularProgressIndicator()),
+                                ),
+                                errorWidget: (context, url, error) =>
+                                    const SizedBox(
+                                  height: 300,
+                                  child: Center(child: Icon(Icons.error)),
+                                ),
+                              ),
+                              
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
+
+                      // ✅ ปุ่มหัวใจ
+                      Positioned(
+                        top: 16,
+                        right: 16,
+                        child: GestureDetector(
+                          onTap: _isProcessing ? null : _toggleFavourite,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: _isFavourite
+                                  ? Colors.red.withOpacity(0.8)
+                                  : Colors.black.withOpacity(0.5),
+                              shape: BoxShape.circle,
+                            ),
+                            child: _isProcessing
+                                ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.white),
+                                    ),
+                                  )
+                                : Icon(
+                                    _isFavourite
+                                        ? Icons.favorite
+                                        : Icons.favorite_border,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
 
                 // Content ที่เลื่อนได้
                 Flexible(
