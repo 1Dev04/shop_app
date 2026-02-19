@@ -6,6 +6,7 @@ import 'package:flutter_application_1/provider/language_provider.dart';
 
 import 'dart:io';
 import 'dart:async';
+import 'dart:math';
 import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
@@ -37,10 +38,8 @@ String getBaseUrl() {
   return 'http://localhost:10000';
 }
 
-// ✅ เปลี่ยนจากวงกลมเป็นสี่เหลี่ยมมน พร้อม corner accent
 class _RectHolePainter extends CustomPainter {
   final Color borderColor;
-
   _RectHolePainter({this.borderColor = Colors.white});
 
   @override
@@ -55,19 +54,16 @@ class _RectHolePainter extends CustomPainter {
       const Radius.circular(20),
     );
 
-    // พื้นหลังมืด
     final fullPath = Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
     final holePath = Path()..addRRect(rrect);
     final cutPath = Path.combine(PathOperation.difference, fullPath, holePath);
     canvas.drawPath(cutPath, Paint()..color = Colors.black.withOpacity(0.55));
 
-    // กรอบบาง
     canvas.drawRRect(rrect, Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2
       ..color = borderColor.withOpacity(0.5));
 
-    // corner accent หนา
     final accentPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 5
@@ -77,22 +73,35 @@ class _RectHolePainter extends CustomPainter {
     const double cLen = 28.0;
     const double r = 20.0;
 
-    // top-left
     canvas.drawLine(Offset(left + r, top), Offset(left + r + cLen, top), accentPaint);
     canvas.drawLine(Offset(left, top + r), Offset(left, top + r + cLen), accentPaint);
-    // top-right
     canvas.drawLine(Offset(left + rectW - r, top), Offset(left + rectW - r - cLen, top), accentPaint);
     canvas.drawLine(Offset(left + rectW, top + r), Offset(left + rectW, top + r + cLen), accentPaint);
-    // bottom-left
     canvas.drawLine(Offset(left + r, top + rectH), Offset(left + r + cLen, top + rectH), accentPaint);
     canvas.drawLine(Offset(left, top + rectH - r), Offset(left, top + rectH - r - cLen), accentPaint);
-    // bottom-right
     canvas.drawLine(Offset(left + rectW - r, top + rectH), Offset(left + rectW - r - cLen, top + rectH), accentPaint);
     canvas.drawLine(Offset(left + rectW, top + rectH - r), Offset(left + rectW, top + rectH - r - cLen), accentPaint);
   }
 
   @override
   bool shouldRepaint(covariant _RectHolePainter old) => old.borderColor != borderColor;
+}
+
+// ─────────────────────────────────────────────
+//  🔬 PRO DETECTION RESULT
+// ─────────────────────────────────────────────
+class _DetectionResult {
+  final bool isCat;
+  final String reason;
+  final double catScore;
+  final bool isCartoon;
+
+  const _DetectionResult({
+    required this.isCat,
+    required this.reason,
+    required this.catScore,
+    required this.isCartoon,
+  });
 }
 
 class CatData {
@@ -176,15 +185,45 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
   static const String cloudinaryUploadPreset = 'cat_img_detect';
   static const String cloudinaryFolder = 'Fetch_Img_SizeCat';
 
+  // ─── Label sets ───────────────────────────────────────────
   static const List<String> _catLabels = [
     'cat', 'tabby', 'kitten', 'persian cat', 'siamese cat',
     'british shorthair', 'maine coon', 'bengal cat', 'ragdoll', 'feline',
   ];
-
   static const List<String> _dogLabels = [
     'dog', 'puppy', 'canine', 'hound', 'labrador', 'poodle',
     'bulldog', 'beagle', 'husky', 'golden retriever', 'german shepherd',
     'dachshund', 'chihuahua', 'pomeranian', 'corgi', 'shih tzu',
+  ];
+  // Labels ที่บ่งบอกว่าเป็น artwork / illustration / cartoon
+  static const List<String> _artLabels = [
+    'cartoon', 'illustration', 'anime', 'drawing', 'animation',
+    'art', 'artwork', 'fictional character', 'animated cartoon',
+    'graphic', 'comic', 'sketch', 'painting', 'digital art',
+    'manga', 'clipart', 'vector', 'poster', 'figure', 'figurine',
+    'toy', 'stuffed animal', 'plush', 'statue', 'sculpture',
+  ];
+  // Labels ที่ยืนยันว่าเป็นสิ่งมีชีวิตจริง (real photo context)
+  static const List<String> _realAnimalLabels = [
+    'fur', 'whisker', 'mammal', 'wildlife', 'fauna', 'paw',
+    'animal', 'pet', 'domestic animal',
+  ];
+
+  // 🚫 Labels สัตว์อื่นที่ไม่ใช่แมว — reject ทันที
+  static const List<String> _nonCatAnimalLabels = [
+    // สัตว์น้ำ/กึ่งน้ำ
+    'otter', 'sea otter', 'river otter', 'mink', 'ferret', 'weasel', 'marten',
+    'beaver', 'seal', 'sea lion', 'walrus', 'dolphin', 'whale', 'fish',
+    // สัตว์ป่า
+    'fox', 'wolf', 'bear', 'raccoon', 'squirrel', 'rabbit', 'hare', 'hamster',
+    'guinea pig', 'gerbil', 'rat', 'mouse', 'hedgehog', 'skunk', 'badger',
+    'mongoose', 'meerkat', 'panda', 'koala', 'kangaroo', 'monkey', 'ape',
+    'chimpanzee', 'gorilla', 'lemur', 'deer', 'elk', 'reindeer', 'moose',
+    // นก/สัตว์เลื้อยคลาน/อื่นๆ
+    'bird', 'parrot', 'owl', 'eagle', 'snake', 'lizard', 'turtle', 'frog',
+    'hamster', 'capybara', 'alpaca', 'llama', 'sheep', 'goat', 'cow', 'horse',
+    'pig', 'chicken', 'duck', 'tiger', 'lion', 'cheetah', 'leopard', 'jaguar',
+    'lynx', 'bobcat', 'cougar', 'panther',
   ];
 
   String get pythonBackendAnalysis => '${getBaseUrl()}/api/vision/analyze-cat';
@@ -211,44 +250,248 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
   }
 
   void _initMLKit() {
-    final options = ImageLabelerOptions(confidenceThreshold: 0.45);
+    // ลด threshold เล็กน้อยเพื่อรับ label ได้มากขึ้น แล้วกรองที่ logic แทน
+    final options = ImageLabelerOptions(confidenceThreshold: 0.35);
     _imageLabeler = ImageLabeler(options: options);
   }
 
-  Future<bool> _detectCatWithMLKit(String imagePath) async {
+  // ─────────────────────────────────────────────────────────
+  //  🔬 PRO DETECTION — ตรวจจับแมวจริง vs การ์ตูน/ของเล่น
+  // ─────────────────────────────────────────────────────────
+  Future<_DetectionResult> _detectCatPro(String imagePath) async {
     try {
+      // ── 1. ML Kit label analysis ─────────────────────────
       final inputImage = InputImage.fromFilePath(imagePath);
       final labels = await _imageLabeler.processImage(inputImage);
 
       double catScore = 0.0;
       double dogScore = 0.0;
+      double artScore = 0.0;
+      double realAnimalScore = 0.0;
+      double nonCatAnimalScore = 0.0; // 🚫 สัตว์อื่นที่ไม่ใช่แมว
+      String nonCatAnimalName = '';   // ชื่อสัตว์ที่ตรวจพบ
 
       for (final label in labels) {
-        final labelText = label.label.toLowerCase();
-        final confidence = label.confidence;
-        print('🔍 ML Kit: "$labelText" confidence=${confidence.toStringAsFixed(2)}');
-        for (final catLabel in _catLabels) {
-          if (labelText.contains(catLabel) && confidence > catScore) catScore = confidence;
+        final text = label.label.toLowerCase();
+        final conf = label.confidence;
+        print('🔍 ML Kit: "$text" conf=${conf.toStringAsFixed(2)}');
+
+        for (final l in _catLabels) {
+          if (text.contains(l) && conf > catScore) catScore = conf;
         }
-        for (final dogLabel in _dogLabels) {
-          if (labelText.contains(dogLabel) && confidence > dogScore) dogScore = confidence;
+        for (final l in _dogLabels) {
+          if (text.contains(l) && conf > dogScore) dogScore = conf;
+        }
+        for (final l in _artLabels) {
+          if (text.contains(l) && conf > artScore) artScore = conf;
+        }
+        for (final l in _realAnimalLabels) {
+          if (text.contains(l) && conf > realAnimalScore) realAnimalScore = conf;
+        }
+        // 🚫 ตรวจสัตว์อื่น
+        for (final l in _nonCatAnimalLabels) {
+          if (text.contains(l) && conf > nonCatAnimalScore) {
+            nonCatAnimalScore = conf;
+            nonCatAnimalName = label.label;
+          }
         }
       }
 
-      print('🐱 catScore=$catScore | 🐶 dogScore=$dogScore');
+      print('🐱 cat=$catScore | 🐶 dog=$dogScore | 🎨 art=$artScore | 🐾 real=$realAnimalScore | 🚫 nonCat=$nonCatAnimalScore ($nonCatAnimalName)');
 
-      final bool catPassThreshold = catScore >= 0.70;
-      final bool catWinsByMargin = (catScore - dogScore) >= 0.20;
-      final bool dogNotTooHigh = dogScore < 0.50;
+      // ── 2. Image texture analysis (cartoon detection) ─────
+      final isCartoonByTexture = await _isLikelyCartoon(imagePath);
+      print('🖼️ Cartoon texture: $isCartoonByTexture');
 
-      if (catPassThreshold && catWinsByMargin && dogNotTooHigh) {
-        print('✅ ผ่าน! เป็นแมว');
-        return true;
+      // ── 3. Decision logic — CAT ONLY STRICT MODE ──────────
+
+      // Rule A: ถ้า art score สูงมาก → การ์ตูน
+      if (artScore >= 0.60) {
+        return _DetectionResult(
+          isCat: false,
+          reason: 'art_label_high',
+          catScore: catScore,
+          isCartoon: true,
+        );
       }
-      print('❌ ไม่ผ่าน');
-      return false;
+
+      // Rule B: texture บ่งว่าเป็นการ์ตูน + catScore ไม่สูงพอ
+      if (isCartoonByTexture && catScore < 0.80) {
+        return _DetectionResult(
+          isCat: false,
+          reason: 'cartoon_texture',
+          catScore: catScore,
+          isCartoon: true,
+        );
+      }
+
+      // Rule C: catScore ต่ำเกิน → ไม่ใช่แมว
+      if (catScore < 0.70) {
+        return _DetectionResult(
+          isCat: false,
+          reason: 'cat_score_low',
+          catScore: catScore,
+          isCartoon: isCartoonByTexture,
+        );
+      }
+
+      // Rule D: dog score แข่งกัน
+      if (dogScore >= 0.50 && (catScore - dogScore) < 0.20) {
+        return _DetectionResult(
+          isCat: false,
+          reason: 'ambiguous_cat_dog',
+          catScore: catScore,
+          isCartoon: isCartoonByTexture,
+        );
+      }
+
+      // Rule E: art score พอมี + ไม่มี real animal signals
+      if (artScore >= 0.35 && realAnimalScore < 0.30 && catScore < 0.85) {
+        return _DetectionResult(
+          isCat: false,
+          reason: 'art_suspected_no_real_signal',
+          catScore: catScore,
+          isCartoon: true,
+        );
+      }
+
+      // ── 🚫 Rule F: STRICT CAT-ONLY ────────────────────────
+      // ถ้าตรวจพบสัตว์อื่นที่ confidence สูงพอ → reject ทันที
+      // ไม่ว่า catScore จะสูงแค่ไหนก็ตาม
+      if (nonCatAnimalScore >= 0.45) {
+        return _DetectionResult(
+          isCat: false,
+          reason: 'non_cat_animal:$nonCatAnimalName',
+          catScore: catScore,
+          isCartoon: false,
+        );
+      }
+
+      // ── 🚫 Rule G: catScore ต้องชนะทุกสัตว์อื่นอย่างชัดเจน
+      // ป้องกัน edge case เช่น นาก/สุนัขจิ้งจอก ที่ catScore พอผ่าน
+      // แต่ nonCatAnimalScore ก็ไม่น้อยมาก
+      if (nonCatAnimalScore > 0.30 && (catScore - nonCatAnimalScore) < 0.30) {
+        return _DetectionResult(
+          isCat: false,
+          reason: 'cat_not_dominant_over_other_animal:$nonCatAnimalName',
+          catScore: catScore,
+          isCartoon: false,
+        );
+      }
+
+      // ── ✅ Rule H: ผ่านทุก rule → เป็นแมวจริง
+      return _DetectionResult(
+        isCat: true,
+        reason: 'passed',
+        catScore: catScore,
+        isCartoon: false,
+      );
     } catch (e) {
-      print('❌ ML Kit error: $e');
+      print('❌ Pro detection error: $e');
+      return _DetectionResult(isCat: false, reason: 'error', catScore: 0, isCartoon: false);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────
+  //  🖼️ CARTOON TEXTURE DETECTOR
+  //  วิเคราะห์ว่าภาพมี "flat color zones" สูงหรือเปล่า
+  //  ภาพการ์ตูนมักมีสีแบน edge คม contrast สูงน้อยบริเวณกว้าง
+  // ─────────────────────────────────────────────────────────
+  Future<bool> _isLikelyCartoon(String imagePath) async {
+    try {
+      final bytes = await File(imagePath).readAsBytes();
+      img.Image? image = img.decodeImage(bytes);
+      if (image == null) return false;
+
+      // Resize ให้เล็กลงเพื่อความเร็ว
+      final small = img.copyResize(image, width: 100, height: 100);
+
+      // ── วิเคราะห์ unique color count (ภาพการ์ตูน = สีน้อย)
+      final Set<int> uniqueColors = {};
+      int totalPixels = small.width * small.height;
+
+      for (int y = 0; y < small.height; y++) {
+        for (int x = 0; x < small.width; x++) {
+          final pixel = small.getPixel(x, y);
+          // Quantize เพื่อ group สีใกล้เคียงกัน (32-step)
+          final r = (pixel.r ~/ 32) * 32;
+          final g = (pixel.g ~/ 32) * 32;
+          final b = (pixel.b ~/ 32) * 32;
+          uniqueColors.add((r << 16) | (g << 8) | b);
+        }
+      }
+
+      // ── วิเคราะห์ edge sharpness (Sobel-like)
+      // ภาพการ์ตูนมี edge คม + พื้นที่ภายใน flat
+      int sharpEdgeCount = 0;
+      int checkedPixels = 0;
+
+      for (int y = 1; y < small.height - 1; y++) {
+        for (int x = 1; x < small.width - 1; x++) {
+          final center = small.getPixel(x, y);
+          final right = small.getPixel(x + 1, y);
+          final down = small.getPixel(x, y + 1);
+
+          final dr = (center.r - right.r).abs();
+          final dg = (center.g - right.g).abs();
+          final db = (center.b - right.b).abs();
+          final dd = (center.r - down.r).abs() + (center.g - down.g).abs() + (center.b - down.b).abs();
+
+          final grad = (dr + dg + db + dd) / 2;
+          if (grad > 80) sharpEdgeCount++;
+          checkedPixels++;
+        }
+      }
+
+      final double colorDiversity = uniqueColors.length / totalPixels; // ต่ำ = การ์ตูน
+      final double edgeRatio = checkedPixels > 0 ? sharpEdgeCount / checkedPixels : 0;
+
+      print('🎨 ColorDiversity=${colorDiversity.toStringAsFixed(3)} EdgeRatio=${edgeRatio.toStringAsFixed(3)} UniqueColors=${uniqueColors.length}');
+
+      // ── วิเคราะห์ color saturation distribution
+      // ภาพการ์ตูนมักมี saturation สูงและสม่ำเสมอมากกว่าภาพจริง
+      double totalSat = 0;
+      List<double> satList = [];
+      for (int y = 0; y < small.height; y++) {
+        for (int x = 0; x < small.width; x++) {
+          final pixel = small.getPixel(x, y);
+          final r = pixel.r / 255.0;
+          final g = pixel.g / 255.0;
+          final b = pixel.b / 255.0;
+          final maxC = [r, g, b].reduce(max);
+          final minC = [r, g, b].reduce(min);
+          final sat = maxC > 0 ? (maxC - minC) / maxC : 0.0;
+          satList.add(sat);
+          totalSat += sat;
+        }
+      }
+      final avgSat = totalSat / satList.length;
+      // Variance of saturation
+      final satVariance = satList.fold(0.0, (sum, s) => sum + pow(s - avgSat, 2)) / satList.length;
+
+      print('🎨 AvgSat=${avgSat.toStringAsFixed(3)} SatVariance=${satVariance.toStringAsFixed(4)}');
+
+      // ── Decision
+      int cartoonSignals = 0;
+
+      // ภาพการ์ตูน: unique color หลังทำ quantize น้อย (< 15% ของ pixels)
+      if (colorDiversity < 0.15) cartoonSignals++;
+
+      // ภาพการ์ตูน: saturation variance ต่ำ (สีสม่ำเสมอ)
+      if (satVariance < 0.04) cartoonSignals++;
+
+      // ภาพการ์ตูน: edge ratio สูง (เส้นขอบคม) แต่ unique color ยังน้อย
+      if (edgeRatio > 0.12 && colorDiversity < 0.20) cartoonSignals++;
+
+      // ภาพการ์ตูน: avg saturation สูงมาก (สีฉูดฉาด)
+      if (avgSat > 0.55 && colorDiversity < 0.20) cartoonSignals++;
+
+      print('🎨 CartoonSignals=$cartoonSignals/4');
+
+      // ถ้า signal >= 2 จาก 4 ถือว่าเป็นการ์ตูน
+      return cartoonSignals >= 2;
+    } catch (e) {
+      print('❌ Cartoon detector error: $e');
       return false;
     }
   }
@@ -270,7 +513,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
   }
 
   void _startLiveDetect() {
-    _detectTimer = Timer.periodic(const Duration(milliseconds: 600), (_) async {
+    _detectTimer = Timer.periodic(const Duration(milliseconds: 700), (_) async {
       if (!mounted) return;
       if (_cameraController == null || !_cameraController!.value.isInitialized) return;
       if (_isDetecting || _isProcessing) return;
@@ -278,14 +521,15 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
       _isDetecting = true;
       try {
         final XFile photo = await _cameraController!.takePicture();
-        // ✅ crop ตาม rect ก่อน detect
         final croppedFile = await _cropToRectArea(photo.path);
         final checkPath = croppedFile?.path ?? photo.path;
-        final isCat = await _detectCatWithMLKit(checkPath);
+        final result = await _detectCatPro(checkPath);
         try { await File(photo.path).delete(); } catch (_) {}
         try { croppedFile?.delete(); } catch (_) {}
-        if (mounted) setState(() => _isCatDetected = isCat);
-      } catch (_) {} finally {
+        if (mounted) setState(() => _isCatDetected = result.isCat);
+      } catch (e) {
+        print('❌ Live detect error: $e');
+      } finally {
         _isDetecting = false;
       }
     });
@@ -302,7 +546,6 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     });
   }
 
-  // ✅ crop ตาม rect (กว้าง 75%, สูง 60%) ตรงกับ painter
   Future<File?> _cropToRectArea(String imagePath) async {
     try {
       final bytes = await File(imagePath).readAsBytes();
@@ -335,14 +578,15 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
 
         final croppedFile = await _cropToRectArea(image.path);
         final checkPath = croppedFile?.path ?? image.path;
-        final isCat = await _detectCatWithMLKit(checkPath);
+        final result = await _detectCatPro(checkPath);
         try { croppedFile?.delete(); } catch (_) {}
 
-        setState(() => _isCatDetected = isCat);
+        setState(() => _isCatDetected = result.isCat);
 
-        if (!isCat) {
+        if (!result.isCat) {
           setState(() => _isProcessing = false);
-          _showError('😿 ไม่พบแมวในภาพที่เลือก กรุณาเลือกรูปแมว');
+          final msg = _buildRejectionMessage(result);
+          _showError(msg);
           await Future.delayed(const Duration(seconds: 2));
           if (mounted) setState(() => _isCatDetected = null);
           return;
@@ -365,28 +609,41 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     }
   }
 
+  // ── ✅ FIX: Null-safe capture ────────────────────────────
   Future<void> _captureFromLiveCamera() async {
     try {
-      if (_cameraController == null || !_cameraController!.value.isInitialized) {
-        _showError('กล้องยังไม่พร้อม');
+      // Guard ป้องกัน null crash
+      final ctrl = _cameraController;
+      if (ctrl == null || !ctrl.value.isInitialized) {
+        _showError('กล้องยังไม่พร้อม กรุณารอสักครู่');
         return;
       }
+
       _detectTimer?.cancel();
       _detectTimer = null;
 
+      // รอ detecting ที่ค้างอยู่ให้เสร็จก่อน
       int wait = 0;
-      while (_isDetecting && wait < 10) {
+      while (_isDetecting && wait < 15) {
         await Future.delayed(const Duration(milliseconds: 100));
         wait++;
       }
       _isDetecting = false;
 
-      final XFile photo = await _cameraController!.takePicture();
-      final isCat = await _detectCatWithMLKit(photo.path);
-      setState(() => _isCatDetected = isCat);
+      // ตรวจซ้ำหลัง wait (อาจ dispose ไปแล้ว)
+      if (!mounted || ctrl != _cameraController || !ctrl.value.isInitialized) {
+        _showError('กล้องไม่พร้อม ลองใหม่อีกครั้ง');
+        return;
+      }
 
-      if (!isCat) {
-        _showError('😿 ไม่พบแมวในภาพ ลองถ่ายใหม่อีกครั้ง');
+      final XFile photo = await ctrl.takePicture();
+      final result = await _detectCatPro(photo.path);
+      setState(() => _isCatDetected = result.isCat);
+
+      if (!result.isCat) {
+        try { File(photo.path).delete(); } catch (_) {}
+        final msg = _buildRejectionMessage(result);
+        _showError(msg);
         await Future.delayed(const Duration(seconds: 2));
         if (mounted) { setState(() => _isCatDetected = null); _startLiveDetect(); }
         return;
@@ -395,16 +652,15 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
       await Future.delayed(const Duration(milliseconds: 400));
       final processedImage = await _validateAndCompressGalleryImage(File(photo.path));
       if (processedImage != null) {
-        await _cameraController?.dispose();
-        _cameraController = null;
-        setState(() { _selectedImage = processedImage; _analysisCat = null; });
+        await ctrl.dispose();
+        if (mounted) setState(() { _cameraController = null; _selectedImage = processedImage; _analysisCat = null; });
         _showSuccessMessage('พบแมว! ถ่ายรูปสำเร็จ 🐱');
       } else {
-        setState(() => _isCatDetected = null);
+        if (mounted) setState(() => _isCatDetected = null);
         _startLiveDetect();
       }
     } catch (e) {
-      setState(() => _isCatDetected = null);
+      if (mounted) setState(() => _isCatDetected = null);
       _showError('ถ่ายรูปไม่สำเร็จ: $e');
       _startLiveDetect();
     }
@@ -509,6 +765,22 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
   void _showInfoMessage(String message) => showTopSnackBar(Overlay.of(context), CustomSnackBar.info(message: message), displayDuration: const Duration(seconds: 2));
   void _showError(String message) => showTopSnackBar(Overlay.of(context), CustomSnackBar.error(message: message), displayDuration: const Duration(seconds: 3));
 
+  // ── แปลง rejection reason → ข้อความที่ผู้ใช้เข้าใจง่าย ──
+  String _buildRejectionMessage(_DetectionResult result) {
+    if (result.isCartoon) {
+      return '😿 ตรวจพบรูปการ์ตูน/ภาพวาด กรุณาใช้รูปแมวจริงเท่านั้น';
+    }
+    final reason = result.reason;
+    if (reason.startsWith('non_cat_animal:') || reason.startsWith('cat_not_dominant_over_other_animal:')) {
+      final animalName = reason.contains(':') ? reason.split(':').last : 'สัตว์อื่น';
+      return '🚫 ตรวจพบ "$animalName" ไม่ใช่แมว\nกรุณาใช้รูปแมวเท่านั้น';
+    }
+    if (reason == 'ambiguous_cat_dog') {
+      return '🐶 ตรวจพบสุนัข ไม่ใช่แมว กรุณาเลือกรูปแมวเท่านั้น';
+    }
+    return '😿 ไม่พบแมวในภาพ กรุณาเลือกรูปแมวเท่านั้น';
+  }
+
   Widget _buildCameraPreview() {
     if (_cameraController == null || !_cameraController!.value.isInitialized) {
       return const Center(child: CircularProgressIndicator());
@@ -517,7 +789,6 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
       fit: StackFit.expand,
       children: [
         CameraPreview(_cameraController!),
-        // ✅ ใช้ _RectHolePainter
         CustomPaint(painter: _RectHolePainter(borderColor: _borderColor), size: Size.infinite),
         Positioned(
           bottom: 20, left: 0, right: 0,
@@ -530,7 +801,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-                _isCatDetected == null ? '🔍 กำลังมองหาแมว...' : _isCatDetected! ? '🐱 พบแมวแล้ว! กดถ่ายรูปได้เลย' : '❌ ไม่พบแมว ปรับมุมกล้องใหม่',
+                _isCatDetected == null ? '🔍 กำลังมองหาแมว...' : _isCatDetected! ? '🐱 พบแมวแล้ว! กดถ่ายรูปได้เลย' : '❌ ไม่พบแมว / ตรวจพบการ์ตูน',
                 style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
               ),
             ),
