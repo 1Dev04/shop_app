@@ -468,6 +468,10 @@ class _FavItemDetailCardState extends State<_FavItemDetailCard> {
   bool _isFavourite = true;
   bool _isProcessing = false;
 
+  
+  final PageController _imagePageController = PageController();
+  int _currentImagePage = 0;
+
   double _parseDouble(dynamic value) {
     if (value == null) return 0.0;
     if (value is double) return value;
@@ -475,6 +479,14 @@ class _FavItemDetailCardState extends State<_FavItemDetailCard> {
     if (value is String) return double.tryParse(value) ?? 0.0;
     return 0.0;
   }
+
+
+   @override
+  void dispose() {
+    _imagePageController.dispose();
+    super.dispose();
+  }
+
 
   Future<void> _toggleFavourite() async {
     if (_isProcessing) return;
@@ -574,6 +586,7 @@ class _FavItemDetailCardState extends State<_FavItemDetailCard> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // ✅ รูป Slideshow + ปุ่มหัวใจ
+                 // ✅ รูป Slideshow + ปุ่มหัวใจ + จุด indicator
                   Stack(
                     children: [
                       ClipRRect(
@@ -582,40 +595,27 @@ class _FavItemDetailCardState extends State<_FavItemDetailCard> {
                         child: SizedBox(
                           height: 300,
                           child: PageView(
+                            controller: _imagePageController,
+                            onPageChanged: (index) {
+                              setState(() => _currentImagePage = index);
+                            },
                             children: [
                               // รูปหลัก
                               CachedNetworkImage(
-                                imageUrl: widget.itemDetails['image_url']
-                                        ?.toString() ??
-                                    '',
+                                imageUrl: widget.itemDetails['image_url'] ?? '',
                                 width: double.infinity,
                                 height: 300,
                                 fit: BoxFit.cover,
                                 placeholder: (context, url) => const SizedBox(
-                                    height: 300,
-                                    child: Center(
-                                        child: CircularProgressIndicator())),
+                                  height: 300,
+                                  child: Center(
+                                      child: CircularProgressIndicator()),
+                                ),
                                 errorWidget: (context, url, error) =>
                                     const SizedBox(
-                                        height: 300,
-                                        child: Center(
-                                            child: Icon(Icons.error))),
-                              ),
-                              // รูปแมว
-                              CachedNetworkImage(
-                                imageUrl: imagesMap['image_cat'] ?? '',
-                                width: double.infinity,
-                                height: 300,
-                                fit: BoxFit.cover,
-                                placeholder: (context, url) => const SizedBox(
-                                    height: 300,
-                                    child: Center(
-                                        child: CircularProgressIndicator())),
-                                errorWidget: (context, url, error) =>
-                                    const SizedBox(
-                                        height: 300,
-                                        child:
-                                            Center(child: Icon(Icons.error))),
+                                  height: 300,
+                                  child: Center(child: Icon(Icons.error)),
+                                ),
                               ),
                               // รูปเสื้อผ้า
                               CachedNetworkImage(
@@ -624,21 +624,47 @@ class _FavItemDetailCardState extends State<_FavItemDetailCard> {
                                 height: 300,
                                 fit: BoxFit.cover,
                                 placeholder: (context, url) => const SizedBox(
-                                    height: 300,
-                                    child: Center(
-                                        child: CircularProgressIndicator())),
+                                  height: 300,
+                                  child: Center(
+                                      child: CircularProgressIndicator()),
+                                ),
                                 errorWidget: (context, url, error) =>
                                     const SizedBox(
-                                        height: 300,
-                                        child:
-                                            Center(child: Icon(Icons.error))),
+                                  height: 300,
+                                  child: Center(child: Icon(Icons.error)),
+                                ),
                               ),
                             ],
                           ),
                         ),
                       ),
 
-                      // ปุ่มหัวใจ
+                      // ✅ จุด Page Indicator
+                      Positioned(
+                        bottom: 12,
+                        left: 0,
+                        right: 0,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: List.generate(2, (index) {
+                            return AnimatedContainer(
+                            
+                              duration: const Duration(milliseconds: 300),
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              width: _currentImagePage == index ? 20 : 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: _currentImagePage == index
+                                    ? Colors.deepOrange
+                                    : const Color.fromARGB(255, 0, 0, 0).withOpacity(0.5),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            );
+                          }),
+                        ),
+                      ),
+
+                      // ✅ ปุ่มหัวใจ
                       Positioned(
                         top: 16,
                         right: 16,

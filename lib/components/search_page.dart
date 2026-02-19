@@ -1162,6 +1162,9 @@ class _ItemDetailCardState extends State<_ItemDetailCard> {
   bool _isFavourite = false;
   bool _isProcessing = false;
 
+   final PageController _imagePageController = PageController();
+  int _currentImagePage = 0;
+
   // ✅ ดึง uuid จาก rawJson เหมือน itemDetails['uuid'] ของหน้าอื่น
   String get _uuid =>
       widget.item.rawJson['uuid']?.toString() ??
@@ -1175,6 +1178,14 @@ class _ItemDetailCardState extends State<_ItemDetailCard> {
     debugPrint('🔑 [ItemDetailCard] rawJson keys: ${widget.item.rawJson.keys.toList()}');
     _checkFavouriteStatus();
   }
+
+  
+  @override
+  void dispose() {
+    _imagePageController.dispose();
+    super.dispose();
+  }
+
 
   Future<void> _checkFavouriteStatus() async {
     if (_uuid.isEmpty) {
@@ -1280,61 +1291,120 @@ class _ItemDetailCardState extends State<_ItemDetailCard> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Stack(
-                  children: [
-                    ClipRRect(
-                      borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(20)),
-                      child: CachedNetworkImage(
-                        imageUrl: widget.item.imageUrl,
-                        width: double.infinity,
-                        height: 300,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => const SizedBox(
-                            height: 300,
-                            child:
-                                Center(child: CircularProgressIndicator())),
-                        errorWidget: (context, url, error) => const SizedBox(
-                            height: 300,
-                            child: Center(child: Icon(Icons.error))),
-                      ),
-                    ),
-                    // ✅ ปุ่มหัวใจ — pattern เดียวกับหน้าอื่น
-                    Positioned(
-                      top: 16,
-                      right: 16,
-                      child: GestureDetector(
-                        onTap: _isProcessing ? null : _toggleFavourite,
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: _isFavourite
-                                ? Colors.red.withOpacity(0.8)
-                                : Colors.black.withOpacity(0.5),
-                            shape: BoxShape.circle,
-                          ),
-                          child: _isProcessing
-                              ? const SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white),
-                                  ),
-                                )
-                              : Icon(
-                                  _isFavourite
-                                      ? Icons.favorite
-                                      : Icons.favorite_border,
-                                  color: Colors.white,
-                                  size: 24,
+               // ✅ รูป Slideshow + ปุ่มหัวใจ + จุด indicator
+                  Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(20)),
+                        child: SizedBox(
+                          height: 300,
+                          child: PageView(
+                            controller: _imagePageController,
+                            onPageChanged: (index) {
+                              setState(() => _currentImagePage = index);
+                            },
+                            children: [
+                              // รูปหลัก
+                              CachedNetworkImage(
+                                imageUrl: widget.item.imageUrl,
+                                width: double.infinity,
+                                height: 300,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) => const SizedBox(
+                                  height: 300,
+                                  child: Center(
+                                      child: CircularProgressIndicator()),
                                 ),
+                                errorWidget: (context, url, error) =>
+                                    const SizedBox(
+                                  height: 300,
+                                  child: Center(child: Icon(Icons.error)),
+                                ),
+                              ),
+                              // รูปเสื้อผ้า
+                              CachedNetworkImage(
+                                imageUrl: widget.item.images['image_clothing'] ?? '',
+                                width: double.infinity,
+                                height: 300,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) => const SizedBox(
+                                  height: 300,
+                                  child: Center(
+                                      child: CircularProgressIndicator()),
+                                ),
+                                errorWidget: (context, url, error) =>
+                                    const SizedBox(
+                                  height: 300,
+                                  child: Center(child: Icon(Icons.error)),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
+
+                      // ✅ จุด Page Indicator
+                      Positioned(
+                        bottom: 12,
+                        left: 0,
+                        right: 0,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: List.generate(2, (index) {
+                            return AnimatedContainer(
+                            
+                              duration: const Duration(milliseconds: 300),
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              width: _currentImagePage == index ? 20 : 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: _currentImagePage == index
+                                    ? Colors.deepOrange
+                                    : const Color.fromARGB(255, 0, 0, 0).withOpacity(0.5),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            );
+                          }),
+                        ),
+                      ),
+
+                      // ✅ ปุ่มหัวใจ
+                      Positioned(
+                        top: 16,
+                        right: 16,
+                        child: GestureDetector(
+                          onTap: _isProcessing ? null : _toggleFavourite,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: _isFavourite
+                                  ? Colors.red.withOpacity(0.8)
+                                  : Colors.black.withOpacity(0.5),
+                              shape: BoxShape.circle,
+                            ),
+                            child: _isProcessing
+                                ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.white),
+                                    ),
+                                  )
+                                : Icon(
+                                    _isFavourite
+                                        ? Icons.favorite
+                                        : Icons.favorite_border,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 Flexible(
                   child: SingleChildScrollView(
                     child: Padding(

@@ -60,7 +60,8 @@ class ApiConfig {
   static String get baseUrl => getBaseUrl();
   static const Duration apiTimeout = Duration(seconds: 10);
 
-  static Uri getMessagesUri() => Uri.parse('$baseUrl/api/notifications/messages');
+  static Uri getMessagesUri() =>
+      Uri.parse('$baseUrl/api/notifications/messages');
   static Uri getMessageDetailUri(String id) =>
       Uri.parse('$baseUrl/api/notifications/messages/$id');
   static Uri getNewsUri() => Uri.parse('$baseUrl/api/notifications/news');
@@ -181,9 +182,8 @@ class _NotificationPageState extends State<NotificationPage> {
         final decodedBody = utf8.decode(response.bodyBytes);
         final List<dynamic> data = json.decode(decodedBody);
         setState(() {
-          _news = data
-              .map((json) => NotificationItemNews.fromJson(json))
-              .toList();
+          _news =
+              data.map((json) => NotificationItemNews.fromJson(json)).toList();
           _isLoadingNews = false;
         });
       } else {
@@ -348,8 +348,7 @@ class _NotificationPageState extends State<NotificationPage> {
               currentType: _currentContentType,
               onTabChanged: _navigateToContentType,
             ),
-            Divider(
-                color: Theme.of(context).colorScheme.onSurface, height: 2),
+            Divider(color: Theme.of(context).colorScheme.onSurface, height: 2),
             SizedBox(
               height: 280,
               child: PageView(
@@ -390,8 +389,7 @@ class _NotificationPageState extends State<NotificationPage> {
 
   Widget _buildNewsTab() {
     final languageProvider = Provider.of<LanguageProvider>(context);
-    if (_isLoadingNews)
-      return const Center(child: CircularProgressIndicator());
+    if (_isLoadingNews) return const Center(child: CircularProgressIndicator());
     if (_newsError != null) {
       return _ErrorView(message: _newsError!, onRetry: _fetchNews);
     }
@@ -463,8 +461,7 @@ void _showDetailPopup(BuildContext context, dynamic item) {
       const begin = Offset(0.0, -1.0);
       const end = Offset.zero;
       const curve = Curves.easeInOut;
-      var tween =
-          Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+      var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
       return SlideTransition(
         position: animation.drive(tween),
         child: FadeTransition(
@@ -495,6 +492,9 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
   bool _isFavourite = false;
   bool _isProcessing = false;
 
+  final PageController _imagePageController = PageController();
+  int _currentImagePage = 0;
+
   // ✅ ดึง uuid จาก item
   String get _uuid => widget.item.uuid ?? '';
 
@@ -502,13 +502,18 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
   String get _imageUrl => widget.item.image_url ?? '';
 
   // ✅ Safe parse images จาก item.images (String หรือ Map)
-  Map<String, dynamic> get _imagesMap =>
-      _parseImagesMap(widget.item.images);
+  Map<String, dynamic> get _imagesMap => _parseImagesMap(widget.item.images);
 
   @override
   void initState() {
     super.initState();
     _checkFavouriteStatus();
+  }
+
+  @override
+  void dispose() {
+    _imagePageController.dispose();
+    super.dispose();
   }
 
   Future<void> _checkFavouriteStatus() async {
@@ -561,8 +566,7 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
       }
     } catch (e) {
       if (mounted) {
-        showTopSnackBar(
-            Overlay.of(context),
+        showTopSnackBar(Overlay.of(context),
             CustomSnackBar.error(message: 'เกิดข้อผิดพลาด: $e'));
       }
     } finally {
@@ -576,7 +580,7 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
     try {
       await BasketApiService().addToBasket(clothingUuid: _uuid);
       if (mounted) {
-         Navigator.of(context).pop();
+        Navigator.of(context).pop();
         showTopSnackBar(
           Overlay.of(context),
           CustomSnackBar.success(
@@ -589,8 +593,7 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
       }
     } catch (e) {
       if (mounted) {
-        showTopSnackBar(
-            Overlay.of(context),
+        showTopSnackBar(Overlay.of(context),
             CustomSnackBar.error(message: 'เกิดข้อผิดพลาด: $e'));
       }
     }
@@ -627,7 +630,7 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // ✅ รูป Slideshow + ปุ่มหัวใจ
+                  // ✅ รูป Slideshow + ปุ่มหัวใจ + จุด indicator
                   Stack(
                     children: [
                       ClipRRect(
@@ -636,6 +639,10 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
                         child: SizedBox(
                           height: 300,
                           child: PageView(
+                            controller: _imagePageController,
+                            onPageChanged: (index) {
+                              setState(() => _currentImagePage = index);
+                            },
                             children: [
                               // รูปหลัก
                               CachedNetworkImage(
@@ -654,7 +661,6 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
                                   child: Center(child: Icon(Icons.error)),
                                 ),
                               ),
-                          
                               // รูปเสื้อผ้า
                               CachedNetworkImage(
                                 imageUrl: _imagesMap['image_clothing'] ?? '',
@@ -677,7 +683,32 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
                         ),
                       ),
 
-                      // ปุ่มหัวใจ
+                      // ✅ จุด Page Indicator
+                      Positioned(
+                        bottom: 12,
+                        left: 0,
+                        right: 0,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: List.generate(2, (index) {
+                            return AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              width: _currentImagePage == index ? 20 : 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: _currentImagePage == index
+                                    ? Colors.deepOrange
+                                    : const Color.fromARGB(255, 0, 0, 0)
+                                        .withOpacity(0.5),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            );
+                          }),
+                        ),
+                      ),
+
+                      // ✅ ปุ่มหัวใจ
                       Positioned(
                         top: 16,
                         right: 16,
@@ -770,8 +801,7 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
                                   Text(
                                     widget.item.description ?? '',
                                     style: TextStyle(
-                                        fontSize: 16,
-                                        color: Colors.grey[700]),
+                                        fontSize: 16, color: Colors.grey[700]),
                                   ),
                                   const SizedBox(height: 16),
                                 ],
@@ -796,9 +826,8 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
                                   style: TextStyle(
                                     fontSize: 28,
                                     fontWeight: FontWeight.bold,
-                                    color: hasDiscount
-                                        ? Colors.red
-                                        : Colors.black,
+                                    color:
+                                        hasDiscount ? Colors.red : Colors.black,
                                   ),
                                 ),
                                 if (hasDiscount) const SizedBox(width: 10),
@@ -827,18 +856,16 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
                               width: double.infinity,
                               height: 60,
                               child: ElevatedButton.icon(
-                                onPressed: _addToBasket
-                                ,
+                                onPressed: _addToBasket,
                                 icon: const Icon(Icons.add_shopping_cart_sharp),
                                 label: Text(
                                   languageProvider.translate(
                                       en: 'Add to Cart', th: 'เพิ่มลงตะกร้า'),
                                   style: const TextStyle(fontSize: 16),
                                 ),
-                                
                                 style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                      vertical: 16),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
                                   backgroundColor: Colors.black,
                                 ),
                               ),
@@ -891,8 +918,7 @@ class _DetailRow extends StatelessWidget {
             child: Text(
               value,
               style: TextStyle(
-                  fontSize: 14,
-                  color: Theme.of(context).colorScheme.secondary),
+                  fontSize: 14, color: Theme.of(context).colorScheme.secondary),
             ),
           ),
         ],
@@ -1117,11 +1143,10 @@ class _ContentImage extends StatelessWidget {
         fit: BoxFit.cover,
         width: 180,
         height: 180,
-        placeholder: (context, url) =>
-            const CircularProgressIndicator.adaptive(
+        placeholder: (context, url) => const CircularProgressIndicator.adaptive(
           backgroundColor: Colors.white,
-          valueColor: AlwaysStoppedAnimation<Color>(
-              Color.fromARGB(75, 50, 50, 50)),
+          valueColor:
+              AlwaysStoppedAnimation<Color>(Color.fromARGB(75, 50, 50, 50)),
         ),
         errorWidget: (context, url, error) => Container(
           width: 180,
@@ -1263,8 +1288,7 @@ class _ActionButtonsState extends State<_ActionButtons> {
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(Colors.white),
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   ),
                 )
               : Icon(

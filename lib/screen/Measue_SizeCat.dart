@@ -37,35 +37,62 @@ String getBaseUrl() {
   return 'http://localhost:10000';
 }
 
-class _CircleHolePainter extends CustomPainter {
-  final Color circleColor;
+// ✅ เปลี่ยนจากวงกลมเป็นสี่เหลี่ยมมน พร้อม corner accent
+class _RectHolePainter extends CustomPainter {
+  final Color borderColor;
 
-  _CircleHolePainter({this.circleColor = Colors.white});
+  _RectHolePainter({this.borderColor = Colors.white});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.black.withOpacity(0.6);
-    final fullPath = Path()
-      ..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width * 0.35;
-    final holePath = Path()
-      ..addOval(Rect.fromCircle(center: center, radius: radius));
-    final finalPath = Path.combine(PathOperation.difference, fullPath, holePath);
-    canvas.drawPath(finalPath, paint);
-    canvas.drawCircle(
-      center,
-      radius,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 5
-        ..color = circleColor,
+    final double rectW = size.width * 0.75;
+    final double rectH = size.height * 0.60;
+    final double left = (size.width - rectW) / 2;
+    final double top = (size.height - rectH) / 2;
+
+    final rrect = RRect.fromLTRBR(
+      left, top, left + rectW, top + rectH,
+      const Radius.circular(20),
     );
+
+    // พื้นหลังมืด
+    final fullPath = Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
+    final holePath = Path()..addRRect(rrect);
+    final cutPath = Path.combine(PathOperation.difference, fullPath, holePath);
+    canvas.drawPath(cutPath, Paint()..color = Colors.black.withOpacity(0.55));
+
+    // กรอบบาง
+    canvas.drawRRect(rrect, Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..color = borderColor.withOpacity(0.5));
+
+    // corner accent หนา
+    final accentPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 5
+      ..color = borderColor
+      ..strokeCap = StrokeCap.round;
+
+    const double cLen = 28.0;
+    const double r = 20.0;
+
+    // top-left
+    canvas.drawLine(Offset(left + r, top), Offset(left + r + cLen, top), accentPaint);
+    canvas.drawLine(Offset(left, top + r), Offset(left, top + r + cLen), accentPaint);
+    // top-right
+    canvas.drawLine(Offset(left + rectW - r, top), Offset(left + rectW - r - cLen, top), accentPaint);
+    canvas.drawLine(Offset(left + rectW, top + r), Offset(left + rectW, top + r + cLen), accentPaint);
+    // bottom-left
+    canvas.drawLine(Offset(left + r, top + rectH), Offset(left + r + cLen, top + rectH), accentPaint);
+    canvas.drawLine(Offset(left, top + rectH - r), Offset(left, top + rectH - r - cLen), accentPaint);
+    // bottom-right
+    canvas.drawLine(Offset(left + rectW - r, top + rectH), Offset(left + rectW - r - cLen, top + rectH), accentPaint);
+    canvas.drawLine(Offset(left + rectW, top + rectH - r), Offset(left + rectW, top + rectH - r - cLen), accentPaint);
   }
 
   @override
-  bool shouldRepaint(covariant _CircleHolePainter old) =>
-      old.circleColor != circleColor;
+  bool shouldRepaint(covariant _RectHolePainter old) => old.borderColor != borderColor;
 }
 
 class CatData {
@@ -108,12 +135,9 @@ class CatData {
       sizeCategory: json['size_category'],
       chestCm: (json['chest_cm'] as num).toDouble(),
       neckCm: json['neck_cm'] != null ? (json['neck_cm'] as num).toDouble() : null,
-      bodyLengthCm: json['body_length_cm'] != null
-          ? (json['body_length_cm'] as num).toDouble()
-          : null,
+      bodyLengthCm: json['body_length_cm'] != null ? (json['body_length_cm'] as num).toDouble() : null,
       confidence: (json['confidence'] as num).toDouble(),
-      boundingBox: List<double>.from(
-          json['bounding_box'].map((e) => (e as num).toDouble())),
+      boundingBox: List<double>.from(json['bounding_box'].map((e) => (e as num).toDouble())),
       imageUrl: json['image_url'],
       thumbnailUrl: json['thumbnail_url'],
       detectedAt: DateTime.parse(json['detected_at']),
@@ -165,7 +189,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
 
   String get pythonBackendAnalysis => '${getBaseUrl()}/api/vision/analyze-cat';
 
-  Color get _circleColor {
+  Color get _borderColor {
     if (_isCatDetected == null) return Colors.white;
     return _isCatDetected! ? Colors.green : Colors.red;
   }
@@ -191,68 +215,49 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     _imageLabeler = ImageLabeler(options: options);
   }
 
-  // ✅ ใช้ score เปรียบเทียบ cat vs dog แทนการ reject ทันที
-Future<bool> _detectCatWithMLKit(String imagePath) async {
-  try {
-    final inputImage = InputImage.fromFilePath(imagePath);
-    final labels = await _imageLabeler.processImage(inputImage);
+  Future<bool> _detectCatWithMLKit(String imagePath) async {
+    try {
+      final inputImage = InputImage.fromFilePath(imagePath);
+      final labels = await _imageLabeler.processImage(inputImage);
 
-    double catScore = 0.0;
-    double dogScore = 0.0;
+      double catScore = 0.0;
+      double dogScore = 0.0;
 
-    for (final label in labels) {
-      final labelText = label.label.toLowerCase();
-      final confidence = label.confidence;
-
-      print('🔍 ML Kit: "$labelText" confidence=${confidence.toStringAsFixed(2)}');
-
-      for (final catLabel in _catLabels) {
-        if (labelText.contains(catLabel) && confidence > catScore) {
-          catScore = confidence;
+      for (final label in labels) {
+        final labelText = label.label.toLowerCase();
+        final confidence = label.confidence;
+        print('🔍 ML Kit: "$labelText" confidence=${confidence.toStringAsFixed(2)}');
+        for (final catLabel in _catLabels) {
+          if (labelText.contains(catLabel) && confidence > catScore) catScore = confidence;
+        }
+        for (final dogLabel in _dogLabels) {
+          if (labelText.contains(dogLabel) && confidence > dogScore) dogScore = confidence;
         }
       }
 
-      for (final dogLabel in _dogLabels) {
-        if (labelText.contains(dogLabel) && confidence > dogScore) {
-          dogScore = confidence;
-        }
+      print('🐱 catScore=$catScore | 🐶 dogScore=$dogScore');
+
+      final bool catPassThreshold = catScore >= 0.70;
+      final bool catWinsByMargin = (catScore - dogScore) >= 0.20;
+      final bool dogNotTooHigh = dogScore < 0.50;
+
+      if (catPassThreshold && catWinsByMargin && dogNotTooHigh) {
+        print('✅ ผ่าน! เป็นแมว');
+        return true;
       }
+      print('❌ ไม่ผ่าน');
+      return false;
+    } catch (e) {
+      print('❌ ML Kit error: $e');
+      return false;
     }
-
-    print('🐱 catScore=$catScore | 🐶 dogScore=$dogScore');
-
-    // ✅ เงื่อนไขเข้มขึ้น
-    // 1. cat ต้องผ่าน 0.70 (เพิ่มจาก 0.55)
-    // 2. cat ต้องชนะ dog อย่างน้อย 0.20 (margin)
-    // 3. dog ต้องไม่เกิน 0.50
-    final bool catPassThreshold = catScore >= 0.70;
-    final bool catWinsByMargin = (catScore - dogScore) >= 0.20;
-    final bool dogNotTooHigh = dogScore < 0.50;
-
-    if (catPassThreshold && catWinsByMargin && dogNotTooHigh) {
-      print('✅ ผ่าน! เป็นแมว cat=$catScore dog=$dogScore');
-      return true;
-    }
-
-    print('❌ ไม่ผ่าน cat=$catScore dog=$dogScore');
-    return false;
-  } catch (e) {
-    print('❌ ML Kit error: $e');
-    return false;
   }
-}
 
   void _initCamera() async {
     try {
       final cameras = await availableCameras();
-      final backCamera = cameras.firstWhere(
-        (c) => c.lensDirection == CameraLensDirection.back,
-      );
-      _cameraController = CameraController(
-        backCamera,
-        ResolutionPreset.medium,
-        enableAudio: false,
-      );
+      final backCamera = cameras.firstWhere((c) => c.lensDirection == CameraLensDirection.back);
+      _cameraController = CameraController(backCamera, ResolutionPreset.medium, enableAudio: false);
       await _cameraController!.initialize();
       if (mounted) {
         setState(() {});
@@ -267,19 +272,20 @@ Future<bool> _detectCatWithMLKit(String imagePath) async {
   void _startLiveDetect() {
     _detectTimer = Timer.periodic(const Duration(milliseconds: 600), (_) async {
       if (!mounted) return;
-      if (_cameraController == null) return;
-      if (!_cameraController!.value.isInitialized) return;
+      if (_cameraController == null || !_cameraController!.value.isInitialized) return;
       if (_isDetecting || _isProcessing) return;
 
       _isDetecting = true;
       try {
         final XFile photo = await _cameraController!.takePicture();
-        final isCat = await _detectCatWithMLKit(photo.path);
+        // ✅ crop ตาม rect ก่อน detect
+        final croppedFile = await _cropToRectArea(photo.path);
+        final checkPath = croppedFile?.path ?? photo.path;
+        final isCat = await _detectCatWithMLKit(checkPath);
         try { await File(photo.path).delete(); } catch (_) {}
+        try { croppedFile?.delete(); } catch (_) {}
         if (mounted) setState(() => _isCatDetected = isCat);
-      } catch (_) {
-        // กล้องยุ่งอยู่ ข้ามรอบนี้ไป
-      } finally {
+      } catch (_) {} finally {
         _isDetecting = false;
       }
     });
@@ -288,61 +294,31 @@ Future<bool> _detectCatWithMLKit(String imagePath) async {
   void _loadRecommendedProducts() {
     setState(() {
       _recommendedProducts = [
-        {
-          'id': '1',
-          'name': 'Cat Clothing Set A',
-          'price': '\$25',
-          'imageUrl': 'https://via.placeholder.com/150/FF6347/FFFFFF?text=Product+1',
-        },
-        {
-          'id': '2',
-          'name': 'Cute Cat Sweater',
-          'price': '\$30',
-          'imageUrl': 'https://via.placeholder.com/150/4682B4/FFFFFF?text=Product+2',
-        },
-        {
-          'id': '3',
-          'name': 'Winter Cat Outfit',
-          'price': '\$28',
-          'imageUrl': 'https://via.placeholder.com/150/32CD32/FFFFFF?text=Product+3',
-        },
-        {
-          'id': '4',
-          'name': 'Premium Cat Dress',
-          'price': '\$35',
-          'imageUrl': 'https://via.placeholder.com/150/FFD700/FFFFFF?text=Product+4',
-        },
+        {'id': '1', 'name': 'Cat Clothing Set A', 'price': '\$25', 'imageUrl': 'https://via.placeholder.com/150/FF6347/FFFFFF?text=Product+1'},
+        {'id': '2', 'name': 'Cute Cat Sweater', 'price': '\$30', 'imageUrl': 'https://via.placeholder.com/150/4682B4/FFFFFF?text=Product+2'},
+        {'id': '3', 'name': 'Winter Cat Outfit', 'price': '\$28', 'imageUrl': 'https://via.placeholder.com/150/32CD32/FFFFFF?text=Product+3'},
+        {'id': '4', 'name': 'Premium Cat Dress', 'price': '\$35', 'imageUrl': 'https://via.placeholder.com/150/FFD700/FFFFFF?text=Product+4'},
       ];
     });
   }
 
-  // ✅ crop เฉพาะส่วนกลางภาพ (ตรงกับวงกลม) ก่อนตรวจ
-  Future<File?> _cropToCircleArea(String imagePath) async {
+  // ✅ crop ตาม rect (กว้าง 75%, สูง 60%) ตรงกับ painter
+  Future<File?> _cropToRectArea(String imagePath) async {
     try {
       final bytes = await File(imagePath).readAsBytes();
       img.Image? image = img.decodeImage(bytes);
       if (image == null) return null;
 
-      final centerX = image.width / 2;
-      final centerY = image.height / 2;
-      final radius = (image.width * 0.35).toInt();
+      final double rectW = image.width * 0.75;
+      final double rectH = image.height * 0.60;
+      final int cropX = ((image.width - rectW) / 2).toInt().clamp(0, image.width);
+      final int cropY = ((image.height - rectH) / 2).toInt().clamp(0, image.height);
+      final int cropW = rectW.toInt().clamp(1, image.width - cropX);
+      final int cropH = rectH.toInt().clamp(1, image.height - cropY);
 
-      final cropX = (centerX - radius).toInt().clamp(0, image.width);
-      final cropY = (centerY - radius).toInt().clamp(0, image.height);
-      final cropSize = (radius * 2).clamp(0, image.width - cropX);
-
-      final cropped = img.copyCrop(
-        image,
-        x: cropX,
-        y: cropY,
-        width: cropSize,
-        height: cropSize,
-      );
-
+      final cropped = img.copyCrop(image, x: cropX, y: cropY, width: cropW, height: cropH);
       final tempDir = await getTemporaryDirectory();
-      final tempFile = File(
-        '${tempDir.path}/cat_crop_${DateTime.now().millisecondsSinceEpoch}.jpg',
-      );
+      final tempFile = File('${tempDir.path}/cat_crop_${DateTime.now().millisecondsSinceEpoch}.jpg');
       await tempFile.writeAsBytes(img.encodeJpg(cropped, quality: 80));
       return tempFile;
     } catch (e) {
@@ -353,22 +329,11 @@ Future<bool> _detectCatWithMLKit(String imagePath) async {
 
   Future<void> _pickImage() async {
     try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 70,
-        maxWidth: 1024,
-        maxHeight: 1024,
-      );
-
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 70, maxWidth: 1024, maxHeight: 1024);
       if (image != null) {
-        setState(() {
-          _isProcessing = true;
-          _progressLabel = 'กำลังตรวจสอบภาพ...';
-          _progress = 0.2;
-        });
+        setState(() { _isProcessing = true; _progressLabel = 'กำลังตรวจสอบภาพ...'; _progress = 0.2; });
 
-        // ✅ crop เฉพาะส่วนกลางก่อนตรวจ ไม่ตรวจทั้งภาพ
-        final croppedFile = await _cropToCircleArea(image.path);
+        final croppedFile = await _cropToRectArea(image.path);
         final checkPath = croppedFile?.path ?? image.path;
         final isCat = await _detectCatWithMLKit(checkPath);
         try { croppedFile?.delete(); } catch (_) {}
@@ -383,20 +348,12 @@ Future<bool> _detectCatWithMLKit(String imagePath) async {
           return;
         }
 
-        // ผ่านแล้ว → ใช้ภาพเต็มส่ง backend
         final processedImage = await _validateAndCompressGalleryImage(File(image.path));
-
         if (processedImage != null) {
           _detectTimer?.cancel();
           await _cameraController?.dispose();
           _cameraController = null;
-
-          setState(() {
-            _selectedImage = processedImage;
-            _analysisCat = null;
-            _isProcessing = false;
-          });
-
+          setState(() { _selectedImage = processedImage; _analysisCat = null; _isProcessing = false; });
           _showSuccessMessage('พบแมว! เลือกรูปภาพสำเร็จ 🐱');
         } else {
           setState(() => _isProcessing = false);
@@ -408,15 +365,12 @@ Future<bool> _detectCatWithMLKit(String imagePath) async {
     }
   }
 
-  // ✅ ถ่ายรูป + รอให้ detect รอบปัจจุบันเสร็จก่อน (แก้ CameraException)
   Future<void> _captureFromLiveCamera() async {
     try {
       if (_cameraController == null || !_cameraController!.value.isInitialized) {
         _showError('กล้องยังไม่พร้อม');
         return;
       }
-
-      // ✅ หยุด timer และรอให้ detect รอบปัจจุบันเสร็จก่อน
       _detectTimer?.cancel();
       _detectTimer = null;
 
@@ -429,32 +383,21 @@ Future<bool> _detectCatWithMLKit(String imagePath) async {
 
       final XFile photo = await _cameraController!.takePicture();
       final isCat = await _detectCatWithMLKit(photo.path);
-
       setState(() => _isCatDetected = isCat);
 
       if (!isCat) {
         _showError('😿 ไม่พบแมวในภาพ ลองถ่ายใหม่อีกครั้ง');
         await Future.delayed(const Duration(seconds: 2));
-        if (mounted) {
-          setState(() => _isCatDetected = null);
-          _startLiveDetect();
-        }
+        if (mounted) { setState(() => _isCatDetected = null); _startLiveDetect(); }
         return;
       }
 
       await Future.delayed(const Duration(milliseconds: 400));
-
       final processedImage = await _validateAndCompressGalleryImage(File(photo.path));
-
       if (processedImage != null) {
         await _cameraController?.dispose();
         _cameraController = null;
-
-        setState(() {
-          _selectedImage = processedImage;
-          _analysisCat = null;
-        });
-
+        setState(() { _selectedImage = processedImage; _analysisCat = null; });
         _showSuccessMessage('พบแมว! ถ่ายรูปสำเร็จ 🐱');
       } else {
         setState(() => _isCatDetected = null);
@@ -471,32 +414,24 @@ Future<bool> _detectCatWithMLKit(String imagePath) async {
     try {
       final bytes = await imageFile.readAsBytes();
       img.Image? image = img.decodeImage(bytes);
-
-      if (image == null) {
-        _showError('รูปภาพไม่ถูกต้อง');
-        return null;
-      }
+      if (image == null) { _showError('รูปภาพไม่ถูกต้อง'); return null; }
 
       const maxSize = 1024;
       if (image.width > maxSize || image.height > maxSize) {
-        image = img.copyResize(
-          image,
+        image = img.copyResize(image,
           width: image.width > image.height ? maxSize : null,
           height: image.height > image.width ? maxSize : null,
         );
       }
 
       final compressedBytes = img.encodeJpg(image, quality: 70);
-
       if (compressedBytes.length > 500 * 1024) {
         _showError('รูปใหญ่เกินไป (${(compressedBytes.length / 1024).toStringAsFixed(0)} KB)');
         return null;
       }
 
       final tempDir = await getTemporaryDirectory();
-      final tempFile = File(
-        '${tempDir.path}/cat_gallery_${DateTime.now().millisecondsSinceEpoch}.jpg',
-      );
+      final tempFile = File('${tempDir.path}/cat_gallery_${DateTime.now().millisecondsSinceEpoch}.jpg');
       await tempFile.writeAsBytes(compressedBytes);
       return tempFile;
     } catch (e) {
@@ -507,26 +442,14 @@ Future<bool> _detectCatWithMLKit(String imagePath) async {
 
   Future<String?> _uploadToCloudinary(File imageFile) async {
     try {
-      final url = Uri.parse(
-        'https://api.cloudinary.com/v1_1/$cloudinaryCloudName/image/upload',
-      );
+      final url = Uri.parse('https://api.cloudinary.com/v1_1/$cloudinaryCloudName/image/upload');
       final request = http.MultipartRequest('POST', url);
       request.fields['upload_preset'] = cloudinaryUploadPreset;
-      if (cloudinaryFolder.isNotEmpty) {
-        request.fields['folder'] = cloudinaryFolder;
-      }
-      final file = await http.MultipartFile.fromPath('file', imageFile.path);
-      request.files.add(file);
-
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode == 200) {
-        final jsonMap = jsonDecode(utf8.decode(response.bodyBytes));
-        return jsonMap['secure_url'];
-      } else {
-        throw Exception('Upload failed: ${response.statusCode}');
-      }
+      if (cloudinaryFolder.isNotEmpty) request.fields['folder'] = cloudinaryFolder;
+      request.files.add(await http.MultipartFile.fromPath('file', imageFile.path));
+      final response = await http.Response.fromStream(await request.send());
+      if (response.statusCode == 200) return jsonDecode(utf8.decode(response.bodyBytes))['secure_url'];
+      throw Exception('Upload failed: ${response.statusCode}');
     } catch (e) {
       print('❌ Cloudinary error: $e');
       return null;
@@ -535,160 +458,80 @@ Future<bool> _detectCatWithMLKit(String imagePath) async {
 
   Future<void> _analyzeCat() async {
     if (_selectedImage == null) return;
-
-    setState(() {
-      _isProcessing = true;
-      _progress = 0.1;
-      _progressLabel = 'Uploading image...';
-    });
+    setState(() { _isProcessing = true; _progress = 0.1; _progressLabel = 'Uploading image...'; });
 
     try {
       final token = await _getFirebaseToken();
-      if (token == null || token.isEmpty) {
-        setState(() => _isProcessing = false);
-        _showError('กรุณาเข้าสู่ระบบก่อนใช้งาน');
-        return;
-      }
+      if (token == null || token.isEmpty) { setState(() => _isProcessing = false); _showError('กรุณาเข้าสู่ระบบก่อนใช้งาน'); return; }
 
       final imageUrl = await _uploadToCloudinary(_selectedImage!);
       if (imageUrl == null) throw Exception('Upload failed');
 
-      setState(() {
-        _progress = 0.4;
-        _progressLabel = 'Detecting cat...';
-      });
+      setState(() { _progress = 0.4; _progressLabel = 'Detecting cat...'; });
 
       final response = await http.post(
         Uri.parse(pythonBackendAnalysis),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': 'Bearer $token'},
         body: jsonEncode({'image_url': imageUrl}),
-      ).timeout(
-        const Duration(seconds: 60),
-        onTimeout: () => throw TimeoutException('Backend ใช้เวลานานเกินไป'),
-      );
+      ).timeout(const Duration(seconds: 60), onTimeout: () => throw TimeoutException('Backend ใช้เวลานานเกินไป'));
 
       final decodedBody = utf8.decode(response.bodyBytes);
-
       if (response.statusCode == 401) throw Exception('Session หมดอายุ กรุณาเข้าสู่ระบบใหม่');
-
-      if (response.statusCode == 500) {
-        final errorData = jsonDecode(decodedBody);
-        throw Exception('Backend Error:\n${errorData['message'] ?? errorData['detail'] ?? 'Internal Server Error'}');
-      }
-
-      if (response.statusCode != 200) {
-        final errorData = jsonDecode(decodedBody);
-        throw Exception('HTTP ${response.statusCode}:\n${errorData['message'] ?? 'Unknown error'}');
-      }
+      if (response.statusCode == 500) { final err = jsonDecode(decodedBody); throw Exception('Backend Error:\n${err['message'] ?? err['detail'] ?? 'Internal Server Error'}'); }
+      if (response.statusCode != 200) { final err = jsonDecode(decodedBody); throw Exception('HTTP ${response.statusCode}:\n${err['message'] ?? 'Unknown error'}'); }
 
       final jsonData = jsonDecode(decodedBody);
-
       if (jsonData['is_cat'] != true) {
         setState(() { _progress = 1.0; _isProcessing = false; });
         _showError('😿 ${jsonData['message'] ?? 'ไม่พบแมวในภาพ'}');
         return;
       }
 
-      final catData = CatData.fromJson(jsonData);
-      setState(() {
-        _progress = 1.0;
-        _isProcessing = false;
-        _analysisCat = catData;
-      });
-
+      setState(() { _progress = 1.0; _isProcessing = false; _analysisCat = CatData.fromJson(jsonData); });
       _showSuccessMessage('วิเคราะห์สำเร็จ 🐱');
       _loadRecommendedProducts();
     } catch (e) {
       setState(() => _isProcessing = false);
-      String errorMessage = e.toString().replaceAll('Exception: ', '');
-      if (e.toString().contains('SocketException')) errorMessage = 'ไม่สามารถเชื่อมต่อ Backend ได้';
-      if (e.toString().contains('Upload failed')) errorMessage = 'อัปโหลดรูปภาพไม่สำเร็จ';
-      _showError(errorMessage);
+      String msg = e.toString().replaceAll('Exception: ', '');
+      if (e.toString().contains('SocketException')) msg = 'ไม่สามารถเชื่อมต่อ Backend ได้';
+      if (e.toString().contains('Upload failed')) msg = 'อัปโหลดรูปภาพไม่สำเร็จ';
+      _showError(msg);
     }
   }
 
   void _clearData() {
-    setState(() {
-      _selectedImage = null;
-      _analysisCat = null;
-      _isCatDetected = null;
-    });
+    setState(() { _selectedImage = null; _analysisCat = null; _isCatDetected = null; });
     _showSuccessMessage('ลบข้อมูลแล้ว');
     _initCamera();
   }
 
-  void _showSuccessMessage(String message) {
-    showTopSnackBar(
-      Overlay.of(context),
-      CustomSnackBar.success(message: message),
-      displayDuration: const Duration(seconds: 2),
-    );
-  }
-
-  void _showInfoMessage(String message) {
-    showTopSnackBar(
-      Overlay.of(context),
-      CustomSnackBar.info(message: message),
-      displayDuration: const Duration(seconds: 2),
-    );
-  }
-
-  void _showError(String message) {
-    showTopSnackBar(
-      Overlay.of(context),
-      CustomSnackBar.error(message: message),
-      displayDuration: const Duration(seconds: 3),
-    );
-  }
-
-  Widget _buildCircularOverlay() {
-    return CustomPaint(
-      painter: _CircleHolePainter(circleColor: _circleColor),
-      size: Size.infinite,
-    );
-  }
+  void _showSuccessMessage(String message) => showTopSnackBar(Overlay.of(context), CustomSnackBar.success(message: message), displayDuration: const Duration(seconds: 2));
+  void _showInfoMessage(String message) => showTopSnackBar(Overlay.of(context), CustomSnackBar.info(message: message), displayDuration: const Duration(seconds: 2));
+  void _showError(String message) => showTopSnackBar(Overlay.of(context), CustomSnackBar.error(message: message), displayDuration: const Duration(seconds: 3));
 
   Widget _buildCameraPreview() {
     if (_cameraController == null || !_cameraController!.value.isInitialized) {
       return const Center(child: CircularProgressIndicator());
     }
-
     return Stack(
       fit: StackFit.expand,
       children: [
         CameraPreview(_cameraController!),
-        _buildCircularOverlay(),
+        // ✅ ใช้ _RectHolePainter
+        CustomPaint(painter: _RectHolePainter(borderColor: _borderColor), size: Size.infinite),
         Positioned(
-          bottom: 20,
-          left: 0,
-          right: 0,
+          bottom: 20, left: 0, right: 0,
           child: Center(
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: BoxDecoration(
-                color: _isCatDetected == null
-                    ? Colors.black45
-                    : _isCatDetected!
-                        ? Colors.green.withOpacity(0.8)
-                        : Colors.red.withOpacity(0.8),
+                color: _isCatDetected == null ? Colors.black45 : _isCatDetected! ? Colors.green.withOpacity(0.8) : Colors.red.withOpacity(0.8),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-                _isCatDetected == null
-                    ? '🔍 กำลังมองหาแมว...'
-                    : _isCatDetected!
-                        ? '🐱 พบแมวแล้ว! กดถ่ายรูปได้เลย'
-                        : '❌ ไม่พบแมว ปรับมุมกล้องใหม่',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                ),
+                _isCatDetected == null ? '🔍 กำลังมองหาแมว...' : _isCatDetected! ? '🐱 พบแมวแล้ว! กดถ่ายรูปได้เลย' : '❌ ไม่พบแมว ปรับมุมกล้องใหม่',
+                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
               ),
             ),
           ),
@@ -707,48 +550,24 @@ Future<bool> _detectCatWithMLKit(String imagePath) async {
             Stack(
               alignment: Alignment.center,
               children: [
-                SizedBox(
-                  width: 190,
-                  height: 190,
+                SizedBox(width: 190, height: 190,
                   child: TweenAnimationBuilder<double>(
                     tween: Tween(begin: 0, end: _progress),
                     duration: const Duration(milliseconds: 400),
-                    builder: (context, value, _) {
-                      return CircularProgressIndicator(
-                        value: value,
-                        strokeWidth: 6,
-                        backgroundColor: Colors.grey.shade300,
-                        valueColor: const AlwaysStoppedAnimation(Colors.orange),
-                      );
-                    },
+                    builder: (context, value, _) => CircularProgressIndicator(value: value, strokeWidth: 6, backgroundColor: Colors.grey.shade300, valueColor: const AlwaysStoppedAnimation(Colors.orange)),
                   ),
                 ),
                 Container(
-                  width: 145,
-                  height: 145,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 4),
-                    boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10)],
-                  ),
-                  child: ClipOval(
-                    child: _selectedImage != null
-                        ? Image.file(_selectedImage!, fit: BoxFit.cover)
-                        : const Icon(Icons.pets, size: 60),
-                  ),
+                  width: 145, height: 145,
+                  decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 4), boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10)]),
+                  child: ClipOval(child: _selectedImage != null ? Image.file(_selectedImage!, fit: BoxFit.cover) : const Icon(Icons.pets, size: 60)),
                 ),
               ],
             ),
             const SizedBox(height: 20),
-            Text(
-              '${(_progress * 100).toInt()}%',
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
+            Text('${(_progress * 100).toInt()}%', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
             const SizedBox(height: 6),
-            Text(
-              _progressLabel,
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
-            ),
+            Text(_progressLabel, style: TextStyle(fontSize: 14, color: Colors.grey.shade700)),
           ],
         ),
       ),
@@ -764,15 +583,8 @@ Future<bool> _detectCatWithMLKit(String imagePath) async {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: Text(
-          languageProvider.translate(en: "MEOW SIZE", th: "วัดขนาดตัวแมว"),
-          style: TextStyle(
-            fontFamily: "catFont",
-            fontSize: 30,
-            fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : Colors.black,
-          ),
-        ),
+        title: Text(languageProvider.translate(en: "MEOW SIZE", th: "วัดขนาดตัวแมว"),
+            style: TextStyle(fontFamily: "catFont", fontSize: 30, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black)),
         backgroundColor: isDark ? Colors.black : Colors.white,
         iconTheme: IconThemeData(color: isDark ? Colors.white : Colors.black),
       ),
@@ -782,15 +594,11 @@ Future<bool> _detectCatWithMLKit(String imagePath) async {
             children: [
               Expanded(
                 child: SingleChildScrollView(
-                  physics: (_selectedImage == null && _analysisCat == null)
-                      ? const NeverScrollableScrollPhysics()
-                      : const BouncingScrollPhysics(),
+                  physics: (_selectedImage == null && _analysisCat == null) ? const NeverScrollableScrollPhysics() : const BouncingScrollPhysics(),
                   child: Column(
                     children: [
-                      if (_selectedImage == null && _analysisCat == null)
-                        SizedBox(height: 678, child: _buildCameraPreview()),
-                      if (_selectedImage != null && _analysisCat == null)
-                        _buildImageWithAnalyzeSection(isDark),
+                      if (_selectedImage == null && _analysisCat == null) SizedBox(height: 678, child: _buildCameraPreview()),
+                      if (_selectedImage != null && _analysisCat == null) _buildImageWithAnalyzeSection(isDark),
                       if (_analysisCat != null) _buildResultSection(isDark),
                     ],
                   ),
@@ -813,36 +621,19 @@ Future<bool> _detectCatWithMLKit(String imagePath) async {
         children: [
           Container(
             height: 300,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4))],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Image.file(_selectedImage!, fit: BoxFit.cover, width: double.infinity),
-            ),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4))]),
+            child: ClipRRect(borderRadius: BorderRadius.circular(16), child: Image.file(_selectedImage!, fit: BoxFit.cover, width: double.infinity)),
           ),
           const SizedBox(height: 20),
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDark ? Colors.grey[850] : Colors.grey[50],
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: isDark ? Colors.grey[700]! : Colors.grey[300]!, width: 2),
-            ),
+            decoration: BoxDecoration(color: isDark ? Colors.grey[850] : Colors.grey[50], borderRadius: BorderRadius.circular(16), border: Border.all(color: isDark ? Colors.grey[700]! : Colors.grey[300]!, width: 2)),
             child: Row(
               children: [
                 Container(
-                  width: 100,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: isDark ? Colors.grey[600]! : Colors.grey[400]!, width: 2),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.file(_selectedImage!, fit: BoxFit.cover),
-                  ),
+                  width: 100, height: 120,
+                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: isDark ? Colors.grey[600]! : Colors.grey[400]!, width: 2)),
+                  child: ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.file(_selectedImage!, fit: BoxFit.cover)),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -865,23 +656,12 @@ Future<bool> _detectCatWithMLKit(String imagePath) async {
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: isDark ? Colors.grey[800] : Colors.grey[200],
-              borderRadius: BorderRadius.circular(12),
-            ),
+            decoration: BoxDecoration(color: isDark ? Colors.grey[800] : Colors.grey[200], borderRadius: BorderRadius.circular(12)),
             child: Row(
               children: [
                 Icon(Icons.info_outline, color: isDark ? Colors.orange[300] : Colors.orange[700], size: 20),
                 const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    languageProvider.translate(
-                      en: 'Please ensure that the cats shape is clearly visible for accurate measurement.',
-                      th: 'โปรดมั่นใจว่ามองเห็นรูปร่างของแมวชัดเจน เพื่อความแม่นยำในการวัดขนาด',
-                    ),
-                    style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : Colors.black87),
-                  ),
-                ),
+                Expanded(child: Text(languageProvider.translate(en: 'Please ensure that the cat is clearly visible for accurate measurement.', th: 'โปรดมั่นใจว่ามองเห็นรูปร่างของแมวชัดเจน เพื่อความแม่นยำในการวัดขนาด'), style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : Colors.black87))),
               ],
             ),
           ),
@@ -891,36 +671,15 @@ Future<bool> _detectCatWithMLKit(String imagePath) async {
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: _isProcessing ? null : _analyzeCat,
-                  icon: _isProcessing
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
-                      : const Icon(Icons.analytics),
-                  label: Text(
-                    _isProcessing
-                        ? languageProvider.translate(en: 'Processing...', th: 'กำลังวิเคราะห์...')
-                        : languageProvider.translate(en: 'Analyze Data', th: 'วิเคราะห์ข้อมูล'),
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    backgroundColor: Colors.orange,
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: Colors.grey[400],
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
+                  icon: _isProcessing ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white))) : const Icon(Icons.analytics),
+                  label: Text(_isProcessing ? languageProvider.translate(en: 'Processing...', th: 'กำลังวิเคราะห์...') : languageProvider.translate(en: 'Analyze Data', th: 'วิเคราะห์ข้อมูล'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14), backgroundColor: Colors.orange, foregroundColor: Colors.white, disabledBackgroundColor: Colors.grey[400], shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                 ),
               ),
               const SizedBox(width: 12),
               ElevatedButton(
                 onPressed: _isProcessing ? null : _clearData,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
+                style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20), backgroundColor: Colors.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                 child: const Icon(Icons.close, size: 24),
               ),
             ],
@@ -939,36 +698,18 @@ Future<bool> _detectCatWithMLKit(String imagePath) async {
         children: [
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDark ? Colors.grey[850] : Colors.grey[50],
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: isDark ? Colors.grey[700]! : Colors.grey[300]!, width: 2),
-            ),
+            decoration: BoxDecoration(color: isDark ? Colors.grey[850] : Colors.grey[50], borderRadius: BorderRadius.circular(16), border: Border.all(color: isDark ? Colors.grey[700]! : Colors.grey[300]!, width: 2)),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 100,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: isDark ? Colors.grey[600]! : Colors.grey[400]!, width: 2),
-                  ),
+                  width: 100, height: 120,
+                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: isDark ? Colors.grey[600]! : Colors.grey[400]!, width: 2)),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(10),
                     child: _analysisCat?.imageUrl != null
-                        ? Image.network(
-                            _analysisCat!.imageUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Container(
-                              color: isDark ? Colors.grey[800] : Colors.grey[200],
-                              child: Icon(Icons.broken_image, size: 40, color: isDark ? Colors.grey[600] : Colors.grey[400]),
-                            ),
-                          )
-                        : Container(
-                            color: isDark ? Colors.grey[800] : Colors.grey[200],
-                            child: Icon(Icons.pets, size: 40, color: isDark ? Colors.grey[600] : Colors.grey[400]),
-                          ),
+                        ? Image.network(_analysisCat!.imageUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(color: isDark ? Colors.grey[800] : Colors.grey[200], child: Icon(Icons.broken_image, size: 40, color: isDark ? Colors.grey[600] : Colors.grey[400])))
+                        : Container(color: isDark ? Colors.grey[800] : Colors.grey[200], child: Icon(Icons.pets, size: 40, color: isDark ? Colors.grey[600] : Colors.grey[400])),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -978,11 +719,7 @@ Future<bool> _detectCatWithMLKit(String imagePath) async {
                     children: [
                       _buildInfoRow(languageProvider.translate(en: 'Cat Color:', th: 'สีแมว:'), _analysisCat?.name ?? 'N/A', isDark),
                       const SizedBox(height: 10),
-                      _buildInfoRow(
-                        languageProvider.translate(en: 'Age:', th: 'อายุ:'),
-                        _analysisCat?.age != null ? '${_analysisCat!.age} years' : 'N/A',
-                        isDark,
-                      ),
+                      _buildInfoRow(languageProvider.translate(en: 'Age:', th: 'อายุ:'), _analysisCat?.age != null ? '${_analysisCat!.age} years' : 'N/A', isDark),
                       const SizedBox(height: 10),
                       _buildInfoRow(languageProvider.translate(en: 'Breed:', th: 'พันธุ์:'), _analysisCat?.breed ?? 'N/A', isDark),
                       const SizedBox(height: 10),
@@ -996,49 +733,28 @@ Future<bool> _detectCatWithMLKit(String imagePath) async {
                     IconButton(
                       onPressed: () {
                         showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                          ),
+                          context: context, isScrollControlled: true,
+                          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
                           builder: (context) => Container(
-                            height: MediaQuery.of(context).size.height * 0.5,
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Center(
-                                  child: Container(
-                                    width: 40, height: 4,
-                                    margin: const EdgeInsets.only(bottom: 12),
-                                    decoration: BoxDecoration(color: Colors.grey.shade400, borderRadius: BorderRadius.circular(10)),
-                                  ),
-                                ),
-                                Text(languageProvider.translate(en: 'Edit Data', th: 'แก้ไขข้อมูล'),
-                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                                const SizedBox(height: 16),
-                                TextField(decoration: InputDecoration(labelText: languageProvider.translate(en: 'Cat Color', th: 'สีแมว'), border: const OutlineInputBorder())),
-                                const SizedBox(height: 8),
-                                TextField(decoration: InputDecoration(labelText: languageProvider.translate(en: 'Age', th: 'อายุ'), border: const OutlineInputBorder())),
-                                const SizedBox(height: 8),
-                                TextField(decoration: InputDecoration(labelText: languageProvider.translate(en: 'Breed', th: 'พันธุ์'), border: const OutlineInputBorder())),
-                                const SizedBox(height: 8),
-                                TextField(decoration: InputDecoration(labelText: languageProvider.translate(en: 'Size', th: 'ขนาด'), border: const OutlineInputBorder())),
-                                const Spacer(),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton(
-                                    onPressed: () => Navigator.pop(context),
-                                    child: Text(languageProvider.translate(en: 'Save', th: 'บันทึก')),
-                                  ),
-                                ),
-                              ],
-                            ),
+                            height: MediaQuery.of(context).size.height * 0.5, padding: const EdgeInsets.all(16),
+                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Center(child: Container(width: 40, height: 4, margin: const EdgeInsets.only(bottom: 12), decoration: BoxDecoration(color: Colors.grey.shade400, borderRadius: BorderRadius.circular(10)))),
+                              Text(languageProvider.translate(en: 'Edit Data', th: 'แก้ไขข้อมูล'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 16),
+                              TextField(decoration: InputDecoration(labelText: languageProvider.translate(en: 'Cat Color', th: 'สีแมว'), border: const OutlineInputBorder())),
+                              const SizedBox(height: 8),
+                              TextField(decoration: InputDecoration(labelText: languageProvider.translate(en: 'Age', th: 'อายุ'), border: const OutlineInputBorder())),
+                              const SizedBox(height: 8),
+                              TextField(decoration: InputDecoration(labelText: languageProvider.translate(en: 'Breed', th: 'พันธุ์'), border: const OutlineInputBorder())),
+                              const SizedBox(height: 8),
+                              TextField(decoration: InputDecoration(labelText: languageProvider.translate(en: 'Size', th: 'ขนาด'), border: const OutlineInputBorder())),
+                              const Spacer(),
+                              SizedBox(width: double.infinity, child: ElevatedButton(onPressed: () => Navigator.pop(context), child: Text(languageProvider.translate(en: 'Save', th: 'บันทึก')))),
+                            ]),
                           ),
                         );
                       },
                       icon: Icon(Icons.mode_edit_outline_outlined, color: Colors.blue.shade700, size: 28),
-                      tooltip: languageProvider.translate(en: 'Edit Data', th: 'แก้ไขข้อมูล'),
                     ),
                     IconButton(
                       onPressed: () {
@@ -1048,22 +764,9 @@ Future<bool> _detectCatWithMLKit(String imagePath) async {
                             title: Text(languageProvider.translate(en: 'Confirm Deletion', th: 'ยืนยันการลบ')),
                             content: Text(languageProvider.translate(en: 'Do you want to delete this cat data?', th: 'คุณต้องการลบข้อมูลแมวนี้ใช่หรือไม่?')),
                             actions: [
+                              TextButton(onPressed: () => Navigator.pop(context), child: Text(languageProvider.translate(en: 'Cancel', th: 'ยกเลิก'))),
                               TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: Text(languageProvider.translate(en: 'Cancel', th: 'ยกเลิก')),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  setState(() {
-                                    _analysisCat = null;
-                                    _recommendedProducts = [];
-                                    _selectedImage = null;
-                                    _isCatDetected = null;
-                                  });
-                                  _initCamera();
-                                  _showSuccessMessage(languageProvider.translate(en: 'Deleted data successfully', th: 'ลบข้อมูลแล้ว'));
-                                },
+                                onPressed: () { Navigator.pop(context); setState(() { _analysisCat = null; _recommendedProducts = []; _selectedImage = null; _isCatDetected = null; }); _initCamera(); _showSuccessMessage(languageProvider.translate(en: 'Deleted data successfully', th: 'ลบข้อมูลแล้ว')); },
                                 style: TextButton.styleFrom(foregroundColor: Colors.red),
                                 child: Text(languageProvider.translate(en: 'Delete', th: 'ลบ')),
                               ),
@@ -1072,7 +775,6 @@ Future<bool> _detectCatWithMLKit(String imagePath) async {
                         );
                       },
                       icon: Icon(Icons.delete_outline, color: Colors.red.shade600, size: 28),
-                      tooltip: languageProvider.translate(en: 'Delete Data', th: 'ลบข้อมูล'),
                     ),
                   ],
                 ),
@@ -1080,26 +782,14 @@ Future<bool> _detectCatWithMLKit(String imagePath) async {
             ),
           ),
           const SizedBox(height: 20),
-          Text(
-            languageProvider.translate(en: 'Recommended Products', th: 'สินค้าแนะนำ'),
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
-          ),
+          Text(languageProvider.translate(en: 'Recommended Products', th: 'สินค้าแนะนำ'), style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
           const SizedBox(height: 12),
-          Container(
+          SizedBox(
             height: 450,
-            padding: const EdgeInsets.symmetric(horizontal: 1),
             child: GridView.builder(
-              shrinkWrap: true,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 5,
-                mainAxisSpacing: 12,
-                childAspectRatio: 0.86,
-              ),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 5, mainAxisSpacing: 12, childAspectRatio: 0.86),
               itemCount: _recommendedProducts.length,
-              itemBuilder: (context, index) {
-                return _buildProductCard(_recommendedProducts[index], index, isDark);
-              },
+              itemBuilder: (context, index) => _buildProductCard(_recommendedProducts[index], index, isDark),
             ),
           ),
         ],
@@ -1108,134 +798,60 @@ Future<bool> _detectCatWithMLKit(String imagePath) async {
   }
 
   Widget _buildInfoRow(String label, String value, bool isDark) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white70 : Colors.black87)),
-        const SizedBox(width: 8),
-        Expanded(child: Text(value, style: TextStyle(fontSize: 16, color: isDark ? Colors.white60 : Colors.black54))),
-      ],
-    );
+    return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(label, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white70 : Colors.black87)),
+      const SizedBox(width: 8),
+      Expanded(child: Text(value, style: TextStyle(fontSize: 16, color: isDark ? Colors.white60 : Colors.black54))),
+    ]);
   }
 
   Widget _buildProductCard(Map<String, dynamic> product, int index, bool isDark) {
     final languageProvider = Provider.of<LanguageProvider>(context);
-
     return FutureBuilder<bool>(
       future: _favouriteApi.checkFavourite(clothingUuid: product['id']),
       builder: (context, snapshot) {
         final isFav = snapshot.data ?? false;
-
         return Container(
-          width: 160,
-          margin: const EdgeInsets.only(right: 12),
-          decoration: BoxDecoration(
-            color: isDark ? Colors.grey[850] : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: isDark ? Colors.grey[700]! : Colors.grey[300]!, width: 1.5),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Stack(
-                children: [
-                  Container(
-                    height: 100,
-                    decoration: BoxDecoration(
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
-                      color: isDark ? Colors.grey[800] : Colors.grey[200],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
-                      child: Image.network(
-                        product['imageUrl'],
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Center(
-                          child: Icon(Icons.shopping_bag, size: 40, color: isDark ? Colors.grey[600] : Colors.grey[400]),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    top: 6,
-                    right: 6,
-                    child: GestureDetector(
-                      onTap: () async {
-                        if (isFav) {
-                          await _favouriteApi.removeFromFavourite(clothingUuid: product['id']);
-                          _showSuccessMessage(languageProvider.translate(en: 'Removed from favourites', th: 'ลบออกจากรายการโปรดแล้ว'));
-                        } else {
-                          await _favouriteApi.addToFavourite(clothingUuid: product['id']);
-                          _showSuccessMessage(languageProvider.translate(en: 'Added to favourites!', th: 'เพิ่มลงรายการโปรดแล้ว!'));
-                        }
-                        setState(() {});
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(color: Colors.black.withOpacity(0.1), shape: BoxShape.circle),
-                        child: Icon(isFav ? Icons.favorite : Icons.favorite_border, color: isFav ? Colors.red : Colors.white, size: 18),
-                      ),
-                    ),
-                  ),
-                ],
+          width: 160, margin: const EdgeInsets.only(right: 12),
+          decoration: BoxDecoration(color: isDark ? Colors.grey[850] : Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: isDark ? Colors.grey[700]! : Colors.grey[300]!, width: 1.5)),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Stack(children: [
+              Container(height: 100,
+                decoration: BoxDecoration(borderRadius: const BorderRadius.vertical(top: Radius.circular(14)), color: isDark ? Colors.grey[800] : Colors.grey[200]),
+                child: ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+                  child: Image.network(product['imageUrl'], width: double.infinity, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Center(child: Icon(Icons.shopping_bag, size: 40, color: isDark ? Colors.grey[600] : Colors.grey[400])))),
               ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(product['name'],
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black87),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis),
-                    const SizedBox(height: 4),
-                    Text(
-                      languageProvider.translate(en: 'Price: ${product['price']}', th: 'ราคา: ${product['price']}'),
-                      style: TextStyle(fontSize: 12, color: isDark ? Colors.orange[300] : Colors.orange[700], fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () async {
-                              try {
-                                await _basketApi.addToBasket(clothingUuid: product['id']);
-                                _showSuccessMessage(languageProvider.translate(en: 'Added to cart!', th: 'เพิ่มลงตะกร้าแล้ว!'));
-                              } catch (e) {
-                                _showError(languageProvider.translate(en: 'Failed to add to cart', th: 'เพิ่มลงตะกร้าไม่สำเร็จ'));
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 6),
-                              backgroundColor: Colors.green,
-                              foregroundColor: Colors.white,
-                              minimumSize: const Size(0, 28),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            ),
-                            child: Text(languageProvider.translate(en: 'Buy', th: 'ซื้อ'), style: const TextStyle(fontSize: 11)),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        ElevatedButton(
-                          onPressed: () => _showInfoMessage(languageProvider.translate(en: 'Opening details...', th: 'กำลังเปิดรายละเอียด...')),
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                            backgroundColor: isDark ? Colors.grey[700] : Colors.grey[300],
-                            foregroundColor: isDark ? Colors.white : Colors.black87,
-                            minimumSize: const Size(0, 28),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
-                          child: Text(languageProvider.translate(en: 'More', th: 'เพิ่มเติม'), style: const TextStyle(fontSize: 11)),
-                        ),
-                      ],
-                    ),
-                  ],
+              Positioned(top: 6, right: 6,
+                child: GestureDetector(
+                  onTap: () async {
+                    if (isFav) { await _favouriteApi.removeFromFavourite(clothingUuid: product['id']); _showSuccessMessage(languageProvider.translate(en: 'Removed from favourites', th: 'ลบออกจากรายการโปรดแล้ว')); }
+                    else { await _favouriteApi.addToFavourite(clothingUuid: product['id']); _showSuccessMessage(languageProvider.translate(en: 'Added to favourites!', th: 'เพิ่มลงรายการโปรดแล้ว!')); }
+                    setState(() {});
+                  },
+                  child: Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: Colors.black.withOpacity(0.1), shape: BoxShape.circle), child: Icon(isFav ? Icons.favorite : Icons.favorite_border, color: isFav ? Colors.red : Colors.white, size: 18)),
                 ),
               ),
-            ],
-          ),
+            ]),
+            Padding(padding: const EdgeInsets.all(8.0), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(product['name'], style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black87), maxLines: 1, overflow: TextOverflow.ellipsis),
+              const SizedBox(height: 4),
+              Text(languageProvider.translate(en: 'Price: ${product['price']}', th: 'ราคา: ${product['price']}'), style: TextStyle(fontSize: 12, color: isDark ? Colors.orange[300] : Colors.orange[700], fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Row(children: [
+                Expanded(child: ElevatedButton(
+                  onPressed: () async { try { await _basketApi.addToBasket(clothingUuid: product['id']); _showSuccessMessage(languageProvider.translate(en: 'Added to cart!', th: 'เพิ่มลงตะกร้าแล้ว!')); } catch (e) { _showError(languageProvider.translate(en: 'Failed to add to cart', th: 'เพิ่มลงตะกร้าไม่สำเร็จ')); } },
+                  style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 6), backgroundColor: Colors.green, foregroundColor: Colors.white, minimumSize: const Size(0, 28), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                  child: Text(languageProvider.translate(en: 'Buy', th: 'ซื้อ'), style: const TextStyle(fontSize: 11)),
+                )),
+                const SizedBox(width: 4),
+                ElevatedButton(
+                  onPressed: () => _showInfoMessage(languageProvider.translate(en: 'Opening details...', th: 'กำลังเปิดรายละเอียด...')),
+                  style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8), backgroundColor: isDark ? Colors.grey[700] : Colors.grey[300], foregroundColor: isDark ? Colors.white : Colors.black87, minimumSize: const Size(0, 28), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                  child: Text(languageProvider.translate(en: 'More', th: 'เพิ่มเติม'), style: const TextStyle(fontSize: 11)),
+                ),
+              ]),
+            ])),
+          ]),
         );
       },
     );
@@ -1244,69 +860,29 @@ Future<bool> _detectCatWithMLKit(String imagePath) async {
   Widget _buildBottomButtons(bool isDark) {
     if (_selectedImage != null || _analysisCat != null) return const SizedBox.shrink();
     final languageProvider = Provider.of<LanguageProvider>(context);
-
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.grey[900] : Colors.white,
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, -2))],
-      ),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              languageProvider.translate(
-                en: 'Take a photo: Place the cat in the center of the circle and see the whole body \n Choose a photo: Use JPEG files no larger than 500KB',
-                th: 'ถ่ายรูป: วางตัวแมวให้อยู่ กลางวงกลม และเห็นทั้งตัว \n เลือกรูป: ใช้ไฟล์ JPEG ขนาดไม่เกิน 500KB',
-              ),
-              textAlign: TextAlign.center,
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: isDark ? Colors.white70 : Colors.black87),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _isProcessing ? null : _captureFromLiveCamera,
-                    icon: const Icon(Icons.camera_alt),
-                    label: Text(
-                      languageProvider.translate(en: 'Take Photo', th: 'ถ่ายรูป'),
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor: Colors.grey[400],
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _isProcessing ? null : _pickImage,
-                    icon: const Icon(Icons.photo_library),
-                    label: Text(
-                      languageProvider.translate(en: 'Choose Photo', th: 'เลือกรูป'),
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor: Colors.grey[400],
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+      decoration: BoxDecoration(color: isDark ? Colors.grey[900] : Colors.white, boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, -2))]),
+      child: SafeArea(top: false, child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Text(languageProvider.translate(en: 'Place the cat inside the frame and see the whole body', th: 'วางตัวแมวให้อยู่ในกรอบ และเห็นทั้งตัว'),
+            textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: isDark ? Colors.white70 : Colors.black87)),
+        const SizedBox(height: 12),
+        Row(children: [
+          Expanded(child: ElevatedButton.icon(
+            onPressed: _isProcessing ? null : _captureFromLiveCamera,
+            icon: const Icon(Icons.camera_alt),
+            label: Text(languageProvider.translate(en: 'Take Photo', th: 'ถ่ายรูป'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14), backgroundColor: Colors.blue, foregroundColor: Colors.white, disabledBackgroundColor: Colors.grey[400], shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+          )),
+          const SizedBox(width: 12),
+          Expanded(child: ElevatedButton.icon(
+            onPressed: _isProcessing ? null : _pickImage,
+            icon: const Icon(Icons.photo_library),
+            label: Text(languageProvider.translate(en: 'Choose Photo', th: 'เลือกรูป'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14), backgroundColor: Colors.green, foregroundColor: Colors.white, disabledBackgroundColor: Colors.grey[400], shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+          )),
+        ]),
+      ])),
     );
   }
 }

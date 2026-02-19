@@ -73,6 +73,7 @@ class _HomePageState extends State<HomePage> {
   void dispose() {
     timer?.cancel();
     _pageController.dispose();
+
     super.dispose();
   }
 
@@ -550,6 +551,9 @@ class _ItemDetailsCardState extends State<ItemDetailsCard> {
   bool _isFavourite = false;
   bool _isProcessing = false;
 
+  final PageController _imagePageController = PageController();
+  int _currentImagePage = 0;
+
   double parseDouble(dynamic value) {
     if (value == null) return 0.0;
     if (value is double) return value;
@@ -562,6 +566,12 @@ class _ItemDetailsCardState extends State<ItemDetailsCard> {
   void initState() {
     super.initState();
     _checkFavouriteStatus();
+  }
+
+  @override
+  void dispose() {
+    _imagePageController.dispose();
+    super.dispose();
   }
 
   Future<void> _checkFavouriteStatus() async {
@@ -658,15 +668,20 @@ class _ItemDetailsCardState extends State<ItemDetailsCard> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // ✅ รูป Slideshow + ปุ่มหัวใจ
+
+                  // ✅ รูป Slideshow + ปุ่มหัวใจ + จุด indicator
                   Stack(
                     children: [
                       ClipRRect(
-                        borderRadius:
-                            const BorderRadius.vertical(top: Radius.circular(20)),
+                        borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(20)),
                         child: SizedBox(
                           height: 300,
                           child: PageView(
+                            controller: _imagePageController,
+                            onPageChanged: (index) {
+                              setState(() => _currentImagePage = index);
+                            },
                             children: [
                               // รูปหลัก
                               CachedNetworkImage(
@@ -676,7 +691,8 @@ class _ItemDetailsCardState extends State<ItemDetailsCard> {
                                 fit: BoxFit.cover,
                                 placeholder: (context, url) => const SizedBox(
                                   height: 300,
-                                  child: Center(child: CircularProgressIndicator()),
+                                  child: Center(
+                                      child: CircularProgressIndicator()),
                                 ),
                                 errorWidget: (context, url, error) =>
                                     const SizedBox(
@@ -692,7 +708,8 @@ class _ItemDetailsCardState extends State<ItemDetailsCard> {
                                 fit: BoxFit.cover,
                                 placeholder: (context, url) => const SizedBox(
                                   height: 300,
-                                  child: Center(child: CircularProgressIndicator()),
+                                  child: Center(
+                                      child: CircularProgressIndicator()),
                                 ),
                                 errorWidget: (context, url, error) =>
                                     const SizedBox(
@@ -700,9 +717,33 @@ class _ItemDetailsCardState extends State<ItemDetailsCard> {
                                   child: Center(child: Icon(Icons.error)),
                                 ),
                               ),
-                              
                             ],
                           ),
+                        ),
+                      ),
+
+                      // ✅ จุด Page Indicator
+                      Positioned(
+                        bottom: 12,
+                        left: 0,
+                        right: 0,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: List.generate(2, (index) {
+                            return AnimatedContainer(
+                            
+                              duration: const Duration(milliseconds: 300),
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              width: _currentImagePage == index ? 20 : 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: _currentImagePage == index
+                                    ? Colors.deepOrange
+                                    : const Color.fromARGB(255, 0, 0, 0).withOpacity(0.5),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            );
+                          }),
                         ),
                       ),
 
@@ -772,8 +813,8 @@ class _ItemDetailsCardState extends State<ItemDetailsCard> {
                             _DetailRow(
                               label: languageProvider.translate(
                                   en: 'Gender', th: 'เพศ'),
-                              value: formatGender(
-                                  widget.itemDetails['gender'], languageProvider),
+                              value: formatGender(widget.itemDetails['gender'],
+                                  languageProvider),
                             ),
                             _DetailRow(
                               label: languageProvider.translate(
