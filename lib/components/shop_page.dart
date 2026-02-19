@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/api/service_fav_backet.dart';
 
 import 'package:flutter_application_1/provider/language_provider.dart';
-import 'package:flutter_application_1/screen/all_products.dart';
+
 
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
@@ -330,23 +330,23 @@ class _ShopPageState extends State<ShopPage> {
                   ),
                   errorWidget: (context, url, error) => const Icon(Icons.error),
                 ),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => AllProducts()));
-                  },
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.shopify_sharp, size: 30),
-                      Text(
-                        languageProvider.translate(en: "All Products", th: "สินค้าทั้งหมด"),
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                    ],
-                  ),
-                ),
+                // GestureDetector(
+                //   onTap: () {
+                //     Navigator.push(context,
+                //         MaterialPageRoute(builder: (context) => AllProducts()));
+                //   },
+                //   child: Column(
+                //     mainAxisAlignment: MainAxisAlignment.center,
+                //     crossAxisAlignment: CrossAxisAlignment.center,
+                //     children: [
+                //       const Icon(Icons.shopify_sharp, size: 30),
+                //       Text(
+                //         languageProvider.translate(en: "All Products", th: "สินค้าทั้งหมด"),
+                //         style: const TextStyle(fontSize: 16),
+                //       ),
+                //     ],
+                //   ),
+                // ),
               ],
             ),
           ),
