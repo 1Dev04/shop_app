@@ -228,10 +228,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
 
   String get pythonBackendAnalysis => '${getBaseUrl()}/api/vision/analyze-cat';
 
-  Color get _borderColor {
-    if (_isCatDetected == null) return Colors.white;
-    return _isCatDetected! ? Colors.green : Colors.red;
-  }
+
 
   @override
   void initState() {
@@ -609,20 +606,19 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     }
   }
 
-  // ── ✅ FIX: Null-safe capture ────────────────────────────
+  // ── ✅ ถ่ายรูปแล้ววนซ้ำได้ (ไม่ dispose กล้อง) ────────────
   Future<void> _captureFromLiveCamera() async {
     try {
-      // Guard ป้องกัน null crash
       final ctrl = _cameraController;
       if (ctrl == null || !ctrl.value.isInitialized) {
         _showError('กล้องยังไม่พร้อม กรุณารอสักครู่');
         return;
       }
 
+      // หยุด live detect ชั่วคราว
       _detectTimer?.cancel();
       _detectTimer = null;
 
-      // รอ detecting ที่ค้างอยู่ให้เสร็จก่อน
       int wait = 0;
       while (_isDetecting && wait < 15) {
         await Future.delayed(const Duration(milliseconds: 100));
@@ -630,34 +626,54 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
       }
       _isDetecting = false;
 
-      // ตรวจซ้ำหลัง wait (อาจ dispose ไปแล้ว)
       if (!mounted || ctrl != _cameraController || !ctrl.value.isInitialized) {
         _showError('กล้องไม่พร้อม ลองใหม่อีกครั้ง');
         return;
       }
 
+      // แสดงสถานะ detecting
+      setState(() => _isCatDetected = null);
+
       final XFile photo = await ctrl.takePicture();
       final result = await _detectCatPro(photo.path);
-      setState(() => _isCatDetected = result.isCat);
 
       if (!result.isCat) {
         try { File(photo.path).delete(); } catch (_) {}
+        setState(() => _isCatDetected = false);
         final msg = _buildRejectionMessage(result);
         _showError(msg);
+        // ✅ วนกลับมา detect ใหม่ได้เลย ไม่ dispose กล้อง
         await Future.delayed(const Duration(seconds: 2));
-        if (mounted) { setState(() => _isCatDetected = null); _startLiveDetect(); }
+        if (mounted) {
+          setState(() => _isCatDetected = null);
+          _startLiveDetect();
+        }
         return;
       }
 
-      await Future.delayed(const Duration(milliseconds: 400));
+      setState(() => _isCatDetected = true);
+      await Future.delayed(const Duration(milliseconds: 300));
+
       final processedImage = await _validateAndCompressGalleryImage(File(photo.path));
       if (processedImage != null) {
+        // ✅ ได้รูปแล้ว → dispose กล้องแล้วไปหน้าวิเคราะห์
         await ctrl.dispose();
-        if (mounted) setState(() { _cameraController = null; _selectedImage = processedImage; _analysisCat = null; });
+        _detectTimer?.cancel();
+        if (mounted) {
+          setState(() {
+            _cameraController = null;
+            _selectedImage = processedImage;
+            _analysisCat = null;
+            _isCatDetected = null;
+          });
+        }
         _showSuccessMessage('พบแมว! ถ่ายรูปสำเร็จ 🐱');
       } else {
-        if (mounted) setState(() => _isCatDetected = null);
-        _startLiveDetect();
+        // processedImage null → วนกลับถ่ายใหม่
+        if (mounted) {
+          setState(() => _isCatDetected = null);
+          _startLiveDetect();
+        }
       }
     } catch (e) {
       if (mounted) setState(() => _isCatDetected = null);
@@ -789,25 +805,87 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
       fit: StackFit.expand,
       children: [
         CameraPreview(_cameraController!),
-        CustomPaint(painter: _RectHolePainter(borderColor: _borderColor), size: Size.infinite),
+        // ✅ กรอบขาวตลอด
+        CustomPaint(painter: _RectHolePainter(borderColor: Colors.white), size: Size.infinite),
+
+        // ✅ Status banner ด้านบน (แทนการเปลี่ยนสีกรอบ)
+        Positioned(
+          top: 20, left: 24, right: 24,
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: _buildStatusBanner(),
+          ),
+        ),
+
+        // ✅ hint ด้านล่าง
         Positioned(
           bottom: 20, left: 0, right: 0,
           child: Center(
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
+            child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              decoration: BoxDecoration(
-                color: _isCatDetected == null ? Colors.black45 : _isCatDetected! ? Colors.green.withOpacity(0.8) : Colors.red.withOpacity(0.8),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                _isCatDetected == null ? '🔍 กำลังมองหาแมว...' : _isCatDetected! ? '🐱 พบแมวแล้ว! กดถ่ายรูปได้เลย' : '❌ ไม่พบแมว / ตรวจพบการ์ตูน',
-                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+              decoration: BoxDecoration(color: Colors.black45, borderRadius: BorderRadius.circular(20)),
+              child: const Text(
+                'วางแมวให้อยู่ในกรอบ แล้วกดถ่ายรูป',
+                style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
               ),
             ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildStatusBanner() {
+    if (_isCatDetected == null) {
+      // กำลัง scan อยู่
+      return Container(
+        key: const ValueKey('scanning'),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(14)),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 16, height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Colors.white70)),
+            ),
+            const SizedBox(width: 10),
+            const Text('🔍 กำลังสแกนหาแมว...', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+          ],
+        ),
+      );
+    }
+    if (_isCatDetected == true) {
+      return Container(
+        key: const ValueKey('found'),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(color: Colors.green.shade700.withOpacity(0.85), borderRadius: BorderRadius.circular(14)),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.check_circle, color: Colors.white, size: 18),
+            SizedBox(width: 8),
+            Text('🐱 พบแมวแล้ว! กดถ่ายรูปได้เลย', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+          ],
+        ),
+      );
+    }
+    // ไม่พบแมว
+    return Container(
+      key: const ValueKey('notfound'),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(color: Colors.red.shade700.withOpacity(0.85), borderRadius: BorderRadius.circular(14)),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.warning_amber_rounded, color: Colors.white, size: 18),
+          SizedBox(width: 8),
+          Text('❌ ไม่พบแมว / ตรวจพบการ์ตูน', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+        ],
+      ),
     );
   }
 
