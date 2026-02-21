@@ -278,7 +278,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     // big cats (ถ้า ML Kit label ว่า tiger/lion ตรงๆ = ไม่ใช่แมวบ้าน)
     'tiger', 'lion', 'cheetah', 'leopard', 'jaguar',
     'lynx', 'bobcat', 'cougar', 'panther',
-    // reptiles
+    // reptiles 
     'snake', 'lizard', 'turtle', 'frog', 'gecko',
     'iguana', 'chameleon', 'crocodile', 'alligator', 'reptile',
     // fantasy/non-real
