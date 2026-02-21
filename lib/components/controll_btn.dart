@@ -1,7 +1,7 @@
 // ----Control Button--------------------------------------------------------------------------
 
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/components/favorite_page.dart';
+
 import 'package:flutter_application_1/components/home_page.dart';
 
 import 'package:flutter_application_1/components/menu_page.dart';
@@ -11,6 +11,7 @@ import 'package:flutter_application_1/components/shop_page.dart';
 import 'package:flutter_application_1/provider/language_provider.dart';
 import 'package:flutter_application_1/provider/theme_provider.dart';
 import 'package:flutter_application_1/screen/basket_page.dart';
+import 'package:flutter_application_1/screen/favorite_page.dart';
 import 'package:provider/provider.dart';
 import '../screen/Measue_SizeCat.dart';
 
@@ -23,16 +24,15 @@ class MyControll extends StatefulWidget {
 
 class _MyControllState extends State<MyControll> {
   //Change Screen
-  var screenIndex = 2;
+  var screenIndex = 1;
   //Active Button
-  int activeButton = 2;
+  int activeButton = 1;
   //Push Screen
   var screenPushIndex = 0;
 
   //Page Screen
   final mobileScreen = [
     SearchPage(),
-    FavouritePage(),
     HomePage(),
     ShopPage(),
     NotificationPage(),
@@ -44,14 +44,12 @@ class _MyControllState extends State<MyControll> {
     if (screenIndex == 0) {
       return "Search";
     } else if (screenIndex == 1) {
-      return "Favorites";
-    } else if (screenIndex == 2) {
       return "ABC shop";
-    } else if (screenIndex == 3) {
+    } else if (screenIndex == 2) {
       return "Shops";
-    } else if (screenIndex == 4) {
+    } else if (screenIndex == 3) {
       return "Notification";
-    } else if (screenIndex == 5) {
+    } else if (screenIndex == 4) {
       return "Menu";
     }
 
@@ -63,14 +61,12 @@ class _MyControllState extends State<MyControll> {
     if (screenIndex == 0) {
       return "ค้นหา";
     } else if (screenIndex == 1) {
-      return "รายการโปรด";
-    } else if (screenIndex == 2) {
       return "ร้าน ABC";
-    } else if (screenIndex == 3) {
+    } else if (screenIndex == 2) {
       return "ร้านค้า";
-    } else if (screenIndex == 4) {
+    } else if (screenIndex == 3) {
       return "การแจ้งเตือน";
-    } else if (screenIndex == 5) {
+    } else if (screenIndex == 4) {
       return "เมนู";
     }
 
@@ -105,11 +101,9 @@ class _MyControllState extends State<MyControll> {
             onTap: () {
               setState(() {
                 if (screenIndex == 0) {
-          
                   screenIndex = 2;
                   activeButton = 2;
                 } else {
-                  
                   screenIndex = 0;
                   activeButton = 0;
                 }
@@ -124,30 +118,23 @@ class _MyControllState extends State<MyControll> {
           SizedBox(
             width: 10,
           ),
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                screenIndex = 1;
-                activeButton = 1;
-              });
-            },
-            child: Icon(
-              screenIndex == 1
-                  ? Icons.favorite
-                  : Icons.favorite_border_outlined,
-              size: 30,
-              color: activeButton == 1
-                  ? AppBarTheme.of(context).iconTheme?.color
-                  : AppBarTheme.of(context).iconTheme?.color,
-            ),
-          ),
+          IconButton(
+              onPressed: () {
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => FavouritePage()));
+              },
+              icon: Icon(
+                Icons.favorite_border_outlined,
+                color: AppBarTheme.of(context).iconTheme?.color,
+                size: 30,
+              )),
           SizedBox(
             width: 10,
           ),
           IconButton(
               onPressed: () {
-                Navigator.push(
-                    context, MaterialPageRoute(builder: (context) => BasketPage()));
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => BasketPage()));
               },
               icon: Icon(
                 Icons.add_shopping_cart_sharp,
@@ -182,16 +169,55 @@ class _MyControllState extends State<MyControll> {
             GestureDetector(
               onTap: () {
                 setState(() {
+                  screenIndex = 1;
+                  activeButton = 1;
+                });
+              },
+              child: Icon(
+                screenIndex == 1 ? Icons.home : Icons.home_outlined,
+                size: 30,
+                color: activeButton == 1
+                    ? AppBarTheme.of(context).iconTheme?.color
+                    : AppBarTheme.of(context).iconTheme?.color,
+              ),
+            ),
+            GestureDetector(
+              onTap: () {
+                setState(() {
                   screenIndex = 2;
                   activeButton = 2;
                 });
               },
               child: Icon(
-                screenIndex == 2 ? Icons.home : Icons.home_outlined,
+                screenIndex == 2
+                    ? Icons.shopping_bag
+                    : Icons.shopping_bag_outlined,
                 size: 30,
                 color: activeButton == 2
                     ? AppBarTheme.of(context).iconTheme?.color
                     : AppBarTheme.of(context).iconTheme?.color,
+              ),
+            ),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => MeasureSizeCat()),
+                ).then((_) {
+                  // ✅ กลับมาให้ reset เป็น home แทน
+                  if (mounted) {
+                    setState(() {
+                      screenIndex = 1;
+                      activeButton = 1;
+                    });
+                  }
+                });
+              },
+              child: Image.network(
+                'https://res.cloudinary.com/dag73dhpl/image/upload/v1769662814/sizeCat_xil2jh.png',
+                width: 40,
+                height: 40,
+                color: AppBarTheme.of(context).iconTheme?.color,
               ),
             ),
             GestureDetector(
@@ -203,38 +229,14 @@ class _MyControllState extends State<MyControll> {
               },
               child: Icon(
                 screenIndex == 3
-                    ? Icons.shopping_bag
-                    : Icons.shopping_bag_outlined,
+                    ? Icons.notifications
+                    : Icons.notifications_outlined,
                 size: 30,
                 color: activeButton == 3
                     ? AppBarTheme.of(context).iconTheme?.color
                     : AppBarTheme.of(context).iconTheme?.color,
               ),
             ),
-            GestureDetector(
-                onTap: () {
-                  setState(() {
-                    screenPushIndex = 2;
-                  });
-
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => MeasureSizeCat())).then((_) {
-                    setState(() {
-                      screenIndex = 2;
-                      activeButton = 2;
-                    });
-                  });
-                },
-                child: Image.network(
-                  'https://res.cloudinary.com/dag73dhpl/image/upload/v1769662814/sizeCat_xil2jh.png',
-                  width: 40,
-                  height: 40,
-                  color: AppBarTheme.of(context)
-                      .iconTheme
-                      ?.color, // ถ้าเป็นรูปสีเดียว
-                )),
             GestureDetector(
               onTap: () {
                 setState(() {
@@ -243,26 +245,9 @@ class _MyControllState extends State<MyControll> {
                 });
               },
               child: Icon(
-                screenIndex == 4
-                    ? Icons.notifications
-                    : Icons.notifications_outlined,
+                screenIndex == 4 ? Icons.menu_open : Icons.menu,
                 size: 30,
                 color: activeButton == 4
-                    ? AppBarTheme.of(context).iconTheme?.color
-                    : AppBarTheme.of(context).iconTheme?.color,
-              ),
-            ),
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  screenIndex = 5;
-                  activeButton = 5;
-                });
-              },
-              child: Icon(
-                screenIndex == 5 ? Icons.menu_open : Icons.menu,
-                size: 30,
-                color: activeButton == 5
                     ? AppBarTheme.of(context).iconTheme?.color
                     : AppBarTheme.of(context).iconTheme?.color,
               ),

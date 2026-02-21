@@ -15,6 +15,7 @@ class _SettingpageState extends State<Settingpage> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final languageProvider = Provider.of<LanguageProvider>(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -22,7 +23,12 @@ class _SettingpageState extends State<Settingpage> {
           languageProvider.translate(en: "Setting", th: "การตั้งค่า"),
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 28),
         ),
-        centerTitle: true,
+         centerTitle: true,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new_rounded,
+              color: isDark ? Colors.white : Colors.black87, size: 20),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       body: SingleChildScrollView(
         child: Column(

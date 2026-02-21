@@ -73,7 +73,7 @@ class _FavouritePageState extends State<FavouritePage> {
       'clothing_uuid': product.clothingUuid,
       'clothing_name': product.clothingName,
       'image_url': product.imageUrl,
-      'images': product.images, 
+      'images': product.images,
       'price': product.price,
       'discount_price': product.discountPrice,
       'stock': product.stock,
@@ -114,70 +114,85 @@ class _FavouritePageState extends State<FavouritePage> {
         return SlideTransition(
           position: animation.drive(tween),
           child: FadeTransition(
-              opacity: animation.drive(Tween(begin: 0.0, end: 1.0)
-                  .chain(CurveTween(curve: curve))),
+              opacity: animation.drive(
+                  Tween(begin: 0.0, end: 1.0).chain(CurveTween(curve: curve))),
               child: child),
         );
       },
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final languageProvider = Provider.of<LanguageProvider>(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+@override
+Widget build(BuildContext context) {
+  final languageProvider = Provider.of<LanguageProvider>(context);
+  final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return SafeArea(
-      child: Column(
+  return Scaffold(
+    backgroundColor: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF5F5F5),
+    appBar: AppBar(
+      centerTitle: true,
+      leading: IconButton(
+        icon: Icon(Icons.arrow_back_ios_new_rounded,
+            color: isDark ? Colors.white : Colors.black87, size: 20),
+        onPressed: () => Navigator.of(context).pop(),
+      ),
+      title: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Header
-          Container(
-            width: double.infinity,
-            height: 70,
-            decoration: BoxDecoration(
-              color: isDark
-                  ? const Color.fromARGB(120, 88, 88, 88)
-                  : Colors.grey[200],
-            ),
-            padding: const EdgeInsets.all(15),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                const Icon(Icons.favorite_outline_rounded,
-                    color: Colors.red, size: 30),
-                const SizedBox(width: 10),
-                Text(
-                  languageProvider.translate(
-                      en: "Items: ${_favourites.length}",
-                      th: "รายการ: ${_favourites.length} รายการ"),
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              ],
+          const Icon(Icons.favorite_rounded, color: Colors.red, size: 22),
+          const SizedBox(width: 8),
+          Text(
+            languageProvider.translate(en: 'Favourites', th: 'รายการโปรด'),
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : Colors.black87,
             ),
           ),
-
-          // Content
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _error != null
-                    ? _buildErrorState(context, _error!, languageProvider)
-                    : _favourites.isEmpty
-                        ? _buildEmptyState(context, languageProvider, isDark)
-                        : _buildFavoriteList(
-                            context, _favourites, isDark, languageProvider),
-          ),
+          if (_favourites.isNotEmpty) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.red,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${_favourites.length}',
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
         ],
       ),
-    );
-  }
+      backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+      elevation: 0,
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1),
+        child: Container(
+          height: 1,
+          color: isDark
+              ? Colors.white.withOpacity(0.08)
+              : Colors.black.withOpacity(0.07),
+        ),
+      ),
+    ),
+    body: _isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : _error != null
+            ? _buildErrorState(context, _error!, languageProvider)
+            : _favourites.isEmpty
+                ? _buildEmptyState(context, languageProvider, isDark)
+                : _buildFavoriteList(
+                    context, _favourites, isDark, languageProvider),
+  );
+}
 
-  Widget _buildErrorState(BuildContext context, String error,
-      LanguageProvider languageProvider) {
+  Widget _buildErrorState(
+      BuildContext context, String error, LanguageProvider languageProvider) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Center(
       child: Column(
@@ -196,23 +211,21 @@ class _FavouritePageState extends State<FavouritePage> {
           const SizedBox(height: 20),
           ElevatedButton(
             onPressed: _loadFavourites,
-            child: Text(
-                languageProvider.translate(en: 'Retry', th: 'ลองใหม่')),
+            child: Text(languageProvider.translate(en: 'Retry', th: 'ลองใหม่')),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildEmptyState(BuildContext context,
-      LanguageProvider languageProvider, bool isDark) {
+  Widget _buildEmptyState(
+      BuildContext context, LanguageProvider languageProvider, bool isDark) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.pets_rounded,
-              size: 80,
-              color: isDark ? Colors.grey[600] : Colors.grey[400]),
+              size: 80, color: isDark ? Colors.grey[600] : Colors.grey[400]),
           const SizedBox(height: 20),
           Text(
             languageProvider.translate(
@@ -262,8 +275,8 @@ class _FavouritePageState extends State<FavouritePage> {
             elevation: 2,
             color: isDark ? Colors.grey[900] : Colors.white,
             margin: const EdgeInsets.only(bottom: 12),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Row(
@@ -431,8 +444,7 @@ class _FavouritePageState extends State<FavouritePage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: Text(
-                languageProvider.translate(en: 'Cancel', th: 'ยกเลิก')),
+            child: Text(languageProvider.translate(en: 'Cancel', th: 'ยกเลิก')),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
@@ -468,7 +480,6 @@ class _FavItemDetailCardState extends State<_FavItemDetailCard> {
   bool _isFavourite = true;
   bool _isProcessing = false;
 
-  
   final PageController _imagePageController = PageController();
   int _currentImagePage = 0;
 
@@ -480,13 +491,11 @@ class _FavItemDetailCardState extends State<_FavItemDetailCard> {
     return 0.0;
   }
 
-
-   @override
+  @override
   void dispose() {
     _imagePageController.dispose();
     super.dispose();
   }
-
 
   Future<void> _toggleFavourite() async {
     if (_isProcessing) return;
@@ -541,9 +550,8 @@ class _FavItemDetailCardState extends State<_FavItemDetailCard> {
   }
 
   String _formatGender(dynamic gender, LanguageProvider lang) {
-    final g = gender is int
-        ? gender
-        : int.tryParse(gender?.toString() ?? '') ?? 0;
+    final g =
+        gender is int ? gender : int.tryParse(gender?.toString() ?? '') ?? 0;
     switch (g) {
       case 0:
         return lang.translate(en: 'Unisex', th: 'ยูนิเซ็กซ์');
@@ -586,7 +594,7 @@ class _FavItemDetailCardState extends State<_FavItemDetailCard> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // ✅ รูป Slideshow + ปุ่มหัวใจ
-                 // ✅ รูป Slideshow + ปุ่มหัวใจ + จุด indicator
+                  // ✅ รูป Slideshow + ปุ่มหัวใจ + จุด indicator
                   Stack(
                     children: [
                       ClipRRect(
@@ -648,7 +656,6 @@ class _FavItemDetailCardState extends State<_FavItemDetailCard> {
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: List.generate(2, (index) {
                             return AnimatedContainer(
-                            
                               duration: const Duration(milliseconds: 300),
                               margin: const EdgeInsets.symmetric(horizontal: 4),
                               width: _currentImagePage == index ? 20 : 8,
@@ -656,7 +663,8 @@ class _FavItemDetailCardState extends State<_FavItemDetailCard> {
                               decoration: BoxDecoration(
                                 color: _currentImagePage == index
                                     ? Colors.deepOrange
-                                    : const Color.fromARGB(255, 0, 0, 0).withOpacity(0.5),
+                                    : const Color.fromARGB(255, 0, 0, 0)
+                                        .withOpacity(0.5),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                             );
@@ -710,8 +718,7 @@ class _FavItemDetailCardState extends State<_FavItemDetailCard> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              widget.itemDetails['clothing_name']
-                                      ?.toString() ??
+                              widget.itemDetails['clothing_name']?.toString() ??
                                   '',
                               style: const TextStyle(
                                   fontSize: 24, fontWeight: FontWeight.bold),
@@ -720,9 +727,9 @@ class _FavItemDetailCardState extends State<_FavItemDetailCard> {
                             _DetailRow(
                               label: languageProvider.translate(
                                   en: 'Category', th: 'หมวดหมู่'),
-                              value: widget.itemDetails['category']
-                                      ?.toString() ??
-                                  '',
+                              value:
+                                  widget.itemDetails['category']?.toString() ??
+                                      '',
                             ),
                             _DetailRow(
                               label: languageProvider.translate(
@@ -734,23 +741,20 @@ class _FavItemDetailCardState extends State<_FavItemDetailCard> {
                             _DetailRow(
                               label: languageProvider.translate(
                                   en: 'Gender', th: 'เพศ'),
-                              value: _formatGender(
-                                  widget.itemDetails['gender'],
+                              value: _formatGender(widget.itemDetails['gender'],
                                   languageProvider),
                             ),
                             _DetailRow(
                               label: languageProvider.translate(
                                   en: 'Stock', th: 'สต็อก'),
                               value:
-                                  widget.itemDetails['stock']?.toString() ??
-                                      '',
+                                  widget.itemDetails['stock']?.toString() ?? '',
                             ),
                             _DetailRow(
                               label: languageProvider.translate(
                                   en: 'Breed', th: 'สายพันธุ์'),
                               value:
-                                  widget.itemDetails['breed']?.toString() ??
-                                      '',
+                                  widget.itemDetails['breed']?.toString() ?? '',
                             ),
                             if (widget.itemDetails['description'] != null &&
                                 widget.itemDetails['description']
@@ -771,8 +775,7 @@ class _FavItemDetailCardState extends State<_FavItemDetailCard> {
                                     widget.itemDetails['description']
                                         .toString(),
                                     style: TextStyle(
-                                        fontSize: 16,
-                                        color: Colors.grey[700]),
+                                        fontSize: 16, color: Colors.grey[700]),
                                   ),
                                   const SizedBox(height: 16),
                                 ],
@@ -787,8 +790,7 @@ class _FavItemDetailCardState extends State<_FavItemDetailCard> {
                                     style: const TextStyle(
                                         fontSize: 18,
                                         color: Colors.grey,
-                                        decoration:
-                                            TextDecoration.lineThrough,
+                                        decoration: TextDecoration.lineThrough,
                                         decorationThickness: 2),
                                   ),
                                 if (hasDiscount) const SizedBox(width: 10),
@@ -811,8 +813,7 @@ class _FavItemDetailCardState extends State<_FavItemDetailCard> {
                                         horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(
                                         color: Colors.red,
-                                        borderRadius:
-                                            BorderRadius.circular(6)),
+                                        borderRadius: BorderRadius.circular(6)),
                                     child: Text(
                                       '-$discountPercent%',
                                       style: const TextStyle(
@@ -831,9 +832,9 @@ class _FavItemDetailCardState extends State<_FavItemDetailCard> {
                               height: 60,
                               child: ElevatedButton.icon(
                                 onPressed: () async {
-                                  final uuid = widget.itemDetails['uuid']
-                                          ?.toString() ??
-                                      '';
+                                  final uuid =
+                                      widget.itemDetails['uuid']?.toString() ??
+                                          '';
                                   try {
                                     await BasketApiService()
                                         .addToBasket(clothingUuid: uuid);
@@ -859,17 +860,15 @@ class _FavItemDetailCardState extends State<_FavItemDetailCard> {
                                     }
                                   }
                                 },
-                                icon: const Icon(
-                                    Icons.add_shopping_cart_sharp),
+                                icon: const Icon(Icons.add_shopping_cart_sharp),
                                 label: Text(
                                   languageProvider.translate(
-                                      en: 'Add to Cart',
-                                      th: 'เพิ่มลงตะกร้า'),
+                                      en: 'Add to Cart', th: 'เพิ่มลงตะกร้า'),
                                   style: const TextStyle(fontSize: 16),
                                 ),
                                 style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                      vertical: 16),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
                                   backgroundColor: Colors.black,
                                 ),
                               ),

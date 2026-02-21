@@ -345,8 +345,8 @@ class _MenuPageState extends State<MenuPage> {
               Center(
                   child: Text(
                       languageProvider.translate(
-                          en: "Version: 4.0 | By 1DEV co.,ltd.",
-                          th: "เวอร์ชัน: 4.0 | โดย 1DEV co.,ltd."),
+                          en: "Version: 6 | By 1DEV co.,ltd.",
+                          th: "เวอร์ชัน: 6 | โดย 1DEV co.,ltd."),
                       style: TextStyle(fontSize: 15)))
             ],
           ),

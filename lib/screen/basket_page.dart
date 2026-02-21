@@ -202,8 +202,14 @@ class _BasketPageState extends State<BasketPage> {
     final isDark = themeProvider.themeMode == ThemeMode.dark;
 
     return Scaffold(
+      
       appBar: AppBar(
-        centerTitle: true,
+         centerTitle: true,
+      leading: IconButton(
+        icon: Icon(Icons.arrow_back_ios_new_rounded,
+            color: isDark ? Colors.white : Colors.black87, size: 20),
+        onPressed: () => Navigator.of(context).pop(),
+      ),
         title: Text(
           languageProvider.translate(en: 'BASKET', th: 'ตะกร้า'),
           style: TextStyle(

@@ -2,10 +2,12 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_application_1/provider/theme_provider.dart';
 import 'package:flutter_application_1/screen/edit_profile.dart';
 import 'package:flutter_application_1/screen/signin_user.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 class Profile extends StatefulWidget {
   @override
@@ -29,10 +31,9 @@ class _ProfileState extends State<Profile> {
   }
 
   void showLogAlertExit(BuildContext context) {
-      final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showDialog(
-      
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
@@ -44,7 +45,6 @@ class _ProfileState extends State<Profile> {
                 child: Text("Cancel"),
               ),
               ElevatedButton(
-                
                 onPressed: () async {
                   Navigator.of(context).pop();
                   await signOut();
@@ -75,7 +75,7 @@ class _ProfileState extends State<Profile> {
   @override
   void initState() {
     super.initState();
-    fetchUser(); 
+    fetchUser();
   }
 
   void fetchUser() async {
@@ -104,13 +104,19 @@ class _ProfileState extends State<Profile> {
 
   @override
   Widget build(BuildContext context) {
+       final themeProvider = context.watch<ThemeProvider>();
+       final isDark = themeProvider.themeMode == ThemeMode.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Profile",
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 28)),
         centerTitle: true,
-
-   
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new_rounded,
+              color: isDark ? Colors.white : Colors.black87, size: 20),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       body: SingleChildScrollView(
         child: Container(
@@ -205,7 +211,9 @@ class _ProfileState extends State<Profile> {
                     onPressed: () => showLogAlertExit(context),
                     child: Text(
                       "Logout",
-                      style: TextStyle(fontSize: 16 ,),
+                      style: TextStyle(
+                        fontSize: 16,
+                      ),
                     ),
                   ),
                 ],
