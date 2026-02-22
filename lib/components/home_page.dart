@@ -25,6 +25,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final PageController _pageController = PageController(initialPage: 1000);
   List<Map<String, dynamic>> images = [];
+  int _currentPage = 0; // ✅ เพิ่มตรงนี้
 
   Timer? timer;
   bool isUserInteracting = false;
@@ -73,7 +74,6 @@ class _HomePageState extends State<HomePage> {
   void dispose() {
     timer?.cancel();
     _pageController.dispose();
-
     super.dispose();
   }
 
@@ -120,6 +120,14 @@ class _HomePageState extends State<HomePage> {
         setState(() {
           images = parsedImages;
           isLoading = false;
+        });
+
+        _pageController.addListener(() {
+          if (images.isEmpty) return;
+          final page = (_pageController.page ?? 0).round() % images.length;
+          if (page != _currentPage && mounted) {
+            setState(() => _currentPage = page);
+          }
         });
 
         if (images.isNotEmpty) {
@@ -174,7 +182,6 @@ class _HomePageState extends State<HomePage> {
           item = Map<String, dynamic>.from(data);
         }
 
-        // ✅ Parse images ให้เป็น Map เสมอ
         if (item != null) {
           final rawImages = item['images'];
           if (rawImages is String) {
@@ -316,216 +323,253 @@ class _HomePageState extends State<HomePage> {
     }
 
     return Scaffold(
-      body: GestureDetector(
-        onPanDown: (_) {
-          isUserInteracting = true;
-          stopAutoScroll();
-        },
-        onPanCancel: () {
-          isUserInteracting = false;
-          startAutoScroll();
-        },
-        onPanEnd: (_) {
-          isUserInteracting = false;
-          startAutoScroll();
-        },
-        child: PageView.builder(
-          controller: _pageController,
-          scrollDirection: Axis.vertical,
-          itemCount: null,
-          itemBuilder: (context, index) {
-            final item = images[index % images.length];
-            final discountPrice = parseDouble(item['discount_price']);
-            final hasDiscount = discountPrice > 0;
+      body: Stack(
+        // ✅ เปลี่ยนจาก GestureDetector เป็น Stack
+        children: [
+          GestureDetector(
+            // ✅ GestureDetector ย้ายมาอยู่ใน Stack
+            onPanDown: (_) {
+              isUserInteracting = true;
+              stopAutoScroll();
+            },
+            onPanCancel: () {
+              isUserInteracting = false;
+              startAutoScroll();
+            },
+            onPanEnd: (_) {
+              isUserInteracting = false;
+              startAutoScroll();
+            },
+            child: PageView.builder(
+              controller: _pageController,
+              scrollDirection: Axis.vertical,
+              itemCount: null,
+              onPageChanged: (index) {
+               
+                if (images.isEmpty) return;
+                setState(() => _currentPage = index % images.length);
+              },
+              itemBuilder: (context, index) {
+                final item = images[index % images.length];
+                final discountPrice = parseDouble(item['discount_price']);
+                final hasDiscount = discountPrice > 0;
 
-            // ✅ Safe parse images
-            final rawImages = item['images'];
-            final Map<String, dynamic> imagesMap = rawImages is String
-                ? Map<String, dynamic>.from(jsonDecode(rawImages))
-                : rawImages is Map
-                    ? Map<String, dynamic>.from(rawImages)
-                    : {};
+                final rawImages = item['images'];
+                final Map<String, dynamic> imagesMap = rawImages is String
+                    ? Map<String, dynamic>.from(jsonDecode(rawImages))
+                    : rawImages is Map
+                        ? Map<String, dynamic>.from(rawImages)
+                        : {};
 
-            return Stack(
-              children: [
-                CachedNetworkImage(
-                  imageUrl: item['image_url'] ?? '',
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                  height: double.infinity,
-                  placeholder: (context, url) =>
-                      const Center(child: CircularProgressIndicator()),
-                  errorWidget: (context, url, error) =>
-                      const Center(child: Icon(Icons.error)),
-                ),
-                Positioned(
-                  bottom: 170,
-                  left: 20,
-                  width: 300,
-                  child: Text(
-                    item['clothing_name'] ?? '',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                      shadows: [
-                        Shadow(
-                          blurRadius: 20,
-                          color: Colors.black.withOpacity(0.7),
-                          offset: const Offset(2, 2),
-                        ),
-                      ],
+                return Stack(
+                  children: [
+                    CachedNetworkImage(
+                      imageUrl: item['image_url'] ?? '',
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: double.infinity,
+                      placeholder: (context, url) =>
+                          const Center(child: CircularProgressIndicator()),
+                      errorWidget: (context, url, error) =>
+                          const Center(child: Icon(Icons.error)),
                     ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 130,
-                  left: 20,
-                  right: 20,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      if (hasDiscount)
-                        Text(
-                          '฿${item['price']?.toString() ?? ''}',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 20,
-                            decoration: TextDecoration.lineThrough,
-                            decorationColor: Colors.white70,
-                            decorationThickness: 2,
-                            shadows: [
-                              Shadow(
-                                blurRadius: 20,
-                                color: Colors.black.withOpacity(0.7),
-                                offset: const Offset(2, 2),
-                              )
-                            ],
-                          ),
-                        ),
-                      if (hasDiscount) const SizedBox(width: 10),
-                      Text(
-                        hasDiscount
-                            ? '฿${discountPrice.toStringAsFixed(0)}'
-                            : '฿${item['price']?.toString() ?? ''}',
+                    Positioned(
+                      bottom: 170,
+                      left: 20,
+                      width: 300,
+                      child: Text(
+                        item['clothing_name'] ?? '',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: hasDiscount
-                              ? const Color.fromARGB(255, 255, 244, 125)
-                              : Colors.white,
-                          fontSize: 25,
+                          color: Colors.white,
+                          fontSize: 30,
                           fontWeight: FontWeight.bold,
                           shadows: [
                             Shadow(
                               blurRadius: 20,
                               color: Colors.black.withOpacity(0.7),
                               offset: const Offset(2, 2),
-                            )
+                            ),
                           ],
                         ),
                       ),
-                      if (hasDiscount) const SizedBox(width: 10),
-                      if (hasDiscount)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            '-${item['discount_percent']?.toString() ?? '0'}%',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                Positioned(
-                  left: 20,
-                  right: 20,
-                  bottom: 40,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
+                    ),
+                    Positioned(
+                      bottom: 130,
+                      left: 20,
+                      right: 20,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          FloatingActionButton.small(
-                            onPressed: () async {
-                              try {
-                                await BasketApiService().addToBasket(
-                                  clothingUuid: item['uuid'],
-                                );
-                                showTopSnackBar(
-                                  Overlay.of(context),
-                                  CustomSnackBar.success(
-                                    message: languageProvider.translate(
-                                      en: 'Added to cart!',
-                                      th: 'เพิ่มลงตะกร้าแล้ว!',
-                                    ),
-                                  ),
-                                );
-                              } catch (e) {
-                                showTopSnackBar(
-                                  Overlay.of(context),
-                                  CustomSnackBar.error(
-                                      message: 'เกิดข้อผิดพลาด'),
-                                );
-                              }
-                            },
-                            backgroundColor: Theme.of(context)
-                                .floatingActionButtonTheme
-                                .backgroundColor,
-                            child: Icon(
-                              Icons.shopping_cart_outlined,
-                              size: 30,
-                              color: Theme.of(context)
-                                  .floatingActionButtonTheme
-                                  .foregroundColor,
+                          if (hasDiscount)
+                            Text(
+                              '฿${item['price']?.toString() ?? ''}',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 20,
+                                decoration: TextDecoration.lineThrough,
+                                decorationColor: Colors.white70,
+                                decorationThickness: 2,
+                                shadows: [
+                                  Shadow(
+                                    blurRadius: 20,
+                                    color: Colors.black.withOpacity(0.7),
+                                    offset: const Offset(2, 2),
+                                  )
+                                ],
+                              ),
+                            ),
+                          if (hasDiscount) const SizedBox(width: 10),
+                          Text(
+                            hasDiscount
+                                ? '฿${discountPrice.toStringAsFixed(0)}'
+                                : '฿${item['price']?.toString() ?? ''}',
+                            style: TextStyle(
+                              color: hasDiscount
+                                  ? const Color.fromARGB(255, 255, 244, 125)
+                                  : Colors.white,
+                              fontSize: 25,
+                              fontWeight: FontWeight.bold,
+                              shadows: [
+                                Shadow(
+                                  blurRadius: 20,
+                                  color: Colors.black.withOpacity(0.7),
+                                  offset: const Offset(2, 2),
+                                )
+                              ],
                             ),
                           ),
-                          const SizedBox(width: 5),
-                          ElevatedButton(
-                            onPressed: () {
-                              final itemId =
-                                  int.tryParse(item['id']?.toString() ?? '0') ??
-                                      0;
-                              showItemDetailsPopup(itemId);
-                            },
-                            child: Text(
-                              languageProvider.translate(
-                                en: 'Learn More',
-                                th: 'ดูเพิ่มเติม',
+                          if (hasDiscount) const SizedBox(width: 10),
+                          if (hasDiscount)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(6),
                               ),
+                              child: Text(
+                                '-${item['discount_percent']?.toString() ?? '0'}%',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    Positioned(
+                      left: 20,
+                      right: 20,
+                      bottom: 40,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              FloatingActionButton.small(
+                                onPressed: () async {
+                                  try {
+                                    await BasketApiService().addToBasket(
+                                      clothingUuid: item['uuid'],
+                                    );
+                                    showTopSnackBar(
+                                      Overlay.of(context),
+                                      CustomSnackBar.success(
+                                        message: languageProvider.translate(
+                                          en: 'Added to cart!',
+                                          th: 'เพิ่มลงตะกร้าแล้ว!',
+                                        ),
+                                      ),
+                                    );
+                                  } catch (e) {
+                                    showTopSnackBar(
+                                      Overlay.of(context),
+                                      CustomSnackBar.error(
+                                          message: 'เกิดข้อผิดพลาด'),
+                                    );
+                                  }
+                                },
+                                backgroundColor: Theme.of(context)
+                                    .floatingActionButtonTheme
+                                    .backgroundColor,
+                                child: Icon(
+                                  Icons.shopping_cart_outlined,
+                                  size: 30,
+                                  color: Theme.of(context)
+                                      .floatingActionButtonTheme
+                                      .foregroundColor,
+                                ),
+                              ),
+                              const SizedBox(width: 5),
+                              ElevatedButton(
+                                onPressed: () {
+                                  final itemId = int.tryParse(
+                                          item['id']?.toString() ?? '0') ??
+                                      0;
+                                  showItemDetailsPopup(itemId);
+                                },
+                                child: Text(
+                                  languageProvider.translate(
+                                    en: 'Learn More',
+                                    th: 'ดูเพิ่มเติม',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: CachedNetworkImage(
+                              imageUrl: imagesMap['image_clothing'] ?? '',
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => const Center(
+                                  child: CircularProgressIndicator()),
+                              errorWidget: (context, url, error) =>
+                                  const Icon(Icons.error),
                             ),
                           ),
                         ],
                       ),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: CachedNetworkImage(
-                          imageUrl: imagesMap['image_clothing'] ?? '',
-                          width: 100,
-                          height: 100,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) =>
-                              const Center(child: CircularProgressIndicator()),
-                          errorWidget: (context, url, error) =>
-                              const Icon(Icons.error),
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              ],
-            );
-          },
-        ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+
+          // ✅ จุด Indicator แนวตั้งด้านขวา (อยู่ใน HomePage Stack)
+          Positioned(
+            right: 12,
+            top: 0,
+            bottom: 0,
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(images.length, (index) {
+                  final isActive = _currentPage == index;
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    width: 8,
+                    height: isActive ? 24 : 8,
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? Colors.deepOrange
+                          : Colors.white.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  );
+                }),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -644,7 +688,6 @@ class _ItemDetailsCardState extends State<ItemDetailsCard> {
     final languageProvider = Provider.of<LanguageProvider>(context);
     final hasDiscount = discountPrice > 0;
 
-    // ✅ Safe parse images ทุกกรณี
     final rawImages = widget.itemDetails['images'];
     final Map<String, dynamic> imagesMap = rawImages is String
         ? Map<String, dynamic>.from(jsonDecode(rawImages))
@@ -668,7 +711,6 @@ class _ItemDetailsCardState extends State<ItemDetailsCard> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-
                   // ✅ รูป Slideshow + ปุ่มหัวใจ + จุด indicator
                   Stack(
                     children: [
@@ -683,7 +725,6 @@ class _ItemDetailsCardState extends State<ItemDetailsCard> {
                               setState(() => _currentImagePage = index);
                             },
                             children: [
-                              // รูปหลัก
                               CachedNetworkImage(
                                 imageUrl: widget.itemDetails['image_url'] ?? '',
                                 width: double.infinity,
@@ -700,7 +741,6 @@ class _ItemDetailsCardState extends State<ItemDetailsCard> {
                                   child: Center(child: Icon(Icons.error)),
                                 ),
                               ),
-                              // รูปเสื้อผ้า
                               CachedNetworkImage(
                                 imageUrl: imagesMap['image_clothing'] ?? '',
                                 width: double.infinity,
@@ -722,7 +762,7 @@ class _ItemDetailsCardState extends State<ItemDetailsCard> {
                         ),
                       ),
 
-                      // ✅ จุด Page Indicator
+                      // ✅ จุด Page Indicator แนวนอน
                       Positioned(
                         bottom: 12,
                         left: 0,
@@ -731,7 +771,6 @@ class _ItemDetailsCardState extends State<ItemDetailsCard> {
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: List.generate(2, (index) {
                             return AnimatedContainer(
-                            
                               duration: const Duration(milliseconds: 300),
                               margin: const EdgeInsets.symmetric(horizontal: 4),
                               width: _currentImagePage == index ? 20 : 8,
@@ -739,7 +778,8 @@ class _ItemDetailsCardState extends State<ItemDetailsCard> {
                               decoration: BoxDecoration(
                                 color: _currentImagePage == index
                                     ? Colors.deepOrange
-                                    : const Color.fromARGB(255, 0, 0, 0).withOpacity(0.5),
+                                    : const Color.fromARGB(255, 0, 0, 0)
+                                        .withOpacity(0.5),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                             );

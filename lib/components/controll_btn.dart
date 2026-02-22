@@ -101,8 +101,8 @@ class _MyControllState extends State<MyControll> {
             onTap: () {
               setState(() {
                 if (screenIndex == 0) {
-                  screenIndex = 2;
-                  activeButton = 2;
+                  screenIndex = 1;
+                  activeButton = 1;
                 } else {
                   screenIndex = 0;
                   activeButton = 0;
