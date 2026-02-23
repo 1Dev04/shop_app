@@ -1198,12 +1198,16 @@ class _ContentDetails extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              Text(
-                _formatDate(item.create_at ?? '', context),
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
+              Expanded(
+                child: Text(
+                  _formatDate(item.create_at ?? '', context),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1, // บังคับให้อยู่บรรทัดเดียว
+                  overflow: TextOverflow.ellipsis, // ถ้าเวลายาวเกินให้ขึ้น ...
                 ),
               ),
               if (hasDiscount && discountPercentClean.isNotEmpty) ...[
@@ -1300,9 +1304,11 @@ class _ActionButtonsState extends State<_ActionButtons> {
                 ),
         ),
         const SizedBox(width: 10),
-        ElevatedButton(
-          onPressed: () => widget.onLearnMore(widget.itemId),
-          child: const Icon(Icons.read_more_outlined, size: 30),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () => widget.onLearnMore(widget.itemId),
+            child: const Icon(Icons.read_more_outlined, size: 30),
+          ),
         ),
       ],
     );
