@@ -997,6 +997,7 @@ class _OutfitSuggestionCard extends StatelessWidget {
         item.discountPrice! > 0 &&
         item.discountPrice! < item.price;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenWidth = MediaQuery.sizeOf(context).width;
 
     return GestureDetector(
       onTap: onTap,
@@ -1014,8 +1015,8 @@ class _OutfitSuggestionCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
                 child: CachedNetworkImage(
                   imageUrl: item.imageUrl,
-                  width: 120,
-                  height: 140,
+                  width: screenWidth * 0.28,
+                  height: screenWidth * 0.32,
                   fit: BoxFit.cover,
                   placeholder: (context, url) =>
                       const Center(child: CircularProgressIndicator()),
@@ -1023,7 +1024,7 @@ class _OutfitSuggestionCard extends StatelessWidget {
                       const Icon(Icons.error),
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: screenWidth * 0.03),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1069,56 +1070,63 @@ class _OutfitSuggestionCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        if (hasDiscount)
-                          Text('฿${item.price.toStringAsFixed(0)}',
-                              style: const TextStyle(
-                                  fontSize: 14,
-                                  decoration: TextDecoration.lineThrough,
-                                  color: Colors.grey)),
-                        if (hasDiscount) const SizedBox(width: 6),
-                        Text(
-                          hasDiscount
-                              ? '฿${item.discountPrice!.toStringAsFixed(0)}'
-                              : '฿${item.price.toStringAsFixed(0)}',
-                          style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: hasDiscount
-                                  ? Colors.red
-                                  : Theme.of(context).colorScheme.primary),
-                        ),
-                        if (hasDiscount && item.discountPercent != null)
-                          const SizedBox(width: 8),
-                        if (hasDiscount && item.discountPercent != null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                                color: Colors.red,
-                                borderRadius: BorderRadius.circular(4)),
-                            child: Text('-${item.discountPercent}%',
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Row(
+                        children: [
+                          if (hasDiscount)
+                            Text('฿${item.price.toStringAsFixed(0)}',
                                 style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w900)),
+                                    fontSize: 14,
+                                    decoration: TextDecoration.lineThrough,
+                                    color: Colors.grey)),
+                          if (hasDiscount) const SizedBox(width: 6),
+                          Text(
+                            hasDiscount
+                                ? '฿${item.discountPrice!.toStringAsFixed(0)}'
+                                : '฿${item.price.toStringAsFixed(0)}',
+                            style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: hasDiscount
+                                    ? Colors.red
+                                    : Theme.of(context).colorScheme.primary),
                           ),
-                      ],
+                          if (hasDiscount && item.discountPercent != null)
+                            const SizedBox(width: 8),
+                          if (hasDiscount && item.discountPercent != null)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius: BorderRadius.circular(4)),
+                              child: Text('-${item.discountPercent}%',
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w900)),
+                            ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
-              FloatingActionButton.small(
-                heroTag: 'basket_${item.uuid}_${item.id}',
-                onPressed: onAddToBasket,
-                backgroundColor:
-                    Theme.of(context).floatingActionButtonTheme.backgroundColor,
-                child: Icon(Icons.shopping_cart_outlined,
-                    size: 24,
-                    color: Theme.of(context)
-                        .floatingActionButtonTheme
-                        .foregroundColor),
+              Padding(
+                padding: const EdgeInsets.only(left: 4.0),
+                child: FloatingActionButton.small(
+                  heroTag: 'basket_${item.uuid}_${item.id}',
+                  onPressed: onAddToBasket,
+                  backgroundColor:
+                      Theme.of(context).floatingActionButtonTheme.backgroundColor,
+                  child: Icon(Icons.shopping_cart_outlined,
+                      size: 24,
+                      color: Theme.of(context)
+                          .floatingActionButtonTheme
+                          .foregroundColor),
+                ),
               ),
             ],
           ),
