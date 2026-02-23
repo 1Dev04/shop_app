@@ -246,7 +246,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
   double _progress = 0.0;
   String _progressLabel = 'Please wait...';
   bool _isCapturing = false;
-  bool _isDisposed = false; // ✅ ป้องกัน labeler ถูกเรียกหลัง dispose
+  bool _isDisposed = false;
 
   CatData? _analysisCat;
   List<Map<String, dynamic>> _recommendedProducts = [];
@@ -258,159 +258,39 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
   static const String cloudinaryFolder = 'Fetch_Img_SizeCat';
 
   static const List<String> _catLabels = [
-    'cat',
-    'tabby',
-    'kitten',
-    'persian cat',
-    'siamese cat',
-    'british shorthair',
-    'maine coon',
-    'bengal cat',
-    'ragdoll',
-    'feline',
+    'cat', 'tabby', 'kitten', 'persian cat', 'siamese cat',
+    'british shorthair', 'maine coon', 'bengal cat', 'ragdoll', 'feline',
   ];
   static const List<String> _dogLabels = [
-    'dog',
-    'puppy',
-    'canine',
-    'hound',
-    'labrador',
-    'poodle',
-    'bulldog',
-    'beagle',
-    'husky',
-    'golden retriever',
-    'german shepherd',
-    'dachshund',
-    'chihuahua',
-    'pomeranian',
-    'corgi',
-    'shih tzu',
+    'dog', 'puppy', 'canine', 'hound', 'labrador', 'poodle', 'bulldog',
+    'beagle', 'husky', 'golden retriever', 'german shepherd', 'dachshund',
+    'chihuahua', 'pomeranian', 'corgi', 'shih tzu',
   ];
   static const List<String> _artLabels = [
-    'cartoon',
-    'illustration',
-    'anime',
-    'drawing',
-    'animation',
-    'art',
-    'artwork',
-    'fictional character',
-    'animated cartoon',
-    'graphic',
-    'comic',
-    'sketch',
-    'painting',
-    'digital art',
-    'manga',
-    'clipart',
-    'vector',
-    'poster',
-    'figure',
-    'figurine',
-    'toy',
-    'stuffed animal',
-    'plush',
-    'statue',
-    'sculpture',
+    'cartoon', 'illustration', 'anime', 'drawing', 'animation', 'art',
+    'artwork', 'fictional character', 'animated cartoon', 'graphic', 'comic',
+    'sketch', 'painting', 'digital art', 'manga', 'clipart', 'vector',
+    'poster', 'figure', 'figurine', 'toy', 'stuffed animal', 'plush',
+    'statue', 'sculpture',
   ];
   static const List<String> _realAnimalLabels = [
-    'fur',
-    'whisker',
-    'mammal',
-    'wildlife',
-    'fauna',
-    'paw',
-    'animal',
-    'pet',
-    'domestic animal',
+    'fur', 'whisker', 'mammal', 'wildlife', 'fauna', 'paw', 'animal',
+    'pet', 'domestic animal',
   ];
   static const List<String> _nonCatAnimalLabels = [
-    'otter',
-    'sea otter',
-    'river otter',
-    'mink',
-    'ferret',
-    'weasel',
-    'marten',
-    'beaver',
-    'badger',
-    'skunk',
-    'seal',
-    'sea lion',
-    'walrus',
-    'dolphin',
-    'whale',
-    'shark',
-    'octopus',
-    'crab',
-    'lobster',
-    'fish',
-    'fox',
-    'wolf',
-    'bear',
-    'panda',
-    'raccoon',
-    'squirrel',
-    'rabbit',
-    'hare',
-    'hamster',
-    'guinea pig',
-    'gerbil',
-    'rat',
-    'mouse',
-    'hedgehog',
-    'meerkat',
-    'mongoose',
-    'capybara',
-    'monkey',
-    'ape',
-    'chimpanzee',
-    'gorilla',
-    'lemur',
-    'koala',
-    'kangaroo',
-    'deer',
-    'elk',
-    'reindeer',
-    'moose',
-    'alpaca',
-    'llama',
-    'sheep',
-    'goat',
-    'cow',
-    'horse',
-    'pig',
-    'bird',
-    'parrot',
-    'owl',
-    'eagle',
-    'chicken',
-    'duck',
-    'tiger',
-    'lion',
-    'cheetah',
-    'leopard',
-    'jaguar',
-    'lynx',
-    'bobcat',
-    'cougar',
-    'panther',
-    'snake',
-    'lizard',
-    'turtle',
-    'frog',
-    'gecko',
-    'iguana',
-    'chameleon',
-    'crocodile',
-    'alligator',
-    'reptile',
-    'dinosaur',
-    'dragon',
-    'spider',
-    'insect',
-    'scorpion',
+    'otter', 'sea otter', 'river otter', 'mink', 'ferret', 'weasel',
+    'marten', 'beaver', 'badger', 'skunk', 'seal', 'sea lion', 'walrus',
+    'dolphin', 'whale', 'shark', 'octopus', 'crab', 'lobster', 'fish',
+    'fox', 'wolf', 'bear', 'panda', 'raccoon', 'squirrel', 'rabbit',
+    'hare', 'hamster', 'guinea pig', 'gerbil', 'rat', 'mouse', 'hedgehog',
+    'meerkat', 'mongoose', 'capybara', 'monkey', 'ape', 'chimpanzee',
+    'gorilla', 'lemur', 'koala', 'kangaroo', 'deer', 'elk', 'reindeer',
+    'moose', 'alpaca', 'llama', 'sheep', 'goat', 'cow', 'horse', 'pig',
+    'bird', 'parrot', 'owl', 'eagle', 'chicken', 'duck', 'tiger', 'lion',
+    'cheetah', 'leopard', 'jaguar', 'lynx', 'bobcat', 'cougar', 'panther',
+    'snake', 'lizard', 'turtle', 'frog', 'gecko', 'iguana', 'chameleon',
+    'crocodile', 'alligator', 'reptile', 'dinosaur', 'dragon', 'spider',
+    'insect', 'scorpion',
   ];
 
   String get pythonBackendAnalysis => '${getBaseUrl()}/api/vision/analyze-cat';
@@ -425,7 +305,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
 
   @override
   void dispose() {
-    _isDisposed = true; // ✅ set ก่อนทุกอย่าง
+    _isDisposed = true;
     _cameraController?.dispose();
     _cameraController = null;
     _imageLabeler.close();
@@ -437,8 +317,85 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     _imageLabeler = ImageLabeler(options: options);
   }
 
+  // ✅ ฟังก์ชันใหม่: ตรวจว่ามีแมวหลายตัวในภาพ โดยแบ่ง grid 2x2
+  Future<bool> _hasMultipleCats(String imagePath) async {
+    if (_isDisposed) return false;
+    try {
+      final bytes = await File(imagePath).readAsBytes();
+      img.Image? image = img.decodeImage(bytes);
+      if (image == null) return false;
+
+      final tempDir = await getTemporaryDirectory();
+      int catRegionCount = 0;
+
+      // แบ่งรูปเป็น 4 ส่วน (2x2 grid) แล้วตรวจแต่ละส่วน
+      final int halfW = image.width ~/ 2;
+      final int halfH = image.height ~/ 2;
+
+      final List<Map<String, int>> regions = [
+        {'x': 0,     'y': 0,     'w': halfW, 'h': halfH}, // บนซ้าย
+        {'x': halfW, 'y': 0,     'w': halfW, 'h': halfH}, // บนขวา
+        {'x': 0,     'y': halfH, 'w': halfW, 'h': halfH}, // ล่างซ้าย
+        {'x': halfW, 'y': halfH, 'w': halfW, 'h': halfH}, // ล่างขวา
+      ];
+
+      for (int i = 0; i < regions.length; i++) {
+        if (_isDisposed) return false;
+
+        final r = regions[i];
+        final cropped = img.copyCrop(
+          image,
+          x: r['x']!,
+          y: r['y']!,
+          width: r['w']!,
+          height: r['h']!,
+        );
+
+        final regionFile = File(
+          '${tempDir.path}/region_${i}_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        );
+        await regionFile.writeAsBytes(img.encodeJpg(cropped, quality: 80));
+
+        try {
+          final inputImage = InputImage.fromFilePath(regionFile.path);
+          final labels = await _imageLabeler.processImage(inputImage);
+
+          double regionCatScore = 0.0;
+          for (final label in labels) {
+            final text = label.label.toLowerCase();
+            for (final catLabel in _catLabels) {
+              if (text.contains(catLabel) && label.confidence > regionCatScore) {
+                regionCatScore = label.confidence;
+              }
+            }
+          }
+
+          // ถ้า region นี้มี cat score >= 0.50 นับว่าเจอแมว
+          if (regionCatScore >= 0.50) {
+            catRegionCount++;
+            print('🐱 Region $i: cat score=${regionCatScore.toStringAsFixed(2)} ✅');
+          } else {
+            print('⬜ Region $i: cat score=${regionCatScore.toStringAsFixed(2)}');
+          }
+        } catch (e) {
+          print('❌ Region $i error: $e');
+        } finally {
+          try { regionFile.delete(); } catch (_) {}
+        }
+
+        // ถ้าพบแมวมากกว่า 1 region แล้ว หยุดทันที
+        if (catRegionCount > 1) return true;
+      }
+
+      print('🐱 Total cat regions: $catRegionCount');
+      return catRegionCount > 1;
+    } catch (e) {
+      print('❌ hasMultipleCats error: $e');
+      return false;
+    }
+  }
+
   Future<_DetectionResult> _detectCatPro(String imagePath) async {
-    // ✅ เช็ค disposed ก่อนเรียก labeler
     if (_isDisposed) {
       return const _DetectionResult(
           isCat: false, reason: 'disposed', catScore: 0, isCartoon: false);
@@ -447,7 +404,6 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
       final inputImage = InputImage.fromFilePath(imagePath);
       final labels = await _imageLabeler.processImage(inputImage);
 
-      // ✅ เช็คอีกรอบหลัง await
       if (_isDisposed) {
         return const _DetectionResult(
             isCat: false, reason: 'disposed', catScore: 0, isCartoon: false);
@@ -474,8 +430,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
           if (text.contains(l) && conf > artScore) artScore = conf;
         }
         for (final l in _realAnimalLabels) {
-          if (text.contains(l) && conf > realAnimalScore)
-            realAnimalScore = conf;
+          if (text.contains(l) && conf > realAnimalScore) realAnimalScore = conf;
         }
         for (final l in _nonCatAnimalLabels) {
           if (text.contains(l) && conf > nonCatAnimalScore) {
@@ -485,8 +440,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
         }
       }
 
-      print(
-          '🐱cat=$catScore 🐶dog=$dogScore 🎨art=$artScore 🐾real=$realAnimalScore');
+      print('🐱cat=$catScore 🐶dog=$dogScore 🎨art=$artScore 🐾real=$realAnimalScore');
 
       final isCartoon = await _cartoonCheckIsolate(imagePath);
 
@@ -495,22 +449,35 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
             isCat: false, reason: 'disposed', catScore: 0, isCartoon: false);
       }
 
-      if (catScore < 0.50) // เปลี่ยนจาก 0.65 → 0.50
+      if (catScore < 0.50)
         return _DetectionResult(
             isCat: false,
             reason: 'cat_score_low',
             catScore: catScore,
             isCartoon: false);
 
-      if (dogScore >= 0.50 &&
-          (catScore - dogScore) < 0.10) // เปลี่ยน 0.20 → 0.10
+      if (dogScore >= 0.50 && (catScore - dogScore) < 0.10) {}
 
-      if (catScore >= 0.45 && realAnimalScore >= 0.40)
+      if (catScore >= 0.45 && realAnimalScore >= 0.40) {
+        // ✅ ตรวจ multiple cats ก่อน confirm
+        final hasMultiple = await _hasMultipleCats(imagePath);
+        if (_isDisposed) {
+          return const _DetectionResult(
+              isCat: false, reason: 'disposed', catScore: 0, isCartoon: false);
+        }
+        if (hasMultiple) {
+          return _DetectionResult(
+              isCat: false,
+              reason: 'multiple_cats',
+              catScore: catScore,
+              isCartoon: false);
+        }
         return _DetectionResult(
             isCat: true,
             reason: 'real_animal_confirmed',
             catScore: catScore,
             isCartoon: false);
+      }
 
       if (artScore >= 0.60)
         return _DetectionResult(
@@ -555,6 +522,20 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
             catScore: catScore,
             isCartoon: false);
 
+      // ✅ ตรวจ multiple cats ก่อน return passed
+      final hasMultiple = await _hasMultipleCats(imagePath);
+      if (_isDisposed) {
+        return const _DetectionResult(
+            isCat: false, reason: 'disposed', catScore: 0, isCartoon: false);
+      }
+      if (hasMultiple) {
+        return _DetectionResult(
+            isCat: false,
+            reason: 'multiple_cats',
+            catScore: catScore,
+            isCartoon: false);
+      }
+
       return _DetectionResult(
           isCat: true, reason: 'passed', catScore: catScore, isCartoon: false);
     } catch (e) {
@@ -565,10 +546,10 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
   }
 
   void _initCamera() async {
-    if (!mounted || _isDisposed) return; // ✅
+    if (!mounted || _isDisposed) return;
     try {
       final cameras = await availableCameras();
-      if (!mounted || _isDisposed) return; // ✅ เช็คหลัง await
+      if (!mounted || _isDisposed) return;
 
       final backCamera = cameras.firstWhere(
         (c) => c.lensDirection == CameraLensDirection.back,
@@ -577,7 +558,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
 
       await _cameraController?.dispose();
       _cameraController = null;
-      if (!mounted || _isDisposed) return; // ✅
+      if (!mounted || _isDisposed) return;
 
       _cameraController = CameraController(
         backCamera,
@@ -586,7 +567,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
       );
       await _cameraController!.initialize();
 
-      if (mounted && !_isDisposed) setState(() {}); // ✅
+      if (mounted && !_isDisposed) setState(() {});
     } catch (e) {
       print('❌ Camera error: $e');
       if (mounted && !_isDisposed) _showError('เปิดกล้องไม่สำเร็จ: $e');
@@ -600,29 +581,25 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
           'id': '1',
           'name': 'Cat Clothing Set A',
           'price': '\$25',
-          'imageUrl':
-              'https://via.placeholder.com/150/FF6347/FFFFFF?text=Product+1'
+          'imageUrl': 'https://via.placeholder.com/150/FF6347/FFFFFF?text=Product+1'
         },
         {
           'id': '2',
           'name': 'Cute Cat Sweater',
           'price': '\$30',
-          'imageUrl':
-              'https://via.placeholder.com/150/4682B4/FFFFFF?text=Product+2'
+          'imageUrl': 'https://via.placeholder.com/150/4682B4/FFFFFF?text=Product+2'
         },
         {
           'id': '3',
           'name': 'Winter Cat Outfit',
           'price': '\$28',
-          'imageUrl':
-              'https://via.placeholder.com/150/32CD32/FFFFFF?text=Product+3'
+          'imageUrl': 'https://via.placeholder.com/150/32CD32/FFFFFF?text=Product+3'
         },
         {
           'id': '4',
           'name': 'Premium Cat Dress',
           'price': '\$35',
-          'imageUrl':
-              'https://via.placeholder.com/150/FFD700/FFFFFF?text=Product+4'
+          'imageUrl': 'https://via.placeholder.com/150/FFD700/FFFFFF?text=Product+4'
         },
       ];
     });
@@ -656,7 +633,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
   }
 
   Future<void> _captureFromLiveCamera() async {
-    if (_isCapturing || _isDisposed) return; // ✅
+    if (_isCapturing || _isDisposed) return;
     final ctrl = _cameraController;
     if (ctrl == null || !ctrl.value.isInitialized) {
       _showError('กล้องยังไม่พร้อม');
@@ -665,48 +642,36 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     if (mounted) setState(() => _isCapturing = true);
     try {
       final XFile photo = await ctrl.takePicture();
-      if (!mounted || _isDisposed) return; // ✅
+      if (!mounted || _isDisposed) return;
 
       final croppedFile = await _cropToRectArea(photo.path);
       if (!mounted || _isDisposed) {
-        try {
-          croppedFile?.delete();
-        } catch (_) {}
-        try {
-          File(photo.path).delete();
-        } catch (_) {}
+        try { croppedFile?.delete(); } catch (_) {}
+        try { File(photo.path).delete(); } catch (_) {}
         return;
       }
 
       final checkPath = croppedFile?.path ?? photo.path;
       final result = await _detectCatPro(checkPath);
-      try {
-        croppedFile?.delete();
-      } catch (_) {}
+      try { croppedFile?.delete(); } catch (_) {}
 
       if (!mounted || _isDisposed) {
-        try {
-          File(photo.path).delete();
-        } catch (_) {}
+        try { File(photo.path).delete(); } catch (_) {}
         return;
       }
 
       if (!result.isCat) {
         setState(() => _isCapturing = false);
-        try {
-          File(photo.path).delete();
-        } catch (_) {}
+        try { File(photo.path).delete(); } catch (_) {}
         _showRejectDialog(result);
         return;
       }
 
       final processedImage =
           await _validateAndCompressGalleryImage(File(photo.path));
-      try {
-        File(photo.path).delete();
-      } catch (_) {}
+      try { File(photo.path).delete(); } catch (_) {}
 
-      if (!mounted || _isDisposed) return; // ✅
+      if (!mounted || _isDisposed) return;
 
       await ctrl.dispose();
       if (mounted && !_isDisposed) {
@@ -726,20 +691,20 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
   }
 
   Future<void> _pickImage() async {
-    if (_isCapturing || _isDisposed) return; // ✅
+    if (_isCapturing || _isDisposed) return;
     try {
       final XFile? image = await _picker.pickImage(
           source: ImageSource.gallery,
-          imageQuality: 95, // เพิ่มจาก 85 → 95
-          maxWidth: 1920, // เพิ่มจาก 1280 → 1920
+          imageQuality: 95,
+          maxWidth: 1920,
           maxHeight: 1920);
       if (image == null) return;
-      if (!mounted || _isDisposed) return; // ✅
+      if (!mounted || _isDisposed) return;
 
       setState(() => _isCapturing = true);
 
       final result = await _detectCatPro(image.path);
-      if (!mounted || _isDisposed) return; // ✅
+      if (!mounted || _isDisposed) return;
 
       if (!result.isCat) {
         setState(() => _isCapturing = false);
@@ -749,7 +714,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
 
       final processedImage =
           await _validateAndCompressGalleryImage(File(image.path));
-      if (!mounted || _isDisposed) return; // ✅
+      if (!mounted || _isDisposed) return;
 
       if (processedImage != null) {
         await _cameraController?.dispose();
@@ -772,13 +737,20 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
   }
 
   void _showRejectDialog(_DetectionResult result) {
-    if (!mounted || _isDisposed) return; // ✅
+    if (!mounted || _isDisposed) return;
     String title, reason;
     IconData icon;
     Color iconColor;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    if (result.isCartoon) {
+    // ✅ เพิ่ม case multiple_cats
+    if (result.reason == 'multiple_cats') {
+      title = '🐱🐱 ตรวจพบแมวหลายตัว';
+      reason =
+          'ระบบตรวจพบแมวมากกว่า 1 ตัวในภาพ\nกรุณาถ่ายรูปแมวทีละตัวเท่านั้น\nเพื่อให้วัดขนาดได้แม่นยำ';
+      icon = Icons.pets;
+      iconColor = Colors.purple;
+    } else if (result.isCartoon) {
       title = '🎨 ตรวจพบภาพการ์ตูน/ภาพวาด';
       reason =
           'รูปที่ถ่ายดูเหมือนภาพการ์ตูน/illustration\nกรุณาถ่ายรูปแมวจริงเท่านั้น';
@@ -888,7 +860,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
   }
 
   Future<void> _analyzeCat() async {
-    if (_selectedImage == null || _isDisposed) return; // ✅
+    if (_selectedImage == null || _isDisposed) return;
     setState(() {
       _isProcessing = true;
       _progress = 0.1;
@@ -896,14 +868,14 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     });
     try {
       final token = await _getFirebaseToken();
-      if (!mounted || _isDisposed) return; // ✅
+      if (!mounted || _isDisposed) return;
       if (token == null || token.isEmpty) {
         setState(() => _isProcessing = false);
         _showError('กรุณาเข้าสู่ระบบก่อนใช้งาน');
         return;
       }
       final imageUrl = await _uploadToCloudinary(_selectedImage!);
-      if (!mounted || _isDisposed) return; // ✅
+      if (!mounted || _isDisposed) return;
       if (imageUrl == null) throw Exception('Upload failed');
 
       setState(() {
@@ -925,7 +897,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
               onTimeout: () =>
                   throw TimeoutException('Backend ใช้เวลานานเกินไป'));
 
-      if (!mounted || _isDisposed) return; // ✅
+      if (!mounted || _isDisposed) return;
 
       final decodedBody = utf8.decode(response.bodyBytes);
       if (response.statusCode == 401)
@@ -969,7 +941,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
   }
 
   void _clearData() {
-    if (!mounted || _isDisposed) return; // ✅
+    if (!mounted || _isDisposed) return;
     setState(() {
       _selectedImage = null;
       _analysisCat = null;
@@ -1017,7 +989,8 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
             Icon(Icons.pets, color: Colors.white, size: 18),
             SizedBox(width: 8),
             Expanded(
-                child: Text('วางแมวให้อยู่ในกรอบ เห็นทั้งตัว แล้วกดถ่ายรูป',
+                child: Text(
+                    'วางแมว 1 ตัวให้อยู่ในกรอบ เห็นทั้งตัว แล้วกดถ่ายรูป',
                     style: TextStyle(
                         color: Colors.white,
                         fontSize: 12,
