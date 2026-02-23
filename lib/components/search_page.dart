@@ -1325,6 +1325,7 @@ class _ItemDetailCardState extends State<_ItemDetailCard> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
     final languageProvider = Provider.of<LanguageProvider>(context);
