@@ -345,7 +345,6 @@ class _HomePageState extends State<HomePage> {
               scrollDirection: Axis.vertical,
               itemCount: null,
               onPageChanged: (index) {
-               
                 if (images.isEmpty) return;
                 setState(() => _currentPage = index % images.length);
               },
@@ -480,16 +479,34 @@ class _HomePageState extends State<HomePage> {
                                       Overlay.of(context),
                                       CustomSnackBar.success(
                                         message: languageProvider.translate(
-                                          en: 'Added to cart!',
-                                          th: 'เพิ่มลงตะกร้าแล้ว!',
+                                          en: 'Added to Basket successfully!',
+                                          th: 'เพิ่มลงตะกร้าสำเร็จ!',
                                         ),
                                       ),
+                                      animationDuration: const Duration(
+                                          milliseconds:
+                                              1000), // เร็วแค่ไหนตอน popup
+                                      reverseAnimationDuration: const Duration(
+                                          milliseconds:
+                                              200), //  เร็วแค่ไหนตอนหาย
+                                      displayDuration: const Duration(
+                                          milliseconds: 1000), // แสดงนานแค่ไหน
                                     );
                                   } catch (e) {
                                     showTopSnackBar(
                                       Overlay.of(context),
                                       CustomSnackBar.error(
-                                          message: 'เกิดข้อผิดพลาด'),
+                                        message: languageProvider.translate(
+                                          en: 'Failed to add to Basket: $e',
+                                          th: 'เพิ่มลงตะกร้าไม่สำเร็จ: $e',
+                                        ),
+                                      ),
+                                      animationDuration:
+                                          const Duration(milliseconds: 1000),
+                                      reverseAnimationDuration:
+                                          const Duration(milliseconds: 200),
+                                      displayDuration:
+                                          const Duration(milliseconds: 1000),
                                     );
                                   }
                                 },
@@ -647,10 +664,16 @@ class _ItemDetailsCardState extends State<ItemDetailsCard> {
             Overlay.of(context),
             CustomSnackBar.success(
               message: languageProvider.translate(
-                en: 'Removed from favourites',
+                en: 'Removed from favourites!',
                 th: 'ลบออกจากรายการโปรดแล้ว',
               ),
             ),
+            animationDuration:
+                const Duration(milliseconds: 1000), // เร็วแค่ไหนตอน popup
+            reverseAnimationDuration:
+                const Duration(milliseconds: 200), // เร็วแค่ไหนตอนหาย
+            displayDuration:
+                const Duration(milliseconds: 1000), // แสดงนานแค่ไหน
           );
         }
       } else {
@@ -663,18 +686,34 @@ class _ItemDetailsCardState extends State<ItemDetailsCard> {
             Overlay.of(context),
             CustomSnackBar.success(
               message: languageProvider.translate(
-                en: 'Added to favourites!',
+                en: 'Added to favourites successfully!',
                 th: 'เพิ่มลงรายการโปรดแล้ว!',
               ),
             ),
+            animationDuration:
+                const Duration(milliseconds: 1000), // เร็วแค่ไหนตอน popup
+            reverseAnimationDuration:
+                const Duration(milliseconds: 200), // เร็วแค่ไหนตอนหาย
+            displayDuration:
+                const Duration(milliseconds: 1000), // แสดงนานแค่ไหน
           );
         }
       }
     } catch (e) {
       if (mounted) {
+        final languageProvider =
+            Provider.of<LanguageProvider>(context, listen: false);
         showTopSnackBar(
           Overlay.of(context),
-          CustomSnackBar.error(message: 'เกิดข้อผิดพลาด: $e'),
+          CustomSnackBar.error(
+            message: languageProvider.translate(
+              en: 'Failed to add to favourites: $e',
+              th: 'เพิ่มลงรายการโปรดไม่สำเร็จ: $e',
+            ),
+          ),
+          animationDuration: const Duration(milliseconds: 1000),
+          reverseAnimationDuration: const Duration(milliseconds: 200),
+          displayDuration: const Duration(milliseconds: 1000),
         );
       }
     } finally {
@@ -948,16 +987,34 @@ class _ItemDetailsCardState extends State<ItemDetailsCard> {
                                       Overlay.of(context),
                                       CustomSnackBar.success(
                                         message: languageProvider.translate(
-                                          en: 'Added to cart successfully!',
+                                          en: 'Added to Basket successfully!',
                                           th: 'เพิ่มลงตะกร้าสำเร็จ!',
                                         ),
                                       ),
+                                      animationDuration: const Duration(
+                                          milliseconds:
+                                              1000), // เร็วแค่ไหนตอน popup
+                                      reverseAnimationDuration: const Duration(
+                                          milliseconds:
+                                              200), //  เร็วแค่ไหนตอนหาย
+                                      displayDuration: const Duration(
+                                          milliseconds: 1000), // แสดงนานแค่ไหน
                                     );
                                   } catch (e) {
                                     showTopSnackBar(
                                       Overlay.of(context),
                                       CustomSnackBar.error(
-                                          message: 'เกิดข้อผิดพลาด'),
+                                        message: languageProvider.translate(
+                                          en: 'Failed to add to Basket: $e',
+                                          th: 'เพิ่มลงตะกร้าไม่สำเร็จ: $e',
+                                        ),
+                                      ),
+                                      animationDuration:
+                                          const Duration(milliseconds: 1000),
+                                      reverseAnimationDuration:
+                                          const Duration(milliseconds: 200),
+                                      displayDuration:
+                                          const Duration(milliseconds: 1000),
                                     );
                                   }
                                 },

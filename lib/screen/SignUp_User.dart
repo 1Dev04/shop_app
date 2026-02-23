@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_application_1/provider/language_provider.dart';
 import 'package:flutter_application_1/provider/theme.dart';
 import 'package:flutter_application_1/provider/theme_provider.dart';
 import 'package:flutter_application_1/screen/auth_page.dart';
@@ -11,7 +12,6 @@ import 'package:provider/provider.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import 'package:http/http.dart' as http;
-
 
 String getBaseUrl() {
   // prod / prod-v2 / local
@@ -39,8 +39,6 @@ String getBaseUrl() {
 
   return 'http://localhost:10000';
 }
-
-
 
 class regisUser extends StatefulWidget {
   const regisUser({super.key});
@@ -77,6 +75,8 @@ class _regisUserState extends State<regisUser> {
   }
 
   void submitForm() {
+    final languageProvider =
+        Provider.of<LanguageProvider>(context, listen: false);
     if (_formKey.currentState!.validate() && acceptTerms) {
       print("Name: ${nameController}");
       print("Gmail: ${emailController}");
@@ -86,18 +86,31 @@ class _regisUserState extends State<regisUser> {
       print("Gender: ${selectedGender}");
       print("Subscribe to the newsletter: ${subscribeNewsletter}");
       print("Accepts Terms: ${acceptTerms}");
+
       showTopSnackBar(
         Overlay.of(context),
         CustomSnackBar.success(
-          message: "Membership registration successful!",
+          message: languageProvider.translate(
+            en: 'Membership registration successful!',
+            th: 'สมัครสมาชิกสำเร็จ!',
+          ),
         ),
+        animationDuration: const Duration(milliseconds: 1000),
+        reverseAnimationDuration: const Duration(milliseconds: 200),
+        displayDuration: const Duration(milliseconds: 1000),
       );
     } else {
       showTopSnackBar(
         Overlay.of(context),
         CustomSnackBar.error(
-          message: "Please>> Fill in the information completely.",
+          message: languageProvider.translate(
+            en: "Please fill in the information completely.",
+            th: "กรุณากรอกข้อมูลให้ครบถ้วน",
+          ),
         ),
+        animationDuration: const Duration(milliseconds: 1000),
+        reverseAnimationDuration: const Duration(milliseconds: 200),
+        displayDuration: const Duration(milliseconds: 1000),
       );
     }
   }

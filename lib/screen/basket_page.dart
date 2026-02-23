@@ -49,11 +49,19 @@ class _BasketPageState extends State<BasketPage> {
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
+        final languageProvider =
+            Provider.of<LanguageProvider>(context, listen: false);
         showTopSnackBar(
           Overlay.of(context),
           CustomSnackBar.error(
-            message: 'Failed to load basket: $e',
+            message: languageProvider.translate(
+              en: 'Failed to add to Basket: $e',
+              th: 'เพิ่มลงตะกร้าไม่สำเร็จ: $e',
+            ),
           ),
+          animationDuration: const Duration(milliseconds: 1000),
+          reverseAnimationDuration: const Duration(milliseconds: 200),
+          displayDuration: const Duration(milliseconds: 1000),
         );
       }
     }
@@ -64,6 +72,8 @@ class _BasketPageState extends State<BasketPage> {
   // ============================================================================
 
   Future<void> _updateQuantity(String clothingUuid, int newQuantity) async {
+    final languageProvider =
+        Provider.of<LanguageProvider>(context, listen: false);
     try {
       // ✅ ไม่ต้องส่ง userId
       await _basketApi.updateQuantity(
@@ -76,9 +86,15 @@ class _BasketPageState extends State<BasketPage> {
       if (mounted) {
         showTopSnackBar(
           Overlay.of(context),
-          const CustomSnackBar.success(
-            message: 'Quantity updated',
+          CustomSnackBar.success(
+            message: languageProvider.translate(
+              en: 'Quantity updated successfully!',
+              th: 'ปรับปรุงจำนวนสินค้าสำเร็จ!',
+            ),
           ),
+          animationDuration: const Duration(milliseconds: 1000),
+          reverseAnimationDuration: const Duration(milliseconds: 200),
+          displayDuration: const Duration(milliseconds: 1000),
         );
       }
     } catch (e) {
@@ -86,8 +102,14 @@ class _BasketPageState extends State<BasketPage> {
         showTopSnackBar(
           Overlay.of(context),
           CustomSnackBar.error(
-            message: 'Failed to update: $e',
+            message: languageProvider.translate(
+              en: 'Failed to update quantity: $e',
+              th: 'ปรับปรุงจำนวนสินค้าไม่สำเร็จ: $e',
+            ),
           ),
+          animationDuration: const Duration(milliseconds: 1000),
+          reverseAnimationDuration: const Duration(milliseconds: 200),
+          displayDuration: const Duration(milliseconds: 1000),
         );
       }
     }
@@ -111,21 +133,37 @@ class _BasketPageState extends State<BasketPage> {
       setState(() => _isDeleting = false);
 
       if (mounted) {
+        final languageProvider =
+            Provider.of<LanguageProvider>(context, listen: false);
         showTopSnackBar(
           Overlay.of(context),
-          const CustomSnackBar.success(
-            message: 'Item removed from basket',
+          CustomSnackBar.success(
+            message: languageProvider.translate(
+              en: 'Item removed from Basket!',
+              th: 'ลบสินค้าออกจากตะกร้าแล้ว!',
+            ),
           ),
+          animationDuration: const Duration(milliseconds: 1000),
+          reverseAnimationDuration: const Duration(milliseconds: 200),
+          displayDuration: const Duration(milliseconds: 1000),
         );
       }
     } catch (e) {
       setState(() => _isDeleting = false);
       if (mounted) {
+        final languageProvider =
+            Provider.of<LanguageProvider>(context, listen: false);
         showTopSnackBar(
           Overlay.of(context),
           CustomSnackBar.error(
-            message: 'Failed to remove: $e',
+            message: languageProvider.translate(
+              en: 'Failed to remove item: $e',
+              th: 'ลบสินค้าออกจากตะกร้าไม่สำเร็จ: $e',
+            ),
           ),
+          animationDuration: const Duration(milliseconds: 1000),
+          reverseAnimationDuration: const Duration(milliseconds: 200),
+          displayDuration: const Duration(milliseconds: 1000),
         );
       }
     }
@@ -171,21 +209,37 @@ class _BasketPageState extends State<BasketPage> {
       setState(() => _isDeleting = false);
 
       if (mounted) {
+        final languageProvider =
+            Provider.of<LanguageProvider>(context, listen: false);
         showTopSnackBar(
           Overlay.of(context),
-          const CustomSnackBar.success(
-            message: 'Basket cleared',
+          CustomSnackBar.success(
+            message: languageProvider.translate(
+              en: 'Basket cleared successfully!',
+              th: 'ล้างตะกร้าสำเร็จ!',
+            ),
           ),
+          animationDuration: const Duration(milliseconds: 1000),
+          reverseAnimationDuration: const Duration(milliseconds: 200),
+          displayDuration: const Duration(milliseconds: 1000),
         );
       }
     } catch (e) {
       setState(() => _isDeleting = false);
       if (mounted) {
+        final languageProvider =
+            Provider.of<LanguageProvider>(context, listen: false);
         showTopSnackBar(
           Overlay.of(context),
           CustomSnackBar.error(
-            message: 'Failed to clear basket: $e',
+            message: languageProvider.translate(
+              en: 'Failed to clear Basket: $e',
+              th: 'ล้างตะกร้าไม่สำเร็จ: $e',
+            ),
           ),
+          animationDuration: const Duration(milliseconds: 1000),
+          reverseAnimationDuration: const Duration(milliseconds: 200),
+          displayDuration: const Duration(milliseconds: 1000),
         );
       }
     }
@@ -202,14 +256,13 @@ class _BasketPageState extends State<BasketPage> {
     final isDark = themeProvider.themeMode == ThemeMode.dark;
 
     return Scaffold(
-      
       appBar: AppBar(
-         centerTitle: true,
-      leading: IconButton(
-        icon: Icon(Icons.arrow_back_ios_new_rounded,
-            color: isDark ? Colors.white : Colors.black87, size: 20),
-        onPressed: () => Navigator.of(context).pop(),
-      ),
+        centerTitle: true,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new_rounded,
+              color: isDark ? Colors.white : Colors.black87, size: 20),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: Text(
           languageProvider.translate(en: 'BASKET', th: 'ตะกร้า'),
           style: TextStyle(
@@ -407,6 +460,9 @@ class _BasketPageState extends State<BasketPage> {
                         th: 'ฟีเจอร์ชำระเงินเร็วๆ นี้!',
                       ),
                     ),
+                    animationDuration: const Duration(milliseconds: 1000),
+                    reverseAnimationDuration: const Duration(milliseconds: 200),
+                    displayDuration: const Duration(milliseconds: 1000),
                   );
                 },
                 style: ElevatedButton.styleFrom(
@@ -578,7 +634,8 @@ class _BasketItemCard extends StatelessWidget {
                                   showDialog(
                                     context: context,
                                     builder: (context) => AlertDialog(
-                                      backgroundColor: isDark ? Colors.black : Colors.white,
+                                      backgroundColor:
+                                          isDark ? Colors.black : Colors.white,
                                       title: Text('จำกัดจำนวน'),
                                       content: Text(
                                           'สามารถซื้อสินค้าได้สูงสุด 8 ชิ้นต่อรายการ'),

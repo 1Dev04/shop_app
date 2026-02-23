@@ -258,39 +258,159 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
   static const String cloudinaryFolder = 'Fetch_Img_SizeCat';
 
   static const List<String> _catLabels = [
-    'cat', 'tabby', 'kitten', 'persian cat', 'siamese cat',
-    'british shorthair', 'maine coon', 'bengal cat', 'ragdoll', 'feline',
+    'cat',
+    'tabby',
+    'kitten',
+    'persian cat',
+    'siamese cat',
+    'british shorthair',
+    'maine coon',
+    'bengal cat',
+    'ragdoll',
+    'feline',
   ];
   static const List<String> _dogLabels = [
-    'dog', 'puppy', 'canine', 'hound', 'labrador', 'poodle', 'bulldog',
-    'beagle', 'husky', 'golden retriever', 'german shepherd', 'dachshund',
-    'chihuahua', 'pomeranian', 'corgi', 'shih tzu',
+    'dog',
+    'puppy',
+    'canine',
+    'hound',
+    'labrador',
+    'poodle',
+    'bulldog',
+    'beagle',
+    'husky',
+    'golden retriever',
+    'german shepherd',
+    'dachshund',
+    'chihuahua',
+    'pomeranian',
+    'corgi',
+    'shih tzu',
   ];
   static const List<String> _artLabels = [
-    'cartoon', 'illustration', 'anime', 'drawing', 'animation', 'art',
-    'artwork', 'fictional character', 'animated cartoon', 'graphic', 'comic',
-    'sketch', 'painting', 'digital art', 'manga', 'clipart', 'vector',
-    'poster', 'figure', 'figurine', 'toy', 'stuffed animal', 'plush',
-    'statue', 'sculpture',
+    'cartoon',
+    'illustration',
+    'anime',
+    'drawing',
+    'animation',
+    'art',
+    'artwork',
+    'fictional character',
+    'animated cartoon',
+    'graphic',
+    'comic',
+    'sketch',
+    'painting',
+    'digital art',
+    'manga',
+    'clipart',
+    'vector',
+    'poster',
+    'figure',
+    'figurine',
+    'toy',
+    'stuffed animal',
+    'plush',
+    'statue',
+    'sculpture',
   ];
   static const List<String> _realAnimalLabels = [
-    'fur', 'whisker', 'mammal', 'wildlife', 'fauna', 'paw', 'animal',
-    'pet', 'domestic animal',
+    'fur',
+    'whisker',
+    'mammal',
+    'wildlife',
+    'fauna',
+    'paw',
+    'animal',
+    'pet',
+    'domestic animal',
   ];
   static const List<String> _nonCatAnimalLabels = [
-    'otter', 'sea otter', 'river otter', 'mink', 'ferret', 'weasel',
-    'marten', 'beaver', 'badger', 'skunk', 'seal', 'sea lion', 'walrus',
-    'dolphin', 'whale', 'shark', 'octopus', 'crab', 'lobster', 'fish',
-    'fox', 'wolf', 'bear', 'panda', 'raccoon', 'squirrel', 'rabbit',
-    'hare', 'hamster', 'guinea pig', 'gerbil', 'rat', 'mouse', 'hedgehog',
-    'meerkat', 'mongoose', 'capybara', 'monkey', 'ape', 'chimpanzee',
-    'gorilla', 'lemur', 'koala', 'kangaroo', 'deer', 'elk', 'reindeer',
-    'moose', 'alpaca', 'llama', 'sheep', 'goat', 'cow', 'horse', 'pig',
-    'bird', 'parrot', 'owl', 'eagle', 'chicken', 'duck', 'tiger', 'lion',
-    'cheetah', 'leopard', 'jaguar', 'lynx', 'bobcat', 'cougar', 'panther',
-    'snake', 'lizard', 'turtle', 'frog', 'gecko', 'iguana', 'chameleon',
-    'crocodile', 'alligator', 'reptile', 'dinosaur', 'dragon', 'spider',
-    'insect', 'scorpion',
+    'otter',
+    'sea otter',
+    'river otter',
+    'mink',
+    'ferret',
+    'weasel',
+    'marten',
+    'beaver',
+    'badger',
+    'skunk',
+    'seal',
+    'sea lion',
+    'walrus',
+    'dolphin',
+    'whale',
+    'shark',
+    'octopus',
+    'crab',
+    'lobster',
+    'fish',
+    'fox',
+    'wolf',
+    'bear',
+    'panda',
+    'raccoon',
+    'squirrel',
+    'rabbit',
+    'hare',
+    'hamster',
+    'guinea pig',
+    'gerbil',
+    'rat',
+    'mouse',
+    'hedgehog',
+    'meerkat',
+    'mongoose',
+    'capybara',
+    'monkey',
+    'ape',
+    'chimpanzee',
+    'gorilla',
+    'lemur',
+    'koala',
+    'kangaroo',
+    'deer',
+    'elk',
+    'reindeer',
+    'moose',
+    'alpaca',
+    'llama',
+    'sheep',
+    'goat',
+    'cow',
+    'horse',
+    'pig',
+    'bird',
+    'parrot',
+    'owl',
+    'eagle',
+    'chicken',
+    'duck',
+    'tiger',
+    'lion',
+    'cheetah',
+    'leopard',
+    'jaguar',
+    'lynx',
+    'bobcat',
+    'cougar',
+    'panther',
+    'snake',
+    'lizard',
+    'turtle',
+    'frog',
+    'gecko',
+    'iguana',
+    'chameleon',
+    'crocodile',
+    'alligator',
+    'reptile',
+    'dinosaur',
+    'dragon',
+    'spider',
+    'insect',
+    'scorpion',
   ];
 
   String get pythonBackendAnalysis => '${getBaseUrl()}/api/vision/analyze-cat';
@@ -333,9 +453,9 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
       final int halfH = image.height ~/ 2;
 
       final List<Map<String, int>> regions = [
-        {'x': 0,     'y': 0,     'w': halfW, 'h': halfH}, // บนซ้าย
-        {'x': halfW, 'y': 0,     'w': halfW, 'h': halfH}, // บนขวา
-        {'x': 0,     'y': halfH, 'w': halfW, 'h': halfH}, // ล่างซ้าย
+        {'x': 0, 'y': 0, 'w': halfW, 'h': halfH}, // บนซ้าย
+        {'x': halfW, 'y': 0, 'w': halfW, 'h': halfH}, // บนขวา
+        {'x': 0, 'y': halfH, 'w': halfW, 'h': halfH}, // ล่างซ้าย
         {'x': halfW, 'y': halfH, 'w': halfW, 'h': halfH}, // ล่างขวา
       ];
 
@@ -364,7 +484,8 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
           for (final label in labels) {
             final text = label.label.toLowerCase();
             for (final catLabel in _catLabels) {
-              if (text.contains(catLabel) && label.confidence > regionCatScore) {
+              if (text.contains(catLabel) &&
+                  label.confidence > regionCatScore) {
                 regionCatScore = label.confidence;
               }
             }
@@ -373,14 +494,18 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
           // ถ้า region นี้มี cat score >= 0.50 นับว่าเจอแมว
           if (regionCatScore >= 0.50) {
             catRegionCount++;
-            print('🐱 Region $i: cat score=${regionCatScore.toStringAsFixed(2)} ✅');
+            print(
+                '🐱 Region $i: cat score=${regionCatScore.toStringAsFixed(2)} ✅');
           } else {
-            print('⬜ Region $i: cat score=${regionCatScore.toStringAsFixed(2)}');
+            print(
+                '⬜ Region $i: cat score=${regionCatScore.toStringAsFixed(2)}');
           }
         } catch (e) {
           print('❌ Region $i error: $e');
         } finally {
-          try { regionFile.delete(); } catch (_) {}
+          try {
+            regionFile.delete();
+          } catch (_) {}
         }
 
         // ถ้าพบแมวมากกว่า 1 region แล้ว หยุดทันที
@@ -430,7 +555,8 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
           if (text.contains(l) && conf > artScore) artScore = conf;
         }
         for (final l in _realAnimalLabels) {
-          if (text.contains(l) && conf > realAnimalScore) realAnimalScore = conf;
+          if (text.contains(l) && conf > realAnimalScore)
+            realAnimalScore = conf;
         }
         for (final l in _nonCatAnimalLabels) {
           if (text.contains(l) && conf > nonCatAnimalScore) {
@@ -440,7 +566,8 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
         }
       }
 
-      print('🐱cat=$catScore 🐶dog=$dogScore 🎨art=$artScore 🐾real=$realAnimalScore');
+      print(
+          '🐱cat=$catScore 🐶dog=$dogScore 🎨art=$artScore 🐾real=$realAnimalScore');
 
       final isCartoon = await _cartoonCheckIsolate(imagePath);
 
@@ -581,25 +708,29 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
           'id': '1',
           'name': 'Cat Clothing Set A',
           'price': '\$25',
-          'imageUrl': 'https://via.placeholder.com/150/FF6347/FFFFFF?text=Product+1'
+          'imageUrl':
+              'https://via.placeholder.com/150/FF6347/FFFFFF?text=Product+1'
         },
         {
           'id': '2',
           'name': 'Cute Cat Sweater',
           'price': '\$30',
-          'imageUrl': 'https://via.placeholder.com/150/4682B4/FFFFFF?text=Product+2'
+          'imageUrl':
+              'https://via.placeholder.com/150/4682B4/FFFFFF?text=Product+2'
         },
         {
           'id': '3',
           'name': 'Winter Cat Outfit',
           'price': '\$28',
-          'imageUrl': 'https://via.placeholder.com/150/32CD32/FFFFFF?text=Product+3'
+          'imageUrl':
+              'https://via.placeholder.com/150/32CD32/FFFFFF?text=Product+3'
         },
         {
           'id': '4',
           'name': 'Premium Cat Dress',
           'price': '\$35',
-          'imageUrl': 'https://via.placeholder.com/150/FFD700/FFFFFF?text=Product+4'
+          'imageUrl':
+              'https://via.placeholder.com/150/FFD700/FFFFFF?text=Product+4'
         },
       ];
     });
@@ -646,30 +777,42 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
 
       final croppedFile = await _cropToRectArea(photo.path);
       if (!mounted || _isDisposed) {
-        try { croppedFile?.delete(); } catch (_) {}
-        try { File(photo.path).delete(); } catch (_) {}
+        try {
+          croppedFile?.delete();
+        } catch (_) {}
+        try {
+          File(photo.path).delete();
+        } catch (_) {}
         return;
       }
 
       final checkPath = croppedFile?.path ?? photo.path;
       final result = await _detectCatPro(checkPath);
-      try { croppedFile?.delete(); } catch (_) {}
+      try {
+        croppedFile?.delete();
+      } catch (_) {}
 
       if (!mounted || _isDisposed) {
-        try { File(photo.path).delete(); } catch (_) {}
+        try {
+          File(photo.path).delete();
+        } catch (_) {}
         return;
       }
 
       if (!result.isCat) {
         setState(() => _isCapturing = false);
-        try { File(photo.path).delete(); } catch (_) {}
+        try {
+          File(photo.path).delete();
+        } catch (_) {}
         _showRejectDialog(result);
         return;
       }
 
       final processedImage =
           await _validateAndCompressGalleryImage(File(photo.path));
-      try { File(photo.path).delete(); } catch (_) {}
+      try {
+        File(photo.path).delete();
+      } catch (_) {}
 
       if (!mounted || _isDisposed) return;
 
@@ -953,20 +1096,35 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
 
   void _showSuccessMessage(String m) {
     if (!mounted || _isDisposed) return;
-    showTopSnackBar(Overlay.of(context), CustomSnackBar.success(message: m),
-        displayDuration: const Duration(seconds: 2));
+    showTopSnackBar(
+      Overlay.of(context),
+      CustomSnackBar.success(message: m),
+      animationDuration: const Duration(milliseconds: 200),
+      reverseAnimationDuration: const Duration(milliseconds: 200),
+      displayDuration: const Duration(milliseconds: 1000),
+    );
   }
 
   void _showInfoMessage(String m) {
     if (!mounted || _isDisposed) return;
-    showTopSnackBar(Overlay.of(context), CustomSnackBar.info(message: m),
-        displayDuration: const Duration(seconds: 2));
+    showTopSnackBar(
+      Overlay.of(context),
+      CustomSnackBar.info(message: m),
+      animationDuration: const Duration(milliseconds: 200),
+      reverseAnimationDuration: const Duration(milliseconds: 200),
+      displayDuration: const Duration(milliseconds: 1000),
+    );
   }
 
   void _showError(String m) {
     if (!mounted || _isDisposed) return;
-    showTopSnackBar(Overlay.of(context), CustomSnackBar.error(message: m),
-        displayDuration: const Duration(seconds: 3));
+    showTopSnackBar(
+      Overlay.of(context),
+      CustomSnackBar.error(message: m),
+      animationDuration: const Duration(milliseconds: 200),
+      reverseAnimationDuration: const Duration(milliseconds: 200),
+      displayDuration: const Duration(milliseconds: 1500),
+    );
   }
 
   Widget _buildCameraPreview() {

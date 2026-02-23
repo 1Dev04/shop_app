@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/provider/language_provider.dart';
 import 'package:flutter_application_1/provider/theme.dart';
 import 'package:flutter_application_1/provider/theme_provider.dart';
 import 'package:flutter_application_1/screen/signup_user.dart';
@@ -41,7 +42,6 @@ String getBaseUrl() {
   return 'http://localhost:10000';
 }
 
-
 class Login extends StatefulWidget {
   const Login({super.key});
 
@@ -57,38 +57,46 @@ class _LoginState extends State<Login> {
 
   void signUserIn() async {
     try {
+      await FirebaseAuth.instance.signOut();
 
-     await FirebaseAuth.instance.signOut();
+      UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
 
-    UserCredential userCredential =
-        await FirebaseAuth.instance.signInWithEmailAndPassword(
-      email: emailController.text.trim(),
-      password: passwordController.text.trim(),
-    );
+      final user = userCredential.user;
+      final idToken = await user!.getIdToken(true);
+      final languageProvider =
+          Provider.of<LanguageProvider>(context, listen: false);
+      final uri = Uri.parse('${getBaseUrl()}/api/auth/login');
 
-    final user = userCredential.user;
-    final idToken = await user!.getIdToken(true);
-    
-    final uri = Uri.parse('${getBaseUrl()}/api/auth/login');
-    
-    final response = await http.post(
-      uri,
-      headers: {
-        "Authorization": "Bearer $idToken",
-        "Content-Type": "application/json",
-      },
-    );
-    if (response.statusCode != 200) {
-      throw Exception("Backend login failed: ${response.body}");
-    }
+      final response = await http.post(
+        uri,
+        headers: {
+          "Authorization": "Bearer $idToken",
+          "Content-Type": "application/json",
+        },
+      );
+      if (response.statusCode != 200) {
+        throw Exception("Backend login failed: ${response.body}");
+      }
 
       if (!mounted) return;
 
       showTopSnackBar(
         Overlay.of(context),
         CustomSnackBar.success(
-          message: "Login successful!",
+          message: languageProvider.translate(
+            en: 'Login successful!',
+            th: 'เข้าสู่ระบบสำเร็จ!',
+          ),
         ),
+        animationDuration:
+            const Duration(milliseconds: 1000), // เร็วแค่ไหนตอน popup
+        reverseAnimationDuration:
+            const Duration(milliseconds: 200), // เร็วแค่ไหนตอนหาย
+        displayDuration: const Duration(milliseconds: 1000), // แสดงนานแค่ไหน
       );
 
       WidgetsBinding.instance.addPostFrameCallback((_) {

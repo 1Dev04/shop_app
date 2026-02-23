@@ -11,7 +11,6 @@ import 'package:flutter_application_1/api/service_fav_backet.dart';
 
 import 'package:flutter_application_1/provider/language_provider.dart';
 
-
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
@@ -96,7 +95,10 @@ class _ShopPageState extends State<ShopPage> {
       final baseUrl = getBaseUrl();
       final response = await http.get(
         Uri.parse('$baseUrl/api/clothing-shop/like'),
-        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
@@ -107,13 +109,20 @@ class _ShopPageState extends State<ShopPage> {
         if (data is List) {
           parsedImages = data.map<Map<String, dynamic>>((item) {
             final rawImages = item['images'];
-            return {...item, 'images': rawImages is String ? jsonDecode(rawImages) : rawImages};
+            return {
+              ...item,
+              'images': rawImages is String ? jsonDecode(rawImages) : rawImages
+            };
           }).toList();
         } else if (data is Map && data.containsKey('data')) {
           parsedImages = List<Map<String, dynamic>>.from(
             data['data'].map<Map<String, dynamic>>((item) {
               final rawImages = item['images'];
-              return {...item, 'images': rawImages is String ? jsonDecode(rawImages) : rawImages};
+              return {
+                ...item,
+                'images':
+                    rawImages is String ? jsonDecode(rawImages) : rawImages
+              };
             }),
           );
         }
@@ -151,7 +160,10 @@ class _ShopPageState extends State<ShopPage> {
       final baseUrl = getBaseUrl();
       final response = await http.get(
         Uri.parse('$baseUrl/api/clothing-shop/seller'),
-        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
@@ -162,13 +174,20 @@ class _ShopPageState extends State<ShopPage> {
         if (data is List) {
           parsedImages = data.map<Map<String, dynamic>>((item) {
             final rawImages = item['images'];
-            return {...item, 'images': rawImages is String ? jsonDecode(rawImages) : rawImages};
+            return {
+              ...item,
+              'images': rawImages is String ? jsonDecode(rawImages) : rawImages
+            };
           }).toList();
         } else if (data is Map && data.containsKey('data')) {
           parsedImages = List<Map<String, dynamic>>.from(
             data['data'].map<Map<String, dynamic>>((item) {
               final rawImages = item['images'];
-              return {...item, 'images': rawImages is String ? jsonDecode(rawImages) : rawImages};
+              return {
+                ...item,
+                'images':
+                    rawImages is String ? jsonDecode(rawImages) : rawImages
+              };
             }),
           );
         }
@@ -179,7 +198,8 @@ class _ShopPageState extends State<ShopPage> {
         });
       } else {
         setState(() {
-          errorMessageSeller = 'ไม่สามารถโหลดข้อมูลได้ (${response.statusCode})';
+          errorMessageSeller =
+              'ไม่สามารถโหลดข้อมูลได้ (${response.statusCode})';
           isLoadingSeller = false;
         });
       }
@@ -218,17 +238,30 @@ class _ShopPageState extends State<ShopPage> {
           Overlay.of(context),
           CustomSnackBar.success(
             message: languageProvider.translate(
-              en: 'Added to cart!',
-              th: 'เพิ่มลงตะกร้าแล้ว!',
+              en: 'Added to Basket successfully!',
+              th: 'เพิ่มลงตะกร้าสำเร็จ!',
             ),
           ),
+          animationDuration:
+              const Duration(milliseconds: 1000), // เร็วแค่ไหนตอน popup
+          reverseAnimationDuration:
+              const Duration(milliseconds: 200), // เร็วแค่ไหนตอนหาย
+          displayDuration: const Duration(milliseconds: 1000), // แสดงนานแค่ไหน
         );
       }
     } catch (e) {
       if (mounted) {
         showTopSnackBar(
           Overlay.of(context),
-          CustomSnackBar.error(message: 'เกิดข้อผิดพลาด: $e'),
+          CustomSnackBar.error(
+            message: languageProvider.translate(
+              en: 'Failed to add to Basket: $e',
+              th: 'เพิ่มลงตะกร้าไม่สำเร็จ: $e',
+            ),
+          ),
+          animationDuration: const Duration(milliseconds: 1000),
+          reverseAnimationDuration: const Duration(milliseconds: 200),
+          displayDuration: const Duration(milliseconds: 1000),
         );
       }
     }
@@ -243,7 +276,10 @@ class _ShopPageState extends State<ShopPage> {
       final baseUrl = getBaseUrl();
       final response = await http.get(
         Uri.parse('$baseUrl/api/home-advertiment/$itemId'),
-        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
@@ -274,7 +310,8 @@ class _ShopPageState extends State<ShopPage> {
       showGeneralDialog(
         context: context,
         barrierDismissible: true,
-        barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+        barrierLabel:
+            MaterialLocalizations.of(context).modalBarrierDismissLabel,
         barrierColor: Colors.black54,
         transitionDuration: const Duration(milliseconds: 400),
         pageBuilder: (context, animation, secondaryAnimation) {
@@ -284,11 +321,13 @@ class _ShopPageState extends State<ShopPage> {
           const begin = Offset(0.0, -1.0);
           const end = Offset.zero;
           const curve = Curves.easeInOut;
-          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          var tween =
+              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
           return SlideTransition(
             position: animation.drive(tween),
             child: FadeTransition(
-              opacity: animation.drive(Tween(begin: 0.0, end: 1.0).chain(CurveTween(curve: curve))),
+              opacity: animation.drive(
+                  Tween(begin: 0.0, end: 1.0).chain(CurveTween(curve: curve))),
               child: child,
             ),
           );
@@ -296,7 +335,9 @@ class _ShopPageState extends State<ShopPage> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('ไม่สามารถโหลดข้อมูลได้'), backgroundColor: Colors.red),
+        const SnackBar(
+            content: Text('ไม่สามารถโหลดข้อมูลได้'),
+            backgroundColor: Colors.red),
       );
     }
   }
@@ -324,9 +365,11 @@ class _ShopPageState extends State<ShopPage> {
                       "https://res.cloudinary.com/dag73dhpl/image/upload/v1741695217/cat3_xvd0mu.png",
                   width: 50,
                   height: 50,
-                  placeholder: (context, url) => const CircularProgressIndicator.adaptive(
+                  placeholder: (context, url) =>
+                      const CircularProgressIndicator.adaptive(
                     backgroundColor: Colors.white,
-                    valueColor: AlwaysStoppedAnimation<Color>(Color.fromARGB(75, 50, 50, 50)),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                        Color.fromARGB(75, 50, 50, 50)),
                   ),
                   errorWidget: (context, url, error) => const Icon(Icons.error),
                 ),
@@ -357,7 +400,8 @@ class _ShopPageState extends State<ShopPage> {
           // You might like this Section
           // ============================================================================
           _buildSection(
-            title: languageProvider.translate(en: "You might like this", th: "คุณอาจจะชอบสิ่งนี้"),
+            title: languageProvider.translate(
+                en: "You might like this", th: "คุณอาจจะชอบสิ่งนี้"),
             isLoading: isLoadingLike,
             errorMessage: errorMessageLike,
             data: dataShoplike,
@@ -369,7 +413,8 @@ class _ShopPageState extends State<ShopPage> {
           // Best Seller Section
           // ============================================================================
           _buildSection(
-            title: languageProvider.translate(en: "Best Seller", th: "สินค้าขายดี"),
+            title: languageProvider.translate(
+                en: "Best Seller", th: "สินค้าขายดี"),
             isLoading: isLoadingSeller,
             errorMessage: errorMessageSeller,
             data: dataShopSeller,
@@ -402,11 +447,14 @@ class _ShopPageState extends State<ShopPage> {
           ),
         ),
         isLoading
-            ? const SizedBox(height: 490, child: Center(child: CircularProgressIndicator()))
+            ? const SizedBox(
+                height: 490, child: Center(child: CircularProgressIndicator()))
             : errorMessage.isNotEmpty
-                ? SizedBox(height: 490, child: Center(child: Text(errorMessage)))
+                ? SizedBox(
+                    height: 490, child: Center(child: Text(errorMessage)))
                 : data.isEmpty
-                    ? const SizedBox(height: 490, child: Center(child: Text('ไม่มีข้อมูล')))
+                    ? const SizedBox(
+                        height: 490, child: Center(child: Text('ไม่มีข้อมูล')))
                     : SizedBox(
                         height: 490,
                         child: PageView.builder(
@@ -416,49 +464,64 @@ class _ShopPageState extends State<ShopPage> {
                           itemBuilder: (context, index) {
                             final item = data[index];
                             final price = _parseDouble(item['price']);
-                            final discountPrice = _parseDouble(item['discount_price']);
-                            final hasDiscount = discountPrice > 0 && discountPrice < price;
+                            final discountPrice =
+                                _parseDouble(item['discount_price']);
+                            final hasDiscount =
+                                discountPrice > 0 && discountPrice < price;
 
                             return Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 10),
                               child: Column(
                                 children: [
                                   // รูปภาพ — กดดู detail
                                   GestureDetector(
                                     onTap: () {
-                                      final itemId = int.tryParse(item['id']?.toString() ?? '0') ?? 0;
+                                      final itemId = int.tryParse(
+                                              item['id']?.toString() ?? '0') ??
+                                          0;
                                       showItemDetailsPopup(itemId);
                                     },
                                     child: CachedNetworkImage(
-                                      imageUrl: item["image_url"]?.toString() ?? '',
+                                      imageUrl:
+                                          item["image_url"]?.toString() ?? '',
                                       fit: BoxFit.cover,
                                       width: double.infinity,
                                       height: 350,
                                       placeholder: (context, url) =>
-                                          const CircularProgressIndicator.adaptive(),
-                                      errorWidget: (context, url, error) => const Icon(Icons.error),
+                                          const CircularProgressIndicator
+                                              .adaptive(),
+                                      errorWidget: (context, url, error) =>
+                                          const Icon(Icons.error),
                                     ),
                                   ),
                                   const SizedBox(height: 10),
 
                                   // Gender + Size
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
-                                        getGenderText(item['gender'], languageProvider),
+                                        getGenderText(
+                                            item['gender'], languageProvider),
                                         style: TextStyle(
                                           fontSize: 15,
                                           fontWeight: FontWeight.bold,
-                                          color: Theme.of(context).colorScheme.onSurface,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface,
                                         ),
                                       ),
                                       Text(
-                                        item['size_category']?.toString() ?? 'N/A',
+                                        item['size_category']?.toString() ??
+                                            'N/A',
                                         style: TextStyle(
                                           fontSize: 15,
                                           fontWeight: FontWeight.bold,
-                                          color: Theme.of(context).colorScheme.onSurface,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface,
                                         ),
                                       ),
                                     ],
@@ -467,14 +530,18 @@ class _ShopPageState extends State<ShopPage> {
 
                                   // Clothing Name + Stock
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Expanded(
                                         child: Text(
-                                          item['clothing_name']?.toString() ?? 'N/A',
+                                          item['clothing_name']?.toString() ??
+                                              'N/A',
                                           style: TextStyle(
                                             fontSize: 15,
-                                            color: Theme.of(context).colorScheme.primary,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary,
                                           ),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
@@ -485,7 +552,9 @@ class _ShopPageState extends State<ShopPage> {
                                         style: TextStyle(
                                           fontSize: 15,
                                           fontWeight: FontWeight.bold,
-                                          color: Theme.of(context).colorScheme.onSurface,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface,
                                         ),
                                       ),
                                     ],
@@ -494,8 +563,10 @@ class _ShopPageState extends State<ShopPage> {
 
                                   // Price + Cart button
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
                                     children: [
                                       Row(
                                         children: [
@@ -504,11 +575,13 @@ class _ShopPageState extends State<ShopPage> {
                                               '฿${price.toStringAsFixed(0)}',
                                               style: const TextStyle(
                                                 fontSize: 16,
-                                                decoration: TextDecoration.lineThrough,
+                                                decoration:
+                                                    TextDecoration.lineThrough,
                                                 color: Colors.grey,
                                               ),
                                             ),
-                                          if (hasDiscount) const SizedBox(width: 8),
+                                          if (hasDiscount)
+                                            const SizedBox(width: 8),
                                           Text(
                                             hasDiscount
                                                 ? '฿${discountPrice.toStringAsFixed(0)}'
@@ -517,18 +590,24 @@ class _ShopPageState extends State<ShopPage> {
                                               fontSize: 20,
                                               color: hasDiscount
                                                   ? Colors.red
-                                                  : Theme.of(context).colorScheme.primary,
+                                                  : Theme.of(context)
+                                                      .colorScheme
+                                                      .primary,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
-                                          if (hasDiscount) const SizedBox(width: 10),
+                                          if (hasDiscount)
+                                            const SizedBox(width: 10),
                                           if (hasDiscount)
                                             Container(
-                                              padding: const EdgeInsets.symmetric(
-                                                  horizontal: 4, vertical: 2),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 4,
+                                                      vertical: 2),
                                               decoration: BoxDecoration(
                                                 color: Colors.red,
-                                                borderRadius: BorderRadius.circular(6),
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
                                               ),
                                               child: Text(
                                                 '-${item['discount_percent']?.toString() ?? '0'}%',
@@ -544,7 +623,8 @@ class _ShopPageState extends State<ShopPage> {
 
                                       // ✅ Cart button — เรียก API จริง
                                       FloatingActionButton.small(
-                                        heroTag: 'shop_cart_${item['uuid']}_${index}',
+                                        heroTag:
+                                            'shop_cart_${item['uuid']}_${index}',
                                         onPressed: () => _addToBasket(item),
                                         backgroundColor: Theme.of(context)
                                             .floatingActionButtonTheme
@@ -587,9 +667,8 @@ class _ShopItemDetailsCardState extends State<_ShopItemDetailsCard> {
   bool _isFavourite = false;
   bool _isProcessing = false;
 
-    final PageController _imagePageController = PageController();
+  final PageController _imagePageController = PageController();
   int _currentImagePage = 0;
-
 
   double _pd(dynamic v) => _parseDouble(v);
 
@@ -599,7 +678,7 @@ class _ShopItemDetailsCardState extends State<_ShopItemDetailsCard> {
     _checkFavouriteStatus();
   }
 
-    @override
+  @override
   void dispose() {
     _imagePageController.dispose();
     super.dispose();
@@ -636,10 +715,16 @@ class _ShopItemDetailsCardState extends State<_ShopItemDetailsCard> {
             Overlay.of(context),
             CustomSnackBar.info(
               message: languageProvider.translate(
-                en: 'Removed from favourites',
+                en: 'Removed from favourites!',
                 th: 'ลบออกจากรายการโปรดแล้ว',
               ),
             ),
+            animationDuration:
+                const Duration(milliseconds: 1000), // เร็วแค่ไหนตอน popup
+            reverseAnimationDuration:
+                const Duration(milliseconds: 200), // เร็วแค่ไหนตอนหาย
+            displayDuration:
+                const Duration(milliseconds: 1000), // แสดงนานแค่ไหน
           );
         }
       } else {
@@ -652,18 +737,34 @@ class _ShopItemDetailsCardState extends State<_ShopItemDetailsCard> {
             Overlay.of(context),
             CustomSnackBar.success(
               message: languageProvider.translate(
-                en: 'Added to favourites!',
+                en: 'Added to favourites successfully!',
                 th: 'เพิ่มลงรายการโปรดแล้ว!',
               ),
             ),
+            animationDuration:
+                const Duration(milliseconds: 1000), // เร็วแค่ไหนตอน popup
+            reverseAnimationDuration:
+                const Duration(milliseconds: 200), // เร็วแค่ไหนตอนหาย
+            displayDuration:
+                const Duration(milliseconds: 1000), // แสดงนานแค่ไหน
           );
         }
       }
     } catch (e) {
       if (mounted) {
+        final languageProvider =
+            Provider.of<LanguageProvider>(context, listen: false);
         showTopSnackBar(
           Overlay.of(context),
-          CustomSnackBar.error(message: 'เกิดข้อผิดพลาด: $e'),
+          CustomSnackBar.error(
+            message: languageProvider.translate(
+              en: 'Failed to add to favourites: $e',
+              th: 'เพิ่มลงรายการโปรดไม่สำเร็จ: $e',
+            ),
+          ),
+          animationDuration: const Duration(milliseconds: 1000),
+          reverseAnimationDuration: const Duration(milliseconds: 200),
+          displayDuration: const Duration(milliseconds: 1000),
         );
       }
     } finally {
@@ -686,17 +787,30 @@ class _ShopItemDetailsCardState extends State<_ShopItemDetailsCard> {
           Overlay.of(context),
           CustomSnackBar.success(
             message: languageProvider.translate(
-              en: 'Added to cart successfully!',
+              en: 'Added to Basket successfully!',
               th: 'เพิ่มลงตะกร้าสำเร็จ!',
             ),
           ),
+          animationDuration:
+              const Duration(milliseconds: 1000), // เร็วแค่ไหนตอน popup
+          reverseAnimationDuration:
+              const Duration(milliseconds: 200), // เร็วแค่ไหนตอนหาย
+          displayDuration: const Duration(milliseconds: 1000), // แสดงนานแค่ไหน
         );
       }
     } catch (e) {
       if (mounted) {
         showTopSnackBar(
           Overlay.of(context),
-          CustomSnackBar.error(message: 'เกิดข้อผิดพลาด: $e'),
+          CustomSnackBar.error(
+            message: languageProvider.translate(
+              en: 'Failed to add to Basket: $e',
+              th: 'เพิ่มลงตะกร้าไม่สำเร็จ: $e',
+            ),
+          ),
+          animationDuration: const Duration(milliseconds: 1000),
+          reverseAnimationDuration: const Duration(milliseconds: 200),
+          displayDuration: const Duration(milliseconds: 1000),
         );
       }
     }
@@ -709,9 +823,11 @@ class _ShopItemDetailsCardState extends State<_ShopItemDetailsCard> {
     final discountPrice = _pd(widget.itemDetails['discount_price']);
     final hasDiscount = discountPrice > 0 && discountPrice < price;
     final discountPercentClean =
-        (widget.itemDetails['discount_percent']?.toString() ?? '').replaceAll('%', '').trim();
+        (widget.itemDetails['discount_percent']?.toString() ?? '')
+            .replaceAll('%', '')
+            .trim();
 
-        // ✅ Safe parse images ทุกกรณี
+    // ✅ Safe parse images ทุกกรณี
     final rawImages = widget.itemDetails['images'];
     final Map<String, dynamic> imagesMap = rawImages is String
         ? Map<String, dynamic>.from(jsonDecode(rawImages))
@@ -734,120 +850,120 @@ class _ShopItemDetailsCardState extends State<_ShopItemDetailsCard> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 // รูปภาพ + ปุ่มหัวใจ
-                 // ✅ รูป Slideshow + ปุ่มหัวใจ + จุด indicator
-                  Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(20)),
-                        child: SizedBox(
-                          height: 300,
-                          child: PageView(
-                            controller: _imagePageController,
-                            onPageChanged: (index) {
-                              setState(() => _currentImagePage = index);
-                            },
-                            children: [
-                              // รูปหลัก
-                              CachedNetworkImage(
-                                imageUrl: widget.itemDetails['image_url'] ?? '',
-                                width: double.infinity,
+                // ✅ รูป Slideshow + ปุ่มหัวใจ + จุด indicator
+                Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(20)),
+                      child: SizedBox(
+                        height: 300,
+                        child: PageView(
+                          controller: _imagePageController,
+                          onPageChanged: (index) {
+                            setState(() => _currentImagePage = index);
+                          },
+                          children: [
+                            // รูปหลัก
+                            CachedNetworkImage(
+                              imageUrl: widget.itemDetails['image_url'] ?? '',
+                              width: double.infinity,
+                              height: 300,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => const SizedBox(
                                 height: 300,
-                                fit: BoxFit.cover,
-                                placeholder: (context, url) => const SizedBox(
-                                  height: 300,
-                                  child: Center(
-                                      child: CircularProgressIndicator()),
-                                ),
-                                errorWidget: (context, url, error) =>
-                                    const SizedBox(
-                                  height: 300,
-                                  child: Center(child: Icon(Icons.error)),
-                                ),
+                                child:
+                                    Center(child: CircularProgressIndicator()),
                               ),
-                              // รูปเสื้อผ้า
-                              CachedNetworkImage(
-                                imageUrl: imagesMap['image_clothing'] ?? '',
-                                width: double.infinity,
+                              errorWidget: (context, url, error) =>
+                                  const SizedBox(
                                 height: 300,
-                                fit: BoxFit.cover,
-                                placeholder: (context, url) => const SizedBox(
-                                  height: 300,
-                                  child: Center(
-                                      child: CircularProgressIndicator()),
-                                ),
-                                errorWidget: (context, url, error) =>
-                                    const SizedBox(
-                                  height: 300,
-                                  child: Center(child: Icon(Icons.error)),
-                                ),
+                                child: Center(child: Icon(Icons.error)),
                               ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // ✅ จุด Page Indicator
-                      Positioned(
-                        bottom: 12,
-                        left: 0,
-                        right: 0,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: List.generate(2, (index) {
-                            return AnimatedContainer(
-                            
-                              duration: const Duration(milliseconds: 300),
-                              margin: const EdgeInsets.symmetric(horizontal: 4),
-                              width: _currentImagePage == index ? 20 : 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: _currentImagePage == index
-                                    ? Colors.deepOrange
-                                    : const Color.fromARGB(255, 0, 0, 0).withOpacity(0.5),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            );
-                          }),
-                        ),
-                      ),
-
-                      // ✅ ปุ่มหัวใจ
-                      Positioned(
-                        top: 16,
-                        right: 16,
-                        child: GestureDetector(
-                          onTap: _isProcessing ? null : _toggleFavourite,
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: _isFavourite
-                                  ? Colors.red.withOpacity(0.8)
-                                  : Colors.black.withOpacity(0.5),
-                              shape: BoxShape.circle,
                             ),
-                            child: _isProcessing
-                                ? const SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                          Colors.white),
-                                    ),
-                                  )
-                                : Icon(
-                                    _isFavourite
-                                        ? Icons.favorite
-                                        : Icons.favorite_border,
-                                    color: Colors.white,
-                                    size: 24,
-                                  ),
-                          ),
+                            // รูปเสื้อผ้า
+                            CachedNetworkImage(
+                              imageUrl: imagesMap['image_clothing'] ?? '',
+                              width: double.infinity,
+                              height: 300,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => const SizedBox(
+                                height: 300,
+                                child:
+                                    Center(child: CircularProgressIndicator()),
+                              ),
+                              errorWidget: (context, url, error) =>
+                                  const SizedBox(
+                                height: 300,
+                                child: Center(child: Icon(Icons.error)),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+
+                    // ✅ จุด Page Indicator
+                    Positioned(
+                      bottom: 12,
+                      left: 0,
+                      right: 0,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: List.generate(2, (index) {
+                          return AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            width: _currentImagePage == index ? 20 : 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: _currentImagePage == index
+                                  ? Colors.deepOrange
+                                  : const Color.fromARGB(255, 0, 0, 0)
+                                      .withOpacity(0.5),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+
+                    // ✅ ปุ่มหัวใจ
+                    Positioned(
+                      top: 16,
+                      right: 16,
+                      child: GestureDetector(
+                        onTap: _isProcessing ? null : _toggleFavourite,
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: _isFavourite
+                                ? Colors.red.withOpacity(0.8)
+                                : Colors.black.withOpacity(0.5),
+                            shape: BoxShape.circle,
+                          ),
+                          child: _isProcessing
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white),
+                                  ),
+                                )
+                              : Icon(
+                                  _isFavourite
+                                      ? Icons.favorite
+                                      : Icons.favorite_border,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
 
                 // Content ที่เลื่อนได้
                 Flexible(
@@ -859,42 +975,60 @@ class _ShopItemDetailsCardState extends State<_ShopItemDetailsCard> {
                         children: [
                           Text(
                             widget.itemDetails['clothing_name'] ?? '',
-                            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                                fontSize: 24, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 5),
                           _DetailRow(
-                            label: languageProvider.translate(en: 'Category', th: 'หมวดหมู่'),
-                            value: widget.itemDetails['category']?.toString() ?? '',
+                            label: languageProvider.translate(
+                                en: 'Category', th: 'หมวดหมู่'),
+                            value: widget.itemDetails['category']?.toString() ??
+                                '',
                           ),
                           _DetailRow(
-                            label: languageProvider.translate(en: 'Size', th: 'ขนาด'),
-                            value: widget.itemDetails['size_category']?.toString() ?? '',
+                            label: languageProvider.translate(
+                                en: 'Size', th: 'ขนาด'),
+                            value: widget.itemDetails['size_category']
+                                    ?.toString() ??
+                                '',
                           ),
                           _DetailRow(
-                            label: languageProvider.translate(en: 'Gender', th: 'เพศ'),
-                            value: _formatGender(widget.itemDetails['gender'], languageProvider),
+                            label: languageProvider.translate(
+                                en: 'Gender', th: 'เพศ'),
+                            value: _formatGender(
+                                widget.itemDetails['gender'], languageProvider),
                           ),
                           _DetailRow(
-                            label: languageProvider.translate(en: 'Stock', th: 'สต็อก'),
-                            value: widget.itemDetails['stock']?.toString() ?? '',
+                            label: languageProvider.translate(
+                                en: 'Stock', th: 'สต็อก'),
+                            value:
+                                widget.itemDetails['stock']?.toString() ?? '',
                           ),
                           _DetailRow(
-                            label: languageProvider.translate(en: 'Breed', th: 'สายพันธุ์'),
-                            value: widget.itemDetails['breed']?.toString() ?? '',
+                            label: languageProvider.translate(
+                                en: 'Breed', th: 'สายพันธุ์'),
+                            value:
+                                widget.itemDetails['breed']?.toString() ?? '',
                           ),
                           if (widget.itemDetails['description'] != null &&
-                              widget.itemDetails['description'].toString().isNotEmpty)
+                              widget.itemDetails['description']
+                                  .toString()
+                                  .isNotEmpty)
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  languageProvider.translate(en: 'Description', th: 'รายละเอียด'),
-                                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                  languageProvider.translate(
+                                      en: 'Description', th: 'รายละเอียด'),
+                                  style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold),
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
                                   widget.itemDetails['description'] ?? '',
-                                  style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+                                  style: TextStyle(
+                                      fontSize: 16, color: Colors.grey[700]),
                                 ),
                                 const SizedBox(height: 16),
                               ],
@@ -919,13 +1053,16 @@ class _ShopItemDetailsCardState extends State<_ShopItemDetailsCard> {
                                 style: TextStyle(
                                   fontSize: 28,
                                   fontWeight: FontWeight.bold,
-                                  color: hasDiscount ? Colors.red : Colors.black,
+                                  color:
+                                      hasDiscount ? Colors.red : Colors.black,
                                 ),
                               ),
                               if (hasDiscount) const SizedBox(width: 10),
-                              if (hasDiscount && discountPercentClean.isNotEmpty)
+                              if (hasDiscount &&
+                                  discountPercentClean.isNotEmpty)
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
                                     color: Colors.red,
                                     borderRadius: BorderRadius.circular(6),
@@ -950,11 +1087,13 @@ class _ShopItemDetailsCardState extends State<_ShopItemDetailsCard> {
                               onPressed: _addToBasket,
                               icon: const Icon(Icons.add_shopping_cart_sharp),
                               label: Text(
-                                languageProvider.translate(en: 'Add to Cart', th: 'เพิ่มลงตะกร้า'),
+                                languageProvider.translate(
+                                    en: 'Add to Cart', th: 'เพิ่มลงตะกร้า'),
                                 style: const TextStyle(fontSize: 16),
                               ),
                               style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
                                 backgroundColor: Colors.black,
                               ),
                             ),
@@ -1005,7 +1144,8 @@ class _DetailRow extends StatelessWidget {
           Expanded(
             child: Text(
               value,
-              style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.secondary),
+              style: TextStyle(
+                  fontSize: 14, color: Theme.of(context).colorScheme.secondary),
             ),
           ),
         ],
@@ -1019,7 +1159,8 @@ class _DetailRow extends StatelessWidget {
 // ============================================================================
 
 String _formatGender(dynamic value, LanguageProvider lang) {
-  final genderCode = value is int ? value : int.tryParse(value?.toString() ?? '');
+  final genderCode =
+      value is int ? value : int.tryParse(value?.toString() ?? '');
   switch (genderCode) {
     case 0:
       return lang.translate(en: 'Unisex', th: 'ยูนิเซ็กซ์');

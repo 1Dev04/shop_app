@@ -122,74 +122,75 @@ class _FavouritePageState extends State<FavouritePage> {
     );
   }
 
-@override
-Widget build(BuildContext context) {
-  final languageProvider = Provider.of<LanguageProvider>(context);
-  final isDark = Theme.of(context).brightness == Brightness.dark;
+  @override
+  Widget build(BuildContext context) {
+    final languageProvider = Provider.of<LanguageProvider>(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-  return Scaffold(
-    backgroundColor: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF5F5F5),
-    appBar: AppBar(
-      centerTitle: true,
-      leading: IconButton(
-        icon: Icon(Icons.arrow_back_ios_new_rounded,
-            color: isDark ? Colors.white : Colors.black87, size: 20),
-        onPressed: () => Navigator.of(context).pop(),
-      ),
-      title: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.favorite_rounded, color: Colors.red, size: 22),
-          const SizedBox(width: 8),
-          Text(
-            languageProvider.translate(en: 'Favourites', th: 'รายการโปรด'),
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : Colors.black87,
-            ),
-          ),
-          if (_favourites.isNotEmpty) ...[
+    return Scaffold(
+      backgroundColor:
+          isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF5F5F5),
+      appBar: AppBar(
+        centerTitle: true,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new_rounded,
+              color: isDark ? Colors.white : Colors.black87, size: 20),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.favorite_rounded, color: Colors.red, size: 22),
             const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.red,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '${_favourites.length}',
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold),
+            Text(
+              languageProvider.translate(en: 'Favourites', th: 'รายการโปรด'),
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : Colors.black87,
               ),
             ),
+            if (_favourites.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${_favourites.length}',
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
           ],
-        ],
-      ),
-      backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
-      elevation: 0,
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(1),
-        child: Container(
-          height: 1,
-          color: isDark
-              ? Colors.white.withOpacity(0.08)
-              : Colors.black.withOpacity(0.07),
+        ),
+        backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+        elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            height: 1,
+            color: isDark
+                ? Colors.white.withOpacity(0.08)
+                : Colors.black.withOpacity(0.07),
+          ),
         ),
       ),
-    ),
-    body: _isLoading
-        ? const Center(child: CircularProgressIndicator())
-        : _error != null
-            ? _buildErrorState(context, _error!, languageProvider)
-            : _favourites.isEmpty
-                ? _buildEmptyState(context, languageProvider, isDark)
-                : _buildFavoriteList(
-                    context, _favourites, isDark, languageProvider),
-  );
-}
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? _buildErrorState(context, _error!, languageProvider)
+              : _favourites.isEmpty
+                  ? _buildEmptyState(context, languageProvider, isDark)
+                  : _buildFavoriteList(
+                      context, _favourites, isDark, languageProvider),
+    );
+  }
 
   Widget _buildErrorState(
       BuildContext context, String error, LanguageProvider languageProvider) {
@@ -393,24 +394,36 @@ Widget build(BuildContext context) {
                           if (mounted) {
                             showTopSnackBar(
                               Overlay.of(context),
-                              CustomSnackBar.success(
+                              CustomSnackBar.info(
                                 message: languageProvider.translate(
-                                  en: 'Removed from favorites',
+                                  en: 'Removed from favourites!',
                                   th: 'ลบออกจากรายการโปรดแล้ว',
                                 ),
                               ),
+                              animationDuration: const Duration(
+                                  milliseconds: 1000), // เร็วแค่ไหนตอน popup
+                              reverseAnimationDuration: const Duration(
+                                  milliseconds: 200), // เร็วแค่ไหนตอนหาย
+                              displayDuration: const Duration(
+                                  milliseconds: 1000), // แสดงนานแค่ไหน
                             );
                           }
                         } catch (e) {
                           if (mounted) {
                             showTopSnackBar(
                               Overlay.of(context),
-                              CustomSnackBar.error(
+                              CustomSnackBar.info(
                                 message: languageProvider.translate(
-                                  en: 'Failed to remove',
-                                  th: 'ลบไม่สำเร็จ',
+                                  en: 'Failed to remove from favourites!',
+                                  th: 'ลบออกจากรายการโปรดไม่สำเร็จ',
                                 ),
                               ),
+                              animationDuration: const Duration(
+                                  milliseconds: 1000), // เร็วแค่ไหนตอน popup
+                              reverseAnimationDuration: const Duration(
+                                  milliseconds: 200), // เร็วแค่ไหนตอนหาย
+                              displayDuration: const Duration(
+                                  milliseconds: 1000), // แสดงนานแค่ไหน
                             );
                           }
                         }
@@ -515,10 +528,16 @@ class _FavItemDetailCardState extends State<_FavItemDetailCard> {
             Overlay.of(context),
             CustomSnackBar.info(
               message: languageProvider.translate(
-                en: 'Removed from favourites',
+                en: 'Removed from favourites!',
                 th: 'ลบออกจากรายการโปรดแล้ว',
               ),
             ),
+            animationDuration:
+                const Duration(milliseconds: 1000), // เร็วแค่ไหนตอน popup
+            reverseAnimationDuration:
+                const Duration(milliseconds: 200), // เร็วแค่ไหนตอนหาย
+            displayDuration:
+                const Duration(milliseconds: 1000), // แสดงนานแค่ไหน
           );
           widget.onRemoved?.call();
         }
@@ -530,18 +549,34 @@ class _FavItemDetailCardState extends State<_FavItemDetailCard> {
             Overlay.of(context),
             CustomSnackBar.success(
               message: languageProvider.translate(
-                en: 'Added to favourites!',
+                en: 'Added to favourites successfully!',
                 th: 'เพิ่มลงรายการโปรดแล้ว!',
               ),
             ),
+            animationDuration:
+                const Duration(milliseconds: 1000), // เร็วแค่ไหนตอน popup
+            reverseAnimationDuration:
+                const Duration(milliseconds: 200), // เร็วแค่ไหนตอนหาย
+            displayDuration:
+                const Duration(milliseconds: 1000), // แสดงนานแค่ไหน
           );
         }
       }
     } catch (e) {
       if (mounted) {
+        final languageProvider =
+            Provider.of<LanguageProvider>(context, listen: false);
         showTopSnackBar(
           Overlay.of(context),
-          CustomSnackBar.error(message: 'เกิดข้อผิดพลาด: $e'),
+          CustomSnackBar.error(
+            message: languageProvider.translate(
+              en: 'Failed to add to favourites: $e',
+              th: 'เพิ่มลงรายการโปรดไม่สำเร็จ: $e',
+            ),
+          ),
+          animationDuration: const Duration(milliseconds: 1000),
+          reverseAnimationDuration: const Duration(milliseconds: 200),
+          displayDuration: const Duration(milliseconds: 1000),
         );
       }
     } finally {
@@ -844,10 +879,16 @@ class _FavItemDetailCardState extends State<_FavItemDetailCard> {
                                         Overlay.of(context),
                                         CustomSnackBar.success(
                                           message: languageProvider.translate(
-                                            en: 'Added to cart successfully!',
+                                            en: 'Added to Basket successfully!',
                                             th: 'เพิ่มลงตะกร้าสำเร็จ!',
                                           ),
                                         ),
+                                        animationDuration:
+                                            const Duration(milliseconds: 1000),
+                                        reverseAnimationDuration:
+                                            const Duration(milliseconds: 200),
+                                        displayDuration:
+                                            const Duration(milliseconds: 1000),
                                       );
                                     }
                                   } catch (e) {
@@ -855,7 +896,17 @@ class _FavItemDetailCardState extends State<_FavItemDetailCard> {
                                       showTopSnackBar(
                                         Overlay.of(context),
                                         CustomSnackBar.error(
-                                            message: 'เกิดข้อผิดพลาด: $e'),
+                                          message: languageProvider.translate(
+                                            en: 'Failed to add to Basket: $e',
+                                            th: 'เพิ่มลงตะกร้าไม่สำเร็จ: $e',
+                                          ),
+                                        ),
+                                        animationDuration:
+                                            const Duration(milliseconds: 1000),
+                                        reverseAnimationDuration:
+                                            const Duration(milliseconds: 200),
+                                        displayDuration:
+                                            const Duration(milliseconds: 1000),
                                       );
                                     }
                                   }

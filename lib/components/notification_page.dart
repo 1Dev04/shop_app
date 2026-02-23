@@ -495,13 +495,13 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
   final PageController _imagePageController = PageController();
   int _currentImagePage = 0;
 
-  // ✅ ดึง uuid จาก item
+  //  ดึง uuid จาก item
   String get _uuid => widget.item.uuid ?? '';
 
-  // ✅ ดึง image_url จาก item
+  //  ดึง image_url จาก item
   String get _imageUrl => widget.item.image_url ?? '';
 
-  // ✅ Safe parse images จาก item.images (String หรือ Map)
+  // Safe parse images จาก item.images (String หรือ Map)
   Map<String, dynamic> get _imagesMap => _parseImagesMap(widget.item.images);
 
   @override
@@ -543,10 +543,16 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
             Overlay.of(context),
             CustomSnackBar.info(
               message: languageProvider.translate(
-                en: 'Removed from favourites',
+                en: 'Removed from favourites!',
                 th: 'ลบออกจากรายการโปรดแล้ว',
               ),
             ),
+            animationDuration:
+                const Duration(milliseconds: 1000), // เร็วแค่ไหนตอน popup
+            reverseAnimationDuration:
+                const Duration(milliseconds: 200), // เร็วแค่ไหนตอนหาย
+            displayDuration:
+                const Duration(milliseconds: 1000), // แสดงนานแค่ไหน
           );
         }
       } else {
@@ -557,17 +563,35 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
             Overlay.of(context),
             CustomSnackBar.success(
               message: languageProvider.translate(
-                en: 'Added to favourites!',
+                en: 'Added to favourites successfully!',
                 th: 'เพิ่มลงรายการโปรดแล้ว!',
               ),
             ),
+            animationDuration:
+                const Duration(milliseconds: 1000), // เร็วแค่ไหนตอน popup
+            reverseAnimationDuration:
+                const Duration(milliseconds: 200), // เร็วแค่ไหนตอนหาย
+            displayDuration:
+                const Duration(milliseconds: 1000), // แสดงนานแค่ไหน
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        showTopSnackBar(Overlay.of(context),
-            CustomSnackBar.error(message: 'เกิดข้อผิดพลาด: $e'));
+        final languageProvider =
+            Provider.of<LanguageProvider>(context, listen: false);
+        showTopSnackBar(
+          Overlay.of(context),
+          CustomSnackBar.error(
+            message: languageProvider.translate(
+              en: 'Failed to add to favourites: $e',
+              th: 'เพิ่มลงรายการโปรดไม่สำเร็จ: $e',
+            ),
+          ),
+          animationDuration: const Duration(milliseconds: 1000),
+          reverseAnimationDuration: const Duration(milliseconds: 200),
+          displayDuration: const Duration(milliseconds: 1000),
+        );
       }
     } finally {
       if (mounted) setState(() => _isProcessing = false);
@@ -585,16 +609,31 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
           Overlay.of(context),
           CustomSnackBar.success(
             message: languageProvider.translate(
-              en: 'Added to cart successfully!',
+              en: 'Added to Basket successfully!',
               th: 'เพิ่มลงตะกร้าสำเร็จ!',
             ),
           ),
+          animationDuration:
+              const Duration(milliseconds: 1000), // เร็วแค่ไหนตอน popup
+          reverseAnimationDuration:
+              const Duration(milliseconds: 200), // เร็วแค่ไหนตอนหาย
+          displayDuration: const Duration(milliseconds: 1000), // แสดงนานแค่ไหน
         );
       }
     } catch (e) {
       if (mounted) {
-        showTopSnackBar(Overlay.of(context),
-            CustomSnackBar.error(message: 'เกิดข้อผิดพลาด: $e'));
+        showTopSnackBar(
+          Overlay.of(context),
+          CustomSnackBar.error(
+            message: languageProvider.translate(
+              en: 'Failed to add to Basket: $e',
+              th: 'เพิ่มลงตะกร้าไม่สำเร็จ: $e',
+            ),
+          ),
+          animationDuration: const Duration(milliseconds: 1000),
+          reverseAnimationDuration: const Duration(milliseconds: 200),
+          displayDuration: const Duration(milliseconds: 1000),
+        );
       }
     }
   }
@@ -1232,7 +1271,11 @@ class _ContentDetails extends StatelessWidget {
             ],
           ),
           const Spacer(),
-          _ActionButtons(itemId: item.id ?? '', onLearnMore: onLearnMore),
+          _ActionButtons(
+            itemId: item.id ?? '',
+            itemUuid: item.uuid ?? '',
+            onLearnMore: onLearnMore,
+          ),
         ],
       ),
     );
@@ -1245,9 +1288,14 @@ class _ContentDetails extends StatelessWidget {
 
 class _ActionButtons extends StatefulWidget {
   final String itemId;
+  final String itemUuid;
   final Function(String) onLearnMore;
 
-  const _ActionButtons({required this.itemId, required this.onLearnMore});
+  const _ActionButtons({
+    required this.itemId,
+    required this.itemUuid,
+    required this.onLearnMore,
+  });
 
   @override
   State<_ActionButtons> createState() => _ActionButtonsState();
@@ -1257,19 +1305,42 @@ class _ActionButtonsState extends State<_ActionButtons> {
   bool _isAddingToCart = false;
 
   Future<void> _handleAddToCart() async {
+    if (_isAddingToCart) return;
     setState(() => _isAddingToCart = true);
     final languageProvider =
         Provider.of<LanguageProvider>(context, listen: false);
     try {
-      showTopSnackBar(
-        Overlay.of(context),
-        CustomSnackBar.info(
-          message: languageProvider.translate(
-            en: 'Tap "Learn More" to add to cart',
-            th: 'กด "ดูเพิ่มเติม" เพื่อเพิ่มลงตะกร้า',
+      //  ดึง uuid จาก item
+      await BasketApiService().addToBasket(clothingUuid: widget.itemUuid);
+      if (mounted) {
+        showTopSnackBar(
+          Overlay.of(context),
+          CustomSnackBar.success(
+            message: languageProvider.translate(
+              en: 'Added to Basket successfully!',
+              th: 'เพิ่มลงตะกร้าสำเร็จ!',
+            ),
           ),
-        ),
-      );
+          animationDuration: const Duration(milliseconds: 1000),
+          reverseAnimationDuration: const Duration(milliseconds: 200),
+          displayDuration: const Duration(milliseconds: 1000),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        showTopSnackBar(
+          Overlay.of(context),
+          CustomSnackBar.error(
+            message: languageProvider.translate(
+              en: 'Failed to add to Basket: $e',
+              th: 'เพิ่มลงตะกร้าไม่สำเร็จ: $e',
+            ),
+          ),
+          animationDuration: const Duration(milliseconds: 1000),
+          reverseAnimationDuration: const Duration(milliseconds: 200),
+          displayDuration: const Duration(milliseconds: 1000),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isAddingToCart = false);
     }

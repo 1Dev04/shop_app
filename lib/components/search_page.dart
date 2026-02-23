@@ -438,7 +438,8 @@ class _SearchPageState extends State<SearchPage> {
     final clothingUuid = item.rawJson['uuid']?.toString() ??
         item.rawJson['clothing_uuid']?.toString() ??
         item.uuid;
-
+    final languageProvider =
+        Provider.of<LanguageProvider>(context, listen: false);
     debugPrint('🛒 [SearchPage] addToBasket uuid="$clothingUuid"');
     debugPrint('🛒 [SearchPage] rawJson keys: ${item.rawJson.keys.toList()}');
 
@@ -446,9 +447,15 @@ class _SearchPageState extends State<SearchPage> {
       if (mounted) {
         showTopSnackBar(
           Overlay.of(context),
-          const CustomSnackBar.error(
-            message: 'ไม่สามารถเพิ่มสินค้าได้: UUID ไม่ถูกต้อง',
+          CustomSnackBar.error(
+            message: languageProvider.translate(
+              en: 'Failed to add to Basket: Invalid UUID',
+              th: 'ไม่สามารถเพิ่มสินค้าได้: UUID ไม่ถูกต้อง',
+            ),
           ),
+          animationDuration: const Duration(milliseconds: 1000),
+          reverseAnimationDuration: const Duration(milliseconds: 200),
+          displayDuration: const Duration(milliseconds: 1000),
         );
       }
       return;
@@ -463,9 +470,15 @@ class _SearchPageState extends State<SearchPage> {
       if (mounted) {
         showTopSnackBar(
           Overlay.of(context),
-          const CustomSnackBar.success(
-            message: 'Added to basket!',
+          CustomSnackBar.success(
+            message: languageProvider.translate(
+              en: 'Added to Basket successfully!',
+              th: 'เพิ่มลงตะกร้าสำเร็จ!',
+            ),
           ),
+          animationDuration: const Duration(milliseconds: 1000),
+          reverseAnimationDuration: const Duration(milliseconds: 200),
+          displayDuration: const Duration(milliseconds: 1000),
         );
       }
     } catch (e) {
@@ -474,8 +487,14 @@ class _SearchPageState extends State<SearchPage> {
         showTopSnackBar(
           Overlay.of(context),
           CustomSnackBar.error(
-            message: 'Failed to add to basket: $e',
+            message: languageProvider.translate(
+              en: 'Failed to add to Basket: $e',
+              th: 'เพิ่มลงตะกร้าไม่สำเร็จ: $e',
+            ),
           ),
+          animationDuration: const Duration(milliseconds: 1000),
+          reverseAnimationDuration: const Duration(milliseconds: 200),
+          displayDuration: const Duration(milliseconds: 1000),
         );
       }
     }
@@ -886,7 +905,8 @@ class _GenderFilterChip extends StatelessWidget {
             Text(label,
                 style: TextStyle(
                     color: isSelected ? Colors.white : Colors.grey[700],
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontWeight:
+                        isSelected ? FontWeight.bold : FontWeight.normal,
                     fontSize: 14)),
           ],
         ),
@@ -929,8 +949,7 @@ class _ResultCard extends StatelessWidget {
                   width: double.infinity,
                   placeholder: (context, url) =>
                       const Center(child: CircularProgressIndicator()),
-                  errorWidget: (context, url, error) =>
-                      const Icon(Icons.error),
+                  errorWidget: (context, url, error) => const Icon(Icons.error),
                 ),
               ),
             ),
@@ -1020,8 +1039,7 @@ class _OutfitSuggestionCard extends StatelessWidget {
                   fit: BoxFit.cover,
                   placeholder: (context, url) =>
                       const Center(child: CircularProgressIndicator()),
-                  errorWidget: (context, url, error) =>
-                      const Icon(Icons.error),
+                  errorWidget: (context, url, error) => const Icon(Icons.error),
                 ),
               ),
               SizedBox(width: screenWidth * 0.03),
@@ -1043,9 +1061,8 @@ class _OutfitSuggestionCard extends StatelessWidget {
                             style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurface)),
+                                color:
+                                    Theme.of(context).colorScheme.onSurface)),
                       ],
                     ),
                     const SizedBox(height: 6),
@@ -1170,7 +1187,7 @@ class _ItemDetailCardState extends State<_ItemDetailCard> {
   bool _isFavourite = false;
   bool _isProcessing = false;
 
-   final PageController _imagePageController = PageController();
+  final PageController _imagePageController = PageController();
   int _currentImagePage = 0;
 
   // ✅ ดึง uuid จาก rawJson เหมือน itemDetails['uuid'] ของหน้าอื่น
@@ -1183,17 +1200,16 @@ class _ItemDetailCardState extends State<_ItemDetailCard> {
   void initState() {
     super.initState();
     debugPrint('🔑 [ItemDetailCard] uuid="$_uuid"');
-    debugPrint('🔑 [ItemDetailCard] rawJson keys: ${widget.item.rawJson.keys.toList()}');
+    debugPrint(
+        '🔑 [ItemDetailCard] rawJson keys: ${widget.item.rawJson.keys.toList()}');
     _checkFavouriteStatus();
   }
 
-  
   @override
   void dispose() {
     _imagePageController.dispose();
     super.dispose();
   }
-
 
   Future<void> _checkFavouriteStatus() async {
     if (_uuid.isEmpty) {
@@ -1214,10 +1230,19 @@ class _ItemDetailCardState extends State<_ItemDetailCard> {
   // ✅ Toggle Favourite — pattern เดียวกับหน้าอื่น
   Future<void> _toggleFavourite() async {
     if (_uuid.isEmpty) {
+      final languageProvider =
+          Provider.of<LanguageProvider>(context, listen: false);
       showTopSnackBar(
         Overlay.of(context),
-        const CustomSnackBar.error(
-            message: 'ไม่สามารถเพิ่ม Favourite ได้: UUID ไม่ถูกต้อง'),
+        CustomSnackBar.error(
+          message: languageProvider.translate(
+            en: 'Failed to toggle Favourite: Invalid UUID',
+            th: 'ไม่สามารถเพิ่ม Favourite ได้: UUID ไม่ถูกต้อง',
+          ),
+        ),
+        animationDuration: const Duration(milliseconds: 1000),
+        reverseAnimationDuration: const Duration(milliseconds: 200),
+        displayDuration: const Duration(milliseconds: 1000),
       );
       return;
     }
@@ -1241,10 +1266,16 @@ class _ItemDetailCardState extends State<_ItemDetailCard> {
             Overlay.of(context),
             CustomSnackBar.info(
               message: languageProvider.translate(
-                en: 'Removed from favourites',
+                en: 'Removed from favourites!',
                 th: 'ลบออกจากรายการโปรดแล้ว',
               ),
             ),
+            animationDuration:
+                const Duration(milliseconds: 1000), // เร็วแค่ไหนตอน popup
+            reverseAnimationDuration:
+                const Duration(milliseconds: 200), // เร็วแค่ไหนตอนหาย
+            displayDuration:
+                const Duration(milliseconds: 1000), // แสดงนานแค่ไหน
           );
         }
       } else {
@@ -1259,18 +1290,34 @@ class _ItemDetailCardState extends State<_ItemDetailCard> {
             Overlay.of(context),
             CustomSnackBar.success(
               message: languageProvider.translate(
-                en: 'Added to favourites!',
+                en: 'Added to favourites successfully!',
                 th: 'เพิ่มลงรายการโปรดแล้ว!',
               ),
             ),
+            animationDuration:
+                const Duration(milliseconds: 1000), // เร็วแค่ไหนตอน popup
+            reverseAnimationDuration:
+                const Duration(milliseconds: 200), // เร็วแค่ไหนตอนหาย
+            displayDuration:
+                const Duration(milliseconds: 1000), // แสดงนานแค่ไหน
           );
         }
       }
     } catch (e) {
       if (mounted) {
+        final languageProvider =
+            Provider.of<LanguageProvider>(context, listen: false);
         showTopSnackBar(
           Overlay.of(context),
-          CustomSnackBar.error(message: 'เกิดข้อผิดพลาด: $e'),
+          CustomSnackBar.error(
+            message: languageProvider.translate(
+              en: 'Failed to add to favourites: $e',
+              th: 'เพิ่มลงรายการโปรดไม่สำเร็จ: $e',
+            ),
+          ),
+          animationDuration: const Duration(milliseconds: 1000),
+          reverseAnimationDuration: const Duration(milliseconds: 200),
+          displayDuration: const Duration(milliseconds: 1000),
         );
       }
     } finally {
@@ -1299,120 +1346,121 @@ class _ItemDetailCardState extends State<_ItemDetailCard> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-               // ✅ รูป Slideshow + ปุ่มหัวใจ + จุด indicator
-                  Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(20)),
-                        child: SizedBox(
-                          height: 300,
-                          child: PageView(
-                            controller: _imagePageController,
-                            onPageChanged: (index) {
-                              setState(() => _currentImagePage = index);
-                            },
-                            children: [
-                              // รูปหลัก
-                              CachedNetworkImage(
-                                imageUrl: widget.item.imageUrl,
-                                width: double.infinity,
+                // ✅ รูป Slideshow + ปุ่มหัวใจ + จุด indicator
+                Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(20)),
+                      child: SizedBox(
+                        height: 300,
+                        child: PageView(
+                          controller: _imagePageController,
+                          onPageChanged: (index) {
+                            setState(() => _currentImagePage = index);
+                          },
+                          children: [
+                            // รูปหลัก
+                            CachedNetworkImage(
+                              imageUrl: widget.item.imageUrl,
+                              width: double.infinity,
+                              height: 300,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => const SizedBox(
                                 height: 300,
-                                fit: BoxFit.cover,
-                                placeholder: (context, url) => const SizedBox(
-                                  height: 300,
-                                  child: Center(
-                                      child: CircularProgressIndicator()),
-                                ),
-                                errorWidget: (context, url, error) =>
-                                    const SizedBox(
-                                  height: 300,
-                                  child: Center(child: Icon(Icons.error)),
-                                ),
+                                child:
+                                    Center(child: CircularProgressIndicator()),
                               ),
-                              // รูปเสื้อผ้า
-                              CachedNetworkImage(
-                                imageUrl: widget.item.images['image_clothing'] ?? '',
-                                width: double.infinity,
+                              errorWidget: (context, url, error) =>
+                                  const SizedBox(
                                 height: 300,
-                                fit: BoxFit.cover,
-                                placeholder: (context, url) => const SizedBox(
-                                  height: 300,
-                                  child: Center(
-                                      child: CircularProgressIndicator()),
-                                ),
-                                errorWidget: (context, url, error) =>
-                                    const SizedBox(
-                                  height: 300,
-                                  child: Center(child: Icon(Icons.error)),
-                                ),
+                                child: Center(child: Icon(Icons.error)),
                               ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // ✅ จุด Page Indicator
-                      Positioned(
-                        bottom: 12,
-                        left: 0,
-                        right: 0,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: List.generate(2, (index) {
-                            return AnimatedContainer(
-                            
-                              duration: const Duration(milliseconds: 300),
-                              margin: const EdgeInsets.symmetric(horizontal: 4),
-                              width: _currentImagePage == index ? 20 : 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: _currentImagePage == index
-                                    ? Colors.deepOrange
-                                    : const Color.fromARGB(255, 0, 0, 0).withOpacity(0.5),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            );
-                          }),
-                        ),
-                      ),
-
-                      // ✅ ปุ่มหัวใจ
-                      Positioned(
-                        top: 16,
-                        right: 16,
-                        child: GestureDetector(
-                          onTap: _isProcessing ? null : _toggleFavourite,
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: _isFavourite
-                                  ? Colors.red.withOpacity(0.8)
-                                  : Colors.black.withOpacity(0.5),
-                              shape: BoxShape.circle,
                             ),
-                            child: _isProcessing
-                                ? const SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                          Colors.white),
-                                    ),
-                                  )
-                                : Icon(
-                                    _isFavourite
-                                        ? Icons.favorite
-                                        : Icons.favorite_border,
-                                    color: Colors.white,
-                                    size: 24,
-                                  ),
-                          ),
+                            // รูปเสื้อผ้า
+                            CachedNetworkImage(
+                              imageUrl:
+                                  widget.item.images['image_clothing'] ?? '',
+                              width: double.infinity,
+                              height: 300,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => const SizedBox(
+                                height: 300,
+                                child:
+                                    Center(child: CircularProgressIndicator()),
+                              ),
+                              errorWidget: (context, url, error) =>
+                                  const SizedBox(
+                                height: 300,
+                                child: Center(child: Icon(Icons.error)),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+
+                    // ✅ จุด Page Indicator
+                    Positioned(
+                      bottom: 12,
+                      left: 0,
+                      right: 0,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: List.generate(2, (index) {
+                          return AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            width: _currentImagePage == index ? 20 : 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: _currentImagePage == index
+                                  ? Colors.deepOrange
+                                  : const Color.fromARGB(255, 0, 0, 0)
+                                      .withOpacity(0.5),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+
+                    // ✅ ปุ่มหัวใจ
+                    Positioned(
+                      top: 16,
+                      right: 16,
+                      child: GestureDetector(
+                        onTap: _isProcessing ? null : _toggleFavourite,
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: _isFavourite
+                                ? Colors.red.withOpacity(0.8)
+                                : Colors.black.withOpacity(0.5),
+                            shape: BoxShape.circle,
+                          ),
+                          child: _isProcessing
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white),
+                                  ),
+                                )
+                              : Icon(
+                                  _isFavourite
+                                      ? Icons.favorite
+                                      : Icons.favorite_border,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
                 Flexible(
                   child: SingleChildScrollView(
                     child: Padding(
@@ -1464,8 +1512,7 @@ class _ItemDetailCardState extends State<_ItemDetailCard> {
                                 const SizedBox(height: 8),
                                 Text(widget.item.description,
                                     style: TextStyle(
-                                        fontSize: 16,
-                                        color: Colors.grey[700])),
+                                        fontSize: 16, color: Colors.grey[700])),
                                 const SizedBox(height: 16),
                               ],
                             ),
@@ -1501,7 +1548,8 @@ class _ItemDetailCardState extends State<_ItemDetailCard> {
                                   decoration: BoxDecoration(
                                       color: Colors.red,
                                       borderRadius: BorderRadius.circular(6)),
-                                  child: Text('-${widget.item.discountPercent}%',
+                                  child: Text(
+                                      '-${widget.item.discountPercent}%',
                                       style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 16,
@@ -1517,7 +1565,8 @@ class _ItemDetailCardState extends State<_ItemDetailCard> {
                             child: ElevatedButton.icon(
                               onPressed: () async {
                                 try {
-                                  debugPrint('🛒 [ItemDetailCard] Add to basket uuid="$_uuid"');
+                                  debugPrint(
+                                      '🛒 [ItemDetailCard] Add to basket uuid="$_uuid"');
                                   await BasketApiService().addToBasket(
                                     clothingUuid: _uuid,
                                   );
@@ -1527,19 +1576,37 @@ class _ItemDetailCardState extends State<_ItemDetailCard> {
                                       Overlay.of(context),
                                       CustomSnackBar.success(
                                         message: languageProvider.translate(
-                                          en: 'Added to cart successfully!',
+                                          en: 'Added to Basket successfully!',
                                           th: 'เพิ่มลงตะกร้าสำเร็จ!',
                                         ),
                                       ),
+                                      animationDuration: const Duration(
+                                          milliseconds:
+                                              1000), // เร็วแค่ไหนตอน popup
+                                      reverseAnimationDuration: const Duration(
+                                          milliseconds:
+                                              200), // เร็วแค่ไหนตอนหาย
+                                      displayDuration: const Duration(
+                                          milliseconds: 1000), // แสดงนานแค่ไหน
                                     );
-                                     Navigator.of(context).pop();
+                                    Navigator.of(context).pop();
                                   }
                                 } catch (e) {
                                   if (context.mounted) {
                                     showTopSnackBar(
                                       Overlay.of(context),
                                       CustomSnackBar.error(
-                                          message: 'เกิดข้อผิดพลาด: $e'),
+                                        message: languageProvider.translate(
+                                          en: 'Failed to add to Basket: $e',
+                                          th: 'เพิ่มลงตะกร้าไม่สำเร็จ: $e',
+                                        ),
+                                      ),
+                                      animationDuration:
+                                          const Duration(milliseconds: 1000),
+                                      reverseAnimationDuration:
+                                          const Duration(milliseconds: 200),
+                                      displayDuration:
+                                          const Duration(milliseconds: 1000),
                                     );
                                   }
                                 }
@@ -1630,8 +1697,7 @@ String _formatGender(int gender, LanguageProvider lang) {
 
 Color brighten(Color color, [double amount = 0.15]) {
   final hsl = HSLColor.fromColor(color);
-  final hslBright =
-      hsl.withLightness((hsl.lightness + amount).clamp(0.0, 1.0));
+  final hslBright = hsl.withLightness((hsl.lightness + amount).clamp(0.0, 1.0));
   return hslBright.toColor();
 }
 
