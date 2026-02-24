@@ -109,16 +109,14 @@ Future<bool> _cartoonCheckIsolate(String imagePath) async {
     if (avgSat > 0.55 && colorDiversity < 0.20) signals++;
 
     // ✅ เพิ่ม: ตรวจพื้นผิวเรียบสม่ำเสมอ = วัตถุ/โมเดล/origami ไม่ใช่ขนแมวจริง
-    if (colorDiversity < 0.08) signals += 2; // สีน้อยมาก = วัตถุ/origami
-    if (colorDiversity < 0.12) signals++; // สีน้อย = น่าสงสัย
-    if (satVariance < 0.02) signals++; // สม่ำเสมอมาก = วัตถุ/ของปั้น
-    if (satVariance < 0.03) signals++; // สม่ำเสมอ = น่าสงสัย
-    if (avgSat < 0.10 && colorDiversity < 0.12)
-      signals++; // ขาว/เทา เรียบ = โมเดล
-    if (avgSat < 0.15 && colorDiversity < 0.15)
-      signals++; // โทนเบจ/ขาว = origami
+    if (colorDiversity < 0.05) signals += 2; // เดิม 0.08
+    if (colorDiversity < 0.08) signals++; // เดิม 0.12
+    if (satVariance < 0.015) signals++; // เดิม 0.02
+    if (satVariance < 0.025) signals++; // เดิม 0.03
+    if (avgSat < 0.08 && colorDiversity < 0.10) signals++; // เดิม 0.10/0.12
+    if (avgSat < 0.12 && colorDiversity < 0.12) signals++; // เดิม 0.15/0.15
 
-    return signals >= 1; // ✅ ลด threshold: พบ signal เดียวก็ถือว่าผิดปกติ
+    return signals >= 3; // ✅ ลด threshold: พบ signal เดียวก็ถือว่าผิดปกติ
   } catch (e) {
     return false;
   }
@@ -663,7 +661,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
             isCartoon: true);
 
       // ✅ 3. cartoon texture check — โมเดล/origami มักผ่านตรงนี้ (ลบ catScore threshold ออก)
-      if (isCartoon)
+      if (isCartoon && catScore < 0.80)
         return _DetectionResult(
             isCat: false,
             reason: 'cartoon_texture',
@@ -671,7 +669,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
             isCartoon: true);
 
       // ✅ 4. ต้องการ catScore สูง AND realAnimalScore สูง จึงจะผ่าน
-      if (catScore >= 0.60 && realAnimalScore >= 0.55) {
+      if (catScore >= 0.60 && realAnimalScore >= 0.40) {
         final hasMultiple = await _hasMultipleCats(imagePath);
         if (_isDisposed) {
           return const _DetectionResult(
@@ -730,7 +728,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
             isCartoon: false);
 
       // ✅ 9. realAnimalScore ต่ำเกิน = สงสัยวัตถุ (backup check)
-      if (realAnimalScore < 0.45)
+      if (realAnimalScore < 0.35)
         return _DetectionResult(
             isCat: false,
             reason: 'art_suspected_no_real_signal',
@@ -1335,7 +1333,6 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     if (confirm != true) return;
 
     try {
-
       await _catApi.deleteCat(_analysisCat!.dbId!);
       setState(() {
         _analysisCat = null;
