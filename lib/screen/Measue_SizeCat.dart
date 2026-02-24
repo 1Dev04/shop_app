@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/api/service_fav_backet.dart';
 import 'package:flutter_application_1/provider/language_provider.dart';
+import 'package:flutter_application_1/screen/history_page.dart';
 
 import 'dart:io';
 import 'dart:async';
@@ -18,6 +19,8 @@ import 'package:flutter_application_1/provider/theme_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:camera/camera.dart';
 import 'package:google_mlkit_image_labeling/google_mlkit_image_labeling.dart';
+
+import 'package:flutter_application_1/api/service_cat_api.dart';
 
 Future<String?> _getFirebaseToken() async {
   try {
@@ -38,7 +41,7 @@ String getBaseUrl() {
   return 'http://localhost:10000';
 }
 
-// ✅ top-level function สำหรับ cartoon check
+// ✅ cartoon / object / model / origami texture check
 Future<bool> _cartoonCheckIsolate(String imagePath) async {
   try {
     final bytes = await File(imagePath).readAsBytes();
@@ -104,7 +107,18 @@ Future<bool> _cartoonCheckIsolate(String imagePath) async {
     if (satVariance < 0.04) signals++;
     if (edgeRatio > 0.12 && colorDiversity < 0.20) signals++;
     if (avgSat > 0.55 && colorDiversity < 0.20) signals++;
-    return signals >= 2;
+
+    // ✅ เพิ่ม: ตรวจพื้นผิวเรียบสม่ำเสมอ = วัตถุ/โมเดล/origami ไม่ใช่ขนแมวจริง
+    if (colorDiversity < 0.08) signals += 2; // สีน้อยมาก = วัตถุ/origami
+    if (colorDiversity < 0.12) signals++; // สีน้อย = น่าสงสัย
+    if (satVariance < 0.02) signals++; // สม่ำเสมอมาก = วัตถุ/ของปั้น
+    if (satVariance < 0.03) signals++; // สม่ำเสมอ = น่าสงสัย
+    if (avgSat < 0.10 && colorDiversity < 0.12)
+      signals++; // ขาว/เทา เรียบ = โมเดล
+    if (avgSat < 0.15 && colorDiversity < 0.15)
+      signals++; // โทนเบจ/ขาว = origami
+
+    return signals >= 1; // ✅ ลด threshold: พบ signal เดียวก็ถือว่าผิดปกติ
   } catch (e) {
     return false;
   }
@@ -190,6 +204,7 @@ class CatData {
   final String imageUrl;
   final String? thumbnailUrl;
   final DateTime detectedAt;
+  final int? dbId;
 
   CatData({
     required this.name,
@@ -205,6 +220,7 @@ class CatData {
     required this.imageUrl,
     this.thumbnailUrl,
     required this.detectedAt,
+    this.dbId,
   });
 
   factory CatData.fromJson(Map<String, dynamic> json) {
@@ -223,9 +239,10 @@ class CatData {
       confidence: (json['confidence'] as num).toDouble(),
       boundingBox: List<double>.from(
           json['bounding_box'].map((e) => (e as num).toDouble())),
-      imageUrl: json['image_url'],
+      imageUrl: json['image_cat'] ?? json['image_url'] ?? '',
       thumbnailUrl: json['thumbnail_url'],
       detectedAt: DateTime.parse(json['detected_at']),
+      dbId: json['db_id'],
     );
   }
 }
@@ -240,6 +257,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
   final ImagePicker _picker = ImagePicker();
   final FavouriteApiService _favouriteApi = FavouriteApiService();
   final BasketApiService _basketApi = BasketApiService();
+  final CatApiService _catApi = CatApiService();
 
   File? _selectedImage;
   bool _isProcessing = false;
@@ -269,6 +287,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     'ragdoll',
     'feline',
   ];
+
   static const List<String> _dogLabels = [
     'dog',
     'puppy',
@@ -287,6 +306,8 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     'corgi',
     'shih tzu',
   ];
+
+  // ✅ เพิ่ม: โมเดล/งานประดิษฐ์/origami/3D/ของปั้น ครบถ้วน
   static const List<String> _artLabels = [
     'cartoon',
     'illustration',
@@ -306,6 +327,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     'clipart',
     'vector',
     'poster',
+    // วัตถุ/ของสะสม
     'figure',
     'figurine',
     'toy',
@@ -313,7 +335,40 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     'plush',
     'statue',
     'sculpture',
+    // ✅ เพิ่มใหม่: โมเดล/งานประดิษฐ์/ของปลอม
+    'origami',
+    'paper craft',
+    'papercraft',
+    'paper model',
+    'paper art',
+    'model',
+    'miniature',
+    'replica',
+    'doll',
+    'puppet',
+    'mannequin',
+    'ceramic',
+    'porcelain',
+    'clay',
+    'plastic',
+    'wood carving',
+    '3d model',
+    'render',
+    '3d render',
+    'cgi',
+    'computer graphics',
+    'craft',
+    'handmade',
+    'artifact',
+    'decorative',
+    'low poly',
+    'polygon',
+    'geometric',
+    'object',
+    'prop',
   ];
+
+  // ✅ เพิ่ม: signal ของสัตว์จริงที่ชัดเจน
   static const List<String> _realAnimalLabels = [
     'fur',
     'whisker',
@@ -324,7 +379,17 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     'animal',
     'pet',
     'domestic animal',
+    // ✅ เพิ่มใหม่
+    'nose',
+    'claw',
+    'tail',
+    'coat',
+    'hair',
+    'living',
+    'vertebrate',
+    'carnivore',
   ];
+
   static const List<String> _nonCatAnimalLabels = [
     'otter',
     'sea otter',
@@ -437,7 +502,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     _imageLabeler = ImageLabeler(options: options);
   }
 
-  // ✅ ฟังก์ชันใหม่: ตรวจว่ามีแมวหลายตัวในภาพ โดยแบ่ง grid 2x2
+  // ✅ ตรวจแมวหลายตัวโดยแบ่ง grid 2x2
   Future<bool> _hasMultipleCats(String imagePath) async {
     if (_isDisposed) return false;
     try {
@@ -448,15 +513,14 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
       final tempDir = await getTemporaryDirectory();
       int catRegionCount = 0;
 
-      // แบ่งรูปเป็น 4 ส่วน (2x2 grid) แล้วตรวจแต่ละส่วน
       final int halfW = image.width ~/ 2;
       final int halfH = image.height ~/ 2;
 
       final List<Map<String, int>> regions = [
-        {'x': 0, 'y': 0, 'w': halfW, 'h': halfH}, // บนซ้าย
-        {'x': halfW, 'y': 0, 'w': halfW, 'h': halfH}, // บนขวา
-        {'x': 0, 'y': halfH, 'w': halfW, 'h': halfH}, // ล่างซ้าย
-        {'x': halfW, 'y': halfH, 'w': halfW, 'h': halfH}, // ล่างขวา
+        {'x': 0, 'y': 0, 'w': halfW, 'h': halfH},
+        {'x': halfW, 'y': 0, 'w': halfW, 'h': halfH},
+        {'x': 0, 'y': halfH, 'w': halfW, 'h': halfH},
+        {'x': halfW, 'y': halfH, 'w': halfW, 'h': halfH},
       ];
 
       for (int i = 0; i < regions.length; i++) {
@@ -491,7 +555,6 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
             }
           }
 
-          // ถ้า region นี้มี cat score >= 0.50 นับว่าเจอแมว
           if (regionCatScore >= 0.50) {
             catRegionCount++;
             print(
@@ -508,7 +571,6 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
           } catch (_) {}
         }
 
-        // ถ้าพบแมวมากกว่า 1 region แล้ว หยุดทันที
         if (catRegionCount > 1) return true;
       }
 
@@ -576,6 +638,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
             isCat: false, reason: 'disposed', catScore: 0, isCartoon: false);
       }
 
+      // ✅ 1. catScore ต่ำเกิน reject ทันที
       if (catScore < 0.50)
         return _DetectionResult(
             isCat: false,
@@ -583,10 +646,32 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
             catScore: catScore,
             isCartoon: false);
 
-      if (dogScore >= 0.50 && (catScore - dogScore) < 0.10) {}
+      // ✅ 2. art/object label สูง หรือ ไม่มี real animal signal = วัตถุ/โมเดล
+      if (artScore >= 0.30 && realAnimalScore < 0.55)
+        return _DetectionResult(
+            isCat: false,
+            reason: 'art_suspected_no_real_signal',
+            catScore: catScore,
+            isCartoon: true);
 
-      if (catScore >= 0.45 && realAnimalScore >= 0.40) {
-        // ✅ ตรวจ multiple cats ก่อน confirm
+      // ✅ 2.5 ไม่มี real animal signal เลย = ไม่ใช่สัตว์จริง
+      if (realAnimalScore < 0.45)
+        return _DetectionResult(
+            isCat: false,
+            reason: 'art_suspected_no_real_signal',
+            catScore: catScore,
+            isCartoon: true);
+
+      // ✅ 3. cartoon texture check — โมเดล/origami มักผ่านตรงนี้ (ลบ catScore threshold ออก)
+      if (isCartoon)
+        return _DetectionResult(
+            isCat: false,
+            reason: 'cartoon_texture',
+            catScore: catScore,
+            isCartoon: true);
+
+      // ✅ 4. ต้องการ catScore สูง AND realAnimalScore สูง จึงจะผ่าน
+      if (catScore >= 0.60 && realAnimalScore >= 0.55) {
         final hasMultiple = await _hasMultipleCats(imagePath);
         if (_isDisposed) {
           return const _DetectionResult(
@@ -606,36 +691,31 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
             isCartoon: false);
       }
 
+      // ✅ 5. artScore สูงมาก
       if (artScore >= 0.60)
         return _DetectionResult(
             isCat: false,
             reason: 'art_label_high',
             catScore: catScore,
             isCartoon: true);
-      if (isCartoon && catScore < 0.80)
-        return _DetectionResult(
-            isCat: false,
-            reason: 'cartoon_texture',
-            catScore: catScore,
-            isCartoon: true);
+
+      // ✅ 6. catScore ไม่สูงพอ
       if (catScore < 0.65)
         return _DetectionResult(
             isCat: false,
             reason: 'cat_score_low',
             catScore: catScore,
             isCartoon: isCartoon);
+
+      // ✅ 7. คล้ายหมา
       if (dogScore >= 0.50 && (catScore - dogScore) < 0.20)
         return _DetectionResult(
             isCat: false,
             reason: 'ambiguous_cat_dog',
             catScore: catScore,
             isCartoon: isCartoon);
-      if (artScore >= 0.35 && realAnimalScore < 0.30 && catScore < 0.85)
-        return _DetectionResult(
-            isCat: false,
-            reason: 'art_suspected_no_real_signal',
-            catScore: catScore,
-            isCartoon: true);
+
+      // ✅ 8. สัตว์อื่น
       if (nonCatAnimalScore >= 0.45)
         return _DetectionResult(
             isCat: false,
@@ -649,7 +729,15 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
             catScore: catScore,
             isCartoon: false);
 
-      // ✅ ตรวจ multiple cats ก่อน return passed
+      // ✅ 9. realAnimalScore ต่ำเกิน = สงสัยวัตถุ (backup check)
+      if (realAnimalScore < 0.45)
+        return _DetectionResult(
+            isCat: false,
+            reason: 'art_suspected_no_real_signal',
+            catScore: catScore,
+            isCartoon: true);
+
+      // ✅ 10. ตรวจ multiple cats ก่อน passed
       final hasMultiple = await _hasMultipleCats(imagePath);
       if (_isDisposed) {
         return const _DetectionResult(
@@ -886,7 +974,6 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
     Color iconColor;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // ✅ เพิ่ม case multiple_cats
     if (result.reason == 'multiple_cats') {
       title = '🐱🐱 ตรวจพบแมวหลายตัว';
       reason =
@@ -894,9 +981,10 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
       icon = Icons.pets;
       iconColor = Colors.purple;
     } else if (result.isCartoon) {
-      title = '🎨 ตรวจพบภาพการ์ตูน/ภาพวาด';
+      // ✅ รวม cartoon / โมเดล / origami / รูปวาด ไว้ด้วยกัน
+      title = '🎨 ตรวจพบภาพที่ไม่ใช่แมวจริง';
       reason =
-          'รูปที่ถ่ายดูเหมือนภาพการ์ตูน/illustration\nกรุณาถ่ายรูปแมวจริงเท่านั้น';
+          'ระบบตรวจพบว่าเป็นภาพการ์ตูน, รูปวาด, โมเดล, ของปั้น หรือ origami\nกรุณาถ่ายรูปแมวจริงๆ เท่านั้น';
       icon = Icons.draw_outlined;
       iconColor = Colors.orange;
     } else if (result.reason.startsWith('non_cat_animal:') ||
@@ -945,8 +1033,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
           ),
           if (result.catScore > 0) ...[
             const SizedBox(height: 8),
-            Text(
-                'Cat score: ${(result.catScore * 100).toStringAsFixed(0)}% (ต้องการ ≥ 65%)',
+            Text('Cat score: ${(result.catScore * 100).toStringAsFixed(0)}%',
                 style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
           ],
         ]),
@@ -1034,7 +1121,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
               'Accept': 'application/json',
               'Authorization': 'Bearer $token'
             },
-            body: jsonEncode({'image_url': imageUrl}),
+            body: jsonEncode({'image_cat': imageUrl}),
           )
           .timeout(const Duration(seconds: 60),
               onTimeout: () =>
@@ -1080,6 +1167,185 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
       if (e.toString().contains('Upload failed'))
         msg = 'อัปโหลดรูปภาพไม่สำเร็จ';
       if (mounted && !_isDisposed) _showError(msg);
+    }
+  }
+
+  Future<void> _showEditDialog() async {
+    if (_analysisCat == null) return;
+
+    final colorCtrl = TextEditingController(text: _analysisCat!.name);
+    final breedCtrl = TextEditingController(text: _analysisCat!.breed ?? '');
+    final ageCtrl =
+        TextEditingController(text: _analysisCat!.age?.toString() ?? '');
+    String selectedSize = _analysisCat!.sizeCategory;
+
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 20,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+        ),
+        child: StatefulBuilder(
+          builder: (ctx2, setModal) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade400,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+              const Text('✏️ แก้ไขข้อมูลแมว',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              TextField(
+                controller: colorCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'สีแมว / Cat Color',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: breedCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'พันธุ์ / Breed',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: ageCtrl,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'อายุ (ปี)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text('ขนาด',
+                  style: TextStyle(fontSize: 13, color: Colors.grey)),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: ['XS', 'S', 'M', 'L', 'XL'].map((size) {
+                  final selected = selectedSize == size;
+                  return GestureDetector(
+                    onTap: () => setModal(() => selectedSize = size),
+                    child: Container(
+                      width: 52,
+                      height: 40,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: selected ? Colors.orange : Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(size,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: selected ? Colors.white : Colors.black87,
+                          )),
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('บันทึก',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (result != true || _analysisCat == null) return;
+
+    // ── ส่ง PUT ─────────────────────────────────────────────────────────────
+    // NOTE: ต้องมี dbId ใน CatData ก่อน — เพิ่ม field dbId ใน CatData.fromJson
+
+    try {
+      final updateData = <String, dynamic>{
+        'cat_color': colorCtrl.text.trim().isNotEmpty
+            ? colorCtrl.text.trim()
+            : _analysisCat!.name,
+        'size_category': selectedSize,
+        if (breedCtrl.text.trim().isNotEmpty) 'breed': breedCtrl.text.trim(),
+        if (ageCtrl.text.trim().isNotEmpty)
+          'age': int.tryParse(ageCtrl.text.trim()),
+      };
+
+      // ใช้ db_id จาก response เดิม (ต้องเพิ่ม dbId ใน CatData)
+      await _catApi.updateCat(_analysisCat!.dbId!, updateData);
+      _showSuccessMessage('บันทึกข้อมูลแล้ว ✅');
+    } catch (e) {
+      _showError(e.toString().replaceAll('Exception: ', ''));
+    }
+  }
+
+  Future<void> _confirmDeleteCat() async {
+    if (_analysisCat == null) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('ยืนยันการลบ'),
+        content: const Text('ต้องการลบข้อมูลแมวนี้ใช่หรือไม่?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('ยกเลิก'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child:
+                const Text('ลบ', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+
+      await _catApi.deleteCat(_analysisCat!.dbId!);
+      setState(() {
+        _analysisCat = null;
+        _selectedImage = null;
+        _recommendedProducts = [];
+      });
+      _initCamera();
+      _showSuccessMessage('ลบข้อมูลแมวแล้ว');
+    } catch (e) {
+      _showError(e.toString().replaceAll('Exception: ', ''));
     }
   }
 
@@ -1148,7 +1414,7 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
             SizedBox(width: 8),
             Expanded(
                 child: Text(
-                    'วางแมว 1 ตัวให้อยู่ในกรอบ เห็นทั้งตัว แล้วกดถ่ายรูป',
+                    'วางแมวจริง 1 ตัวให้อยู่ในกรอบ เห็นทั้งตัว แล้วกดถ่ายรูป',
                     style: TextStyle(
                         color: Colors.white,
                         fontSize: 12,
@@ -1245,6 +1511,16 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                 color: isDark ? Colors.white : Colors.black)),
         backgroundColor: isDark ? Colors.black : Colors.white,
         iconTheme: IconThemeData(color: isDark ? Colors.white : Colors.black),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history_rounded),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const HistoryPage()),
+            ),
+            tooltip: 'ประวัติการวัด',
+          ),
+        ],
       ),
       body: Stack(children: [
         Column(children: [
@@ -1471,104 +1747,12 @@ class _MeasureSizeCatState extends State<MeasureSizeCat> {
                 ])),
             Column(mainAxisSize: MainAxisSize.min, children: [
               IconButton(
-                onPressed: () => showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  shape: const RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.vertical(top: Radius.circular(20))),
-                  builder: (context) => Container(
-                    height: MediaQuery.of(context).size.height * 0.5,
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Center(
-                              child: Container(
-                                  width: 40,
-                                  height: 4,
-                                  margin: const EdgeInsets.only(bottom: 12),
-                                  decoration: BoxDecoration(
-                                      color: Colors.grey.shade400,
-                                      borderRadius:
-                                          BorderRadius.circular(10)))),
-                          Text(
-                              languageProvider.translate(
-                                  en: 'Edit Data', th: 'แก้ไขข้อมูล'),
-                              style: const TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 16),
-                          TextField(
-                              decoration: InputDecoration(
-                                  labelText: languageProvider.translate(
-                                      en: 'Cat Color', th: 'สีแมว'),
-                                  border: const OutlineInputBorder())),
-                          const SizedBox(height: 8),
-                          TextField(
-                              decoration: InputDecoration(
-                                  labelText: languageProvider.translate(
-                                      en: 'Age', th: 'อายุ'),
-                                  border: const OutlineInputBorder())),
-                          const SizedBox(height: 8),
-                          TextField(
-                              decoration: InputDecoration(
-                                  labelText: languageProvider.translate(
-                                      en: 'Breed', th: 'พันธุ์'),
-                                  border: const OutlineInputBorder())),
-                          const SizedBox(height: 8),
-                          TextField(
-                              decoration: InputDecoration(
-                                  labelText: languageProvider.translate(
-                                      en: 'Size', th: 'ขนาด'),
-                                  border: const OutlineInputBorder())),
-                          const Spacer(),
-                          SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: Text(languageProvider.translate(
-                                      en: 'Save', th: 'บันทึก')))),
-                        ]),
-                  ),
-                ),
+                onPressed: () => _showEditDialog(),
                 icon: Icon(Icons.mode_edit_outline_outlined,
                     color: Colors.blue.shade700, size: 28),
               ),
               IconButton(
-                onPressed: () => showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: Text(languageProvider.translate(
-                        en: 'Confirm Deletion', th: 'ยืนยันการลบ')),
-                    content: Text(languageProvider.translate(
-                        en: 'Do you want to delete this cat data?',
-                        th: 'คุณต้องการลบข้อมูลแมวนี้ใช่หรือไม่?')),
-                    actions: [
-                      TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: Text(languageProvider.translate(
-                              en: 'Cancel', th: 'ยกเลิก'))),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          setState(() {
-                            _analysisCat = null;
-                            _recommendedProducts = [];
-                            _selectedImage = null;
-                          });
-                          _initCamera();
-                          _showSuccessMessage(languageProvider.translate(
-                              en: 'Deleted data successfully',
-                              th: 'ลบข้อมูลแล้ว'));
-                        },
-                        style:
-                            TextButton.styleFrom(foregroundColor: Colors.red),
-                        child: Text(
-                            languageProvider.translate(en: 'Delete', th: 'ลบ')),
-                      ),
-                    ],
-                  ),
-                ),
+                onPressed: () => _confirmDeleteCat(),
                 icon: Icon(Icons.delete_outline,
                     color: Colors.red.shade600, size: 28),
               ),
