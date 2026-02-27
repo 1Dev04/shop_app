@@ -1,10 +1,12 @@
 // lib/pages/history_page.dart
 // หน้า History รวม 2 Tab:
 //   - Tab 1: Order History (mock data เดิม)
-//   - Tab 2: Cat Analysis History (ดึงจาก Backend)
+//   - Tab 2: Cat Analysis History (ใช้ CatHistoryBloc)
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_application_1/api/service_cat_api.dart';
+import 'package:flutter_application_1/blocs/cat_history/history_bloc.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -16,12 +18,6 @@ class HistoryPage extends StatefulWidget {
 class _HistoryPageState extends State<HistoryPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final CatApiService _catApi = CatApiService();
-
-  // ── Cat Analysis State ─────────────────────────────────────────────────────
-  List<CatRecord> _cats = [];
-  bool _isLoadingCats = true;
-  String? _catError;
 
   // ── Mock Orders ────────────────────────────────────────────────────────────
   final List<Map<String, dynamic>> _orders = [
@@ -55,7 +51,6 @@ class _HistoryPageState extends State<HistoryPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _loadCats();
   }
 
   @override
@@ -64,58 +59,8 @@ class _HistoryPageState extends State<HistoryPage>
     super.dispose();
   }
 
-  // ── Load Cat History ───────────────────────────────────────────────────────
-  Future<void> _loadCats() async {
-    setState(() {
-      _isLoadingCats = true;
-      _catError = null;
-    });
-    try {
-      final cats = await _catApi.getUserCats();
-      if (mounted) setState(() => _cats = cats);
-    } catch (e) {
-      if (mounted)
-        setState(() => _catError = e.toString().replaceAll('Exception: ', ''));
-    } finally {
-      if (mounted) setState(() => _isLoadingCats = false);
-    }
-  }
-
-  // ── Delete Cat ─────────────────────────────────────────────────────────────
-  Future<void> _deleteCat(CatRecord cat) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('ยืนยันการลบ'),
-        content: Text('ต้องการลบข้อมูลแมว "${cat.catColor}" ใช่หรือไม่?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('ยกเลิก'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('ลบ',
-                style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
-    if (confirm != true) return;
-
-    try {
-      await _catApi.deleteCat(cat.id);
-      setState(() => _cats.removeWhere((c) => c.id == cat.id));
-      _showSuccess('ลบข้อมูลแมวแล้ว');
-    } catch (e) {
-      _showError(e.toString().replaceAll('Exception: ', ''));
-    }
-  }
-
-  // ── Edit Cat ───────────────────────────────────────────────────────────────
-  Future<void> _editCat(CatRecord cat) async {
+  // ── Edit Cat (เปิด Bottom Sheet แล้ว dispatch event) ──────────────────────
+  Future<void> _editCat(BuildContext context, CatRecord cat) async {
     final colorCtrl = TextEditingController(text: cat.catColor);
     final breedCtrl = TextEditingController(text: cat.breed ?? '');
     final ageCtrl = TextEditingController(text: cat.age?.toString() ?? '');
@@ -262,53 +207,56 @@ class _HistoryPageState extends State<HistoryPage>
 
     if (result != true) return;
 
-    try {
-      final updateData = <String, dynamic>{
-        'cat_color': colorCtrl.text.trim().isEmpty
-            ? cat.catColor
-            : colorCtrl.text.trim(),
-        'size_category': selectedSize,
-        if (breedCtrl.text.trim().isNotEmpty) 'breed': breedCtrl.text.trim(),
-        if (ageCtrl.text.trim().isNotEmpty)
-          'age': int.tryParse(ageCtrl.text.trim()),
-        if (weightCtrl.text.trim().isNotEmpty)
-          'weight': double.tryParse(weightCtrl.text.trim()),
-      };
+    final updateData = <String, dynamic>{
+      'cat_color': colorCtrl.text.trim().isEmpty
+          ? cat.catColor
+          : colorCtrl.text.trim(),
+      'size_category': selectedSize,
+      if (breedCtrl.text.trim().isNotEmpty) 'breed': breedCtrl.text.trim(),
+      if (ageCtrl.text.trim().isNotEmpty)
+        'age': int.tryParse(ageCtrl.text.trim()),
+      if (weightCtrl.text.trim().isNotEmpty)
+        'weight': double.tryParse(weightCtrl.text.trim()),
+    };
 
-      final updated = await _catApi.updateCat(cat.id, updateData);
-      setState(() {
-        final index = _cats.indexWhere((c) => c.id == cat.id);
-        if (index != -1) _cats[index] = updated;
-      });
-      _showSuccess('บันทึกข้อมูลแมวแล้ว ✅');
-    } catch (e) {
-      _showError(e.toString().replaceAll('Exception: ', ''));
-    }
+    // ── Dispatch ──────────────────────────────────────────────────────────
+    if (!context.mounted) return;
+    context.read<CatHistoryBloc>().add(
+          CatHistoryUpdateRequested(catId: cat.id, updateData: updateData),
+        );
+  }
+
+  // ── Delete Confirm ─────────────────────────────────────────────────────────
+  Future<void> _deleteCat(BuildContext context, CatRecord cat) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('ยืนยันการลบ'),
+        content: Text('ต้องการลบข้อมูลแมว "${cat.catColor}" ใช่หรือไม่?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('ยกเลิก'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('ลบ',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    if (!context.mounted) return;
+    context
+        .read<CatHistoryBloc>()
+        .add(CatHistoryDeleteRequested(cat));
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────
-  void _showSuccess(String msg) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
-      backgroundColor: Colors.green,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      duration: const Duration(seconds: 2),
-    ));
-  }
-
-  void _showError(String msg) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
-      backgroundColor: Colors.red,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      duration: const Duration(seconds: 3),
-    ));
-  }
-
   String _genderText(int g) {
     switch (g) {
       case 1:
@@ -343,91 +291,98 @@ class _HistoryPageState extends State<HistoryPage>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDark ? Colors.black : const Color(0xFFF5F5F5),
-      appBar: AppBar(
-        centerTitle: true,
-        backgroundColor: isDark ? Colors.black : Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new,
-              color: isDark ? Colors.white : Colors.black87, size: 20),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text(
-          'History',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-            color: isDark ? Colors.white : Colors.black87,
-          ),
-        ),
-        // ── TabBar อยู่ใน bottom ของ AppBar ──────────────────────────────
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(50),
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            height: 42,
-            decoration: BoxDecoration(
-              color: isDark ? Colors.grey.shade900 : Colors.grey.shade200,
-              borderRadius: BorderRadius.circular(30),
+    return BlocProvider(
+      create: (_) =>
+          CatHistoryBloc()..add(const CatHistoryLoadRequested()),
+      child: Builder(builder: (blocCtx) {
+        return Scaffold(
+          backgroundColor:
+              isDark ? Colors.black : const Color(0xFFF5F5F5),
+          appBar: AppBar(
+            centerTitle: true,
+            backgroundColor: isDark ? Colors.black : Colors.white,
+            elevation: 0,
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back_ios_new,
+                  color: isDark ? Colors.white : Colors.black87, size: 20),
+              onPressed: () => Navigator.of(context).pop(),
             ),
-            child: TabBar(
-              controller: _tabController,
-              indicator: BoxDecoration(
-                color: Colors.black,
-                borderRadius: BorderRadius.circular(30),
+            title: Text(
+              'History',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+                color: isDark ? Colors.white : Colors.black87,
               ),
-              indicatorSize: TabBarIndicatorSize.tab,
-              dividerColor: Colors.transparent,
-              labelColor: Colors.white,
-              unselectedLabelColor:
-                  isDark ? Colors.grey.shade400 : Colors.grey.shade600,
-              labelStyle: const TextStyle(
-                  fontWeight: FontWeight.bold, fontSize: 13),
-              unselectedLabelStyle:
-                  const TextStyle(fontSize: 13),
-              tabs: const [
-                Tab(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.shopping_bag_outlined, size: 16),
-                      SizedBox(width: 6),
-                      Text('Orders'),
-                    ],
-                  ),
+            ),
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(50),
+              child: Container(
+                margin:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                height: 42,
+                decoration: BoxDecoration(
+                  color:
+                      isDark ? Colors.grey.shade900 : Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(30),
                 ),
-                Tab(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.pets, size: 16),
-                      SizedBox(width: 6),
-                      Text('Analysis Cat'),
-                    ],
+                child: TabBar(
+                  controller: _tabController,
+                  indicator: BoxDecoration(
+                    color: Colors.black,
+                    borderRadius: BorderRadius.circular(30),
                   ),
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  dividerColor: Colors.transparent,
+                  labelColor: Colors.white,
+                  unselectedLabelColor: isDark
+                      ? Colors.grey.shade400
+                      : Colors.grey.shade600,
+                  labelStyle: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 13),
+                  unselectedLabelStyle: const TextStyle(fontSize: 13),
+                  tabs: const [
+                    Tab(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.shopping_bag_outlined, size: 16),
+                          SizedBox(width: 6),
+                          Text('Orders'),
+                        ],
+                      ),
+                    ),
+                    Tab(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.pets, size: 16),
+                          SizedBox(width: 6),
+                          Text('Analysis Cat'),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
-
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          // ── Tab 1: Orders ────────────────────────────────────────────────
-          _buildOrdersTab(isDark),
-          // ── Tab 2: Cat Analysis ──────────────────────────────────────────
-          _buildCatTab(isDark),
-        ],
-      ),
+          body: TabBarView(
+            controller: _tabController,
+            children: [
+              // ── Tab 1: Orders (ไม่เปลี่ยนแปลง) ──────────────────────────
+              _buildOrdersTab(isDark),
+              // ── Tab 2: Cat Analysis (BLoC) ────────────────────────────────
+              _buildCatTab(blocCtx, isDark),
+            ],
+          ),
+        );
+      }),
     );
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  // TAB 1 — ORDERS
+  // TAB 1 — ORDERS (เหมือนเดิมทุกอย่าง)
   // ══════════════════════════════════════════════════════════════════════════
   Widget _buildOrdersTab(bool isDark) {
     return ListView.builder(
@@ -473,27 +428,27 @@ class _HistoryPageState extends State<HistoryPage>
       child: Padding(
         padding: const EdgeInsets.all(15),
         child: Column(children: [
-          // Header
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text(order['date'],
-                style: const TextStyle(color: Colors.grey, fontSize: 13)),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(order['status'],
-                  style: TextStyle(
-                      color: statusColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12)),
-            ),
-          ]),
+          Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(order['date'],
+                    style:
+                        const TextStyle(color: Colors.grey, fontSize: 13)),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(order['status'],
+                      style: TextStyle(
+                          color: statusColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12)),
+                ),
+              ]),
           const Divider(height: 25),
-
-          // Body
           Row(children: [
             Container(
               width: 60,
@@ -520,18 +475,19 @@ class _HistoryPageState extends State<HistoryPage>
             ),
           ]),
           const SizedBox(height: 15),
-
-          // Footer
           Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Text('Total Payment',
-                      style: TextStyle(fontSize: 12, color: Colors.grey)),
-                  Text(order['total'],
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 16)),
-                ]),
+                Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Total Payment',
+                          style:
+                              TextStyle(fontSize: 12, color: Colors.grey)),
+                      Text(order['total'],
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 16)),
+                    ]),
                 ElevatedButton(
                   onPressed: () {},
                   style: ElevatedButton.styleFrom(
@@ -553,71 +509,131 @@ class _HistoryPageState extends State<HistoryPage>
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  // TAB 2 — CAT ANALYSIS
+  // TAB 2 — CAT ANALYSIS (BLoC)
   // ══════════════════════════════════════════════════════════════════════════
-  Widget _buildCatTab(bool isDark) {
-    if (_isLoadingCats) {
-      return const Center(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          CircularProgressIndicator(color: Colors.orange),
-          SizedBox(height: 16),
-          Text('กำลังโหลดข้อมูล...', style: TextStyle(color: Colors.grey)),
-        ]),
-      );
-    }
+  Widget _buildCatTab(BuildContext blocCtx, bool isDark) {
+    return BlocConsumer<CatHistoryBloc, CatHistoryState>(
+      // ── Listener: แสดง SnackBar ──────────────────────────────────────────
+      listener: (ctx, state) {
+        if (state is CatHistoryActionSuccess) {
+          ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+            content: Text(state.message),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            duration: const Duration(seconds: 2),
+          ));
+        } else if (state is CatHistoryActionFailure) {
+          ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+            content: Text(state.message),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            duration: const Duration(seconds: 3),
+          ));
+        }
+      },
+      // ── Builder: UI ────────────────────────────────────────────────────────
+      builder: (ctx, state) {
+        // Loading ครั้งแรก
+        if (state is CatHistoryInitial || state is CatHistoryLoading) {
+          return const Center(
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              CircularProgressIndicator(color: Colors.black),
+              SizedBox(height: 16),
+              Text('กำลังโหลดข้อมูล...',
+                  style: TextStyle(color: Colors.grey)),
+            ]),
+          );
+        }
 
-    if (_catError != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(_catError!,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.red, fontSize: 15)),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: _loadCats,
-              icon: const Icon(Icons.refresh),
-              label: const Text('ลองใหม่'),
-              style:
-                  ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+        // โหลดล้มเหลว
+        if (state is CatHistoryFailure) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.error_outline,
+                    size: 64, color: Colors.red),
+                const SizedBox(height: 16),
+                Text(state.message,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                        color: Colors.red, fontSize: 15)),
+                const SizedBox(height: 20),
+                ElevatedButton.icon(
+                  onPressed: () => ctx
+                      .read<CatHistoryBloc>()
+                      .add(const CatHistoryLoadRequested()),
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('ลองใหม่'),
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange),
+                ),
+              ]),
             ),
-          ]),
-        ),
-      );
-    }
+          );
+        }
 
-    if (_cats.isEmpty) {
-      return Center(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(Icons.pets, size: 80, color: Colors.grey.shade400),
-          const SizedBox(height: 16),
-          Text('ยังไม่มีประวัติการวัดขนาดแมว',
-              style:
-                  TextStyle(fontSize: 16, color: Colors.grey.shade600)),
-          const SizedBox(height: 8),
-          Text('ถ่ายรูปแมวแล้ววิเคราะห์ได้เลย!',
-              style:
-                  TextStyle(fontSize: 13, color: Colors.grey.shade400)),
-        ]),
-      );
-    }
+        // ดึง cats จาก state ที่มี list (Loaded / ActionInProgress / ActionSuccess / ActionFailure)
+        final cats = _catsFromState(state);
+        final isProcessing = state is CatHistoryActionInProgress;
 
-    return RefreshIndicator(
-      onRefresh: _loadCats,
-      color: Colors.orange,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _cats.length,
-        itemBuilder: (context, index) =>
-            _buildCatCard(_cats[index], isDark),
-      ),
+        if (cats.isEmpty) {
+          return Center(
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Icon(Icons.pets, size: 80, color: Colors.grey.shade400),
+              const SizedBox(height: 16),
+              Text('ยังไม่มีประวัติการวัดขนาดแมว',
+                  style: TextStyle(
+                      fontSize: 16, color: Colors.grey.shade600)),
+              const SizedBox(height: 8),
+              Text('ถ่ายรูปแมวแล้ววิเคราะห์ได้เลย!',
+                  style: TextStyle(
+                      fontSize: 13, color: Colors.grey.shade400)),
+            ]),
+          );
+        }
+
+        return Stack(
+          children: [
+            RefreshIndicator(
+              onRefresh: () async => ctx
+                  .read<CatHistoryBloc>()
+                  .add(const CatHistoryLoadRequested()),
+              color: Colors.orange,
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: cats.length,
+                itemBuilder: (_, index) =>
+                    _buildCatCard(ctx, cats[index], isDark),
+              ),
+            ),
+            // overlay ขณะ delete/update
+            if (isProcessing)
+              Container(
+                color: Colors.black.withOpacity(0.15),
+                child: const Center(
+                  child: CircularProgressIndicator(color: Colors.orange),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 
-  Widget _buildCatCard(CatRecord cat, bool isDark) {
+  List<CatRecord> _catsFromState(CatHistoryState state) {
+    if (state is CatHistoryLoaded) return state.cats;
+    if (state is CatHistoryActionInProgress) return state.cats;
+    if (state is CatHistoryActionSuccess) return state.cats;
+    if (state is CatHistoryActionFailure) return state.cats;
+    return [];
+  }
+
+  Widget _buildCatCard(BuildContext blocCtx, CatRecord cat, bool isDark) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -631,99 +647,101 @@ class _HistoryPageState extends State<HistoryPage>
           ),
         ],
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      child:
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         // ── Header ──────────────────────────────────────────────────────
         Padding(
           padding: const EdgeInsets.all(16),
-          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            // รูปแมว
-            Container(
-              width: 90,
-              height: 100,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                color: isDark
-                    ? Colors.grey.shade800
-                    : Colors.grey.shade200,
-                border: Border.all(
-                  color: isDark
-                      ? Colors.grey.shade700
-                      : Colors.grey.shade300,
-                  width: 1.5,
+          child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 90,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    color: isDark
+                        ? Colors.grey.shade800
+                        : Colors.grey.shade200,
+                    border: Border.all(
+                      color: isDark
+                          ? Colors.grey.shade700
+                          : Colors.grey.shade300,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: cat.imageCat != null
+                        ? Image.network(cat.imageCat!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Icon(Icons.pets,
+                                size: 36,
+                                color: Colors.grey.shade400))
+                        : Icon(Icons.pets,
+                            size: 36, color: Colors.grey.shade400),
+                  ),
                 ),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: cat.imageCat != null
-                    ? Image.network(cat.imageCat!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Icon(Icons.pets,
-                            size: 36, color: Colors.grey.shade400))
-                    : Icon(Icons.pets,
-                        size: 36, color: Colors.grey.shade400),
-              ),
-            ),
-            const SizedBox(width: 14),
-
-            // ข้อมูล
-            Expanded(
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(children: [
-                      Expanded(
-                        child: Text(cat.catColor,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: isDark
-                                  ? Colors.white
-                                  : Colors.black87,
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(children: [
+                          Expanded(
+                            child: Text(cat.catColor,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark
+                                      ? Colors.white
+                                      : Colors.black87,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.orange,
+                              borderRadius: BorderRadius.circular(20),
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.orange,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(cat.sizeCategory,
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13)),
-                      ),
-                    ]),
-                    const SizedBox(height: 6),
-                    if (cat.breed != null)
-                      _infoChip(Icons.pets, cat.breed!, isDark),
-                    const SizedBox(height: 4),
-                    Row(children: [
-                      if (cat.age != null) ...[
-                        _infoChip(Icons.cake_outlined,
-                            '${cat.age} ปี', isDark),
-                        const SizedBox(width: 8),
-                      ],
-                      _infoChip(
-                        cat.gender == 1
-                            ? Icons.male
-                            : cat.gender == 2
-                                ? Icons.female
-                                : Icons.help_outline,
-                        _genderText(cat.gender),
-                        isDark,
-                      ),
-                    ]),
-                    const SizedBox(height: 4),
-                    if (cat.weight != null)
-                      _infoChip(Icons.monitor_weight_outlined,
-                          '${cat.weight!.toStringAsFixed(1)} kg', isDark),
-                  ]),
-            ),
-          ]),
+                            child: Text(cat.sizeCategory,
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13)),
+                          ),
+                        ]),
+                        const SizedBox(height: 6),
+                        if (cat.breed != null)
+                          _infoChip(Icons.pets, cat.breed!, isDark),
+                        const SizedBox(height: 4),
+                        Row(children: [
+                          if (cat.age != null) ...[
+                            _infoChip(Icons.cake_outlined,
+                                '${cat.age} ปี', isDark),
+                            const SizedBox(width: 8),
+                          ],
+                          _infoChip(
+                            cat.gender == 1
+                                ? Icons.male
+                                : cat.gender == 2
+                                    ? Icons.female
+                                    : Icons.help_outline,
+                            _genderText(cat.gender),
+                            isDark,
+                          ),
+                        ]),
+                        const SizedBox(height: 4),
+                        if (cat.weight != null)
+                          _infoChip(Icons.monitor_weight_outlined,
+                              '${cat.weight!.toStringAsFixed(1)} kg',
+                              isDark),
+                      ]),
+                ),
+              ]),
         ),
 
         // ── Body Condition ───────────────────────────────────────────────
@@ -734,8 +752,8 @@ class _HistoryPageState extends State<HistoryPage>
               padding: const EdgeInsets.symmetric(
                   horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color:
-                    _conditionColor(cat.bodyCondition).withOpacity(0.1),
+                color: _conditionColor(cat.bodyCondition)
+                    .withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
                   color: _conditionColor(cat.bodyCondition)
@@ -784,7 +802,8 @@ class _HistoryPageState extends State<HistoryPage>
                 _measureChip('ยาวตัว',
                     '${cat.bodyLengthCm!.toStringAsFixed(1)} cm', isDark),
               if (cat.bmi != null)
-                _measureChip('BMI', cat.bmi!.toStringAsFixed(1), isDark),
+                _measureChip(
+                    'BMI', cat.bmi!.toStringAsFixed(1), isDark),
             ],
           ),
         ),
@@ -801,12 +820,13 @@ class _HistoryPageState extends State<HistoryPage>
                 cat.detectedAt != null
                     ? _formatDate(cat.detectedAt!)
                     : 'ไม่ทราบวันที่',
-                style:
-                    TextStyle(fontSize: 11, color: Colors.grey.shade400),
+                style: TextStyle(
+                    fontSize: 11, color: Colors.grey.shade400),
               ),
             ),
             IconButton(
-              onPressed: () => _editCat(cat),
+              // ส่ง blocCtx เพื่อให้ read<CatHistoryBloc>() หา Bloc เจอ
+              onPressed: () => _editCat(blocCtx, cat),
               icon: Icon(Icons.edit_outlined,
                   color: Colors.blue.shade600, size: 22),
               tooltip: 'แก้ไข',
@@ -815,7 +835,7 @@ class _HistoryPageState extends State<HistoryPage>
             ),
             const SizedBox(width: 4),
             IconButton(
-              onPressed: () => _deleteCat(cat),
+              onPressed: () => _deleteCat(blocCtx, cat),
               icon: Icon(Icons.delete_outline,
                   color: Colors.red.shade500, size: 22),
               tooltip: 'ลบ',
@@ -846,11 +866,13 @@ class _HistoryPageState extends State<HistoryPage>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey.shade800 : Colors.grey.shade100,
+        color:
+            isDark ? Colors.grey.shade800 : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color:
-              isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+          color: isDark
+              ? Colors.grey.shade700
+              : Colors.grey.shade300,
         ),
       ),
       child: Text('$label: $value',

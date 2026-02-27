@@ -1,636 +1,476 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+// lib/screen/edit_profile_page.dart
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/provider/theme_provider.dart';
+import 'package:flutter_application_1/repositories/profile_repository.dart';
 import 'package:flutter_application_1/screen/auth_page.dart';
 import 'package:provider/provider.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
-class editProfilePage extends StatefulWidget {
-  const editProfilePage({super.key});
+class EditProfilePage extends StatefulWidget {
+  const EditProfilePage({super.key});
 
   @override
-  State<editProfilePage> createState() => _editProfilePageState();
+  State<EditProfilePage> createState() => _EditProfilePageState();
 }
 
-class _editProfilePageState extends State<editProfilePage> {
+class _EditProfilePageState extends State<EditProfilePage> {
   final _formKey = GlobalKey<FormState>();
+  final _repo = ProfileRepository();
 
-  bool visiblePassCon = false;
-  bool visiblePassCon1 = false;
-  bool visiblePassCon2 = false;
+  // ── UI state ──────────────────────────────────────────────────────────────
+  bool _visibleCurrent = false;
+  bool _visibleNew = false;
+  bool _visibleConfirm = false;
+  bool _isLoading = false;
+  bool _isSubmitting = false;
 
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController newEmailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-  final TextEditingController newPasswordController = TextEditingController();
-  final TextEditingController conNewPasswordController =
-      TextEditingController();
-  final TextEditingController postalController = TextEditingController();
-  final TextEditingController phoneController = TextEditingController();
-  final TextEditingController birthdateController = TextEditingController();
+  // ── Controllers ───────────────────────────────────────────────────────────
+  final _nameCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _newEmailCtrl = TextEditingController();
+  final _passwordCtrl = TextEditingController();
+  final _newPasswordCtrl = TextEditingController();
+  final _conNewPasswordCtrl = TextEditingController();
+  final _postalCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+  final _birthdateCtrl = TextEditingController();
 
-  String? selectedGender;
-  bool subscribeNewsletter = false;
-  bool acceptTerms = false;
-  DateTime? selectedBirthdate;
+  // ── Form state ────────────────────────────────────────────────────────────
+  String? _selectedGender;
+  bool _subscribeNewsletter = false;
+  bool _acceptTerms = false;
+  DateTime? _selectedBirthdate;
 
   @override
   void initState() {
     super.initState();
-    loadUserProfile();
+    _loadProfile();
   }
 
-  // ✅ โหลดข้อมูลโปรไฟล์ผู้ใช้จาก Firestore
-  void loadUserProfile() async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _emailCtrl.dispose();
+    _newEmailCtrl.dispose();
+    _passwordCtrl.dispose();
+    _newPasswordCtrl.dispose();
+    _conNewPasswordCtrl.dispose();
+    _postalCtrl.dispose();
+    _phoneCtrl.dispose();
+    _birthdateCtrl.dispose();
+    super.dispose();
+  }
 
-      if (userDoc.exists) {
-        setState(() {
-          nameController.text = userDoc['name'] ?? '';
-          emailController.text = user.email ?? ''; // ✅ ดึงจาก Authentication
-          postalController.text = userDoc['postal'] ?? '';
-          phoneController.text = userDoc['phone'] ?? '';
-          selectedGender = userDoc['gender'] ?? '';
-          subscribeNewsletter = userDoc['subscribeNewsletter'] ?? false;
-          acceptTerms = userDoc['acceptTerms'] ?? false;
-
-          // ✅ จัดการ birthdate ให้ถูกต้อง
-          if (userDoc['birthdate'] != null) {
-            if (userDoc['birthdate'] is Timestamp) {
-              selectedBirthdate = (userDoc['birthdate'] as Timestamp).toDate();
-              birthdateController.text = selectedBirthdate!.toIso8601String();
-            } else if (userDoc['birthdate'] is String) {
-              selectedBirthdate = DateTime.parse(userDoc['birthdate']);
-              birthdateController.text = selectedBirthdate!.toIso8601String();
-            }
-          }
-        });
-      }
+  // ── Load ──────────────────────────────────────────────────────────────────
+  Future<void> _loadProfile() async {
+    setState(() => _isLoading = true);
+    try {
+      final profile = await _repo.loadProfile();
+      if (!mounted) return;
+      setState(() {
+        _nameCtrl.text = profile.name;
+        _emailCtrl.text = profile.email;
+        _phoneCtrl.text = profile.phone;
+        _postalCtrl.text = profile.postal;
+        _selectedGender = profile.gender;
+        _subscribeNewsletter = profile.subscribeNewsletter;
+        _acceptTerms = profile.acceptTerms;
+        if (profile.birthdate != null) {
+          _selectedBirthdate = profile.birthdate;
+          _birthdateCtrl.text = profile.birthdate!.toIso8601String();
+        }
+      });
+    } catch (e) {
+      _showSnack('Failed to load profile: $e', _SnackType.error);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  void _showSuccessMessage(String message) {
-    showTopSnackBar(
-      Overlay.of(context),
-      CustomSnackBar.success(message: message),
-      animationDuration: const Duration(milliseconds: 200),
-      reverseAnimationDuration: const Duration(milliseconds: 200),
-      displayDuration: const Duration(milliseconds: 1000),
-    );
+  // ── Submit ────────────────────────────────────────────────────────────────
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (!_acceptTerms) {
+      _showSnack('Please accept terms and conditions', _SnackType.info);
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+    try {
+      final resultKey = await _repo.updateProfile(UpdateProfileParams(
+        name: _nameCtrl.text,
+        email: _emailCtrl.text,
+        phone: _phoneCtrl.text,
+        postal: _postalCtrl.text,
+        birthdate: _birthdateCtrl.text,
+        gender: _selectedGender,
+        subscribeNewsletter: _subscribeNewsletter,
+        acceptTerms: _acceptTerms,
+        newEmail: _newEmailCtrl.text.isNotEmpty ? _newEmailCtrl.text : null,
+        currentPassword:
+            _passwordCtrl.text.isNotEmpty ? _passwordCtrl.text : null,
+        newPassword:
+            _newPasswordCtrl.text.isNotEmpty ? _newPasswordCtrl.text : null,
+      ));
+
+      if (!mounted) return;
+
+      if (resultKey == 'verify_email_sent') {
+        _showSnack(
+            'Please check your new email to verify the change.',
+            _SnackType.info);
+      } else {
+        _showSnack('Profile updated successfully 🎉', _SnackType.success);
+      }
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => authPage()),
+      );
+    } on FirebaseAuthException catch (e) {
+      _showSnack('Auth error: ${e.message}', _SnackType.error);
+    } catch (e) {
+      _showSnack('Error: $e', _SnackType.error);
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
-  void _showInfoMessage(String message) {
-    showTopSnackBar(
-      Overlay.of(context),
-      CustomSnackBar.info(message: message),
-      animationDuration: const Duration(milliseconds: 200),
-      reverseAnimationDuration: const Duration(milliseconds: 200),
-      displayDuration: const Duration(milliseconds: 1000),
+  // ── Select Birthdate ──────────────────────────────────────────────────────
+  Future<void> _selectBirthdate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedBirthdate ?? DateTime(2000),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
     );
+    if (picked != null && picked != _selectedBirthdate) {
+      setState(() {
+        _selectedBirthdate = picked;
+        _birthdateCtrl.text = picked.toIso8601String();
+      });
+    }
   }
 
-  void _showError(String message) {
+  // ── SnackBar helper ───────────────────────────────────────────────────────
+  void _showSnack(String message, _SnackType type) {
+    if (!mounted) return;
+    final snackBar = switch (type) {
+      _SnackType.success => CustomSnackBar.success(message: message),
+      _SnackType.info => CustomSnackBar.info(message: message),
+      _SnackType.error => CustomSnackBar.error(message: message),
+    };
     showTopSnackBar(
       Overlay.of(context),
-      CustomSnackBar.error(message: message),
+      snackBar,
       animationDuration: const Duration(milliseconds: 200),
       reverseAnimationDuration: const Duration(milliseconds: 200),
       displayDuration: const Duration(milliseconds: 1500),
     );
   }
 
-  // ฟังก์ชันเลือกวันเกิด
-  Future<void> selectBirthdate() async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: selectedBirthdate ?? DateTime(2000),
-      firstDate: DateTime(1900),
-      lastDate: DateTime.now(),
-    );
-    if (picked != null && picked != selectedBirthdate) {
-      setState(() {
-        selectedBirthdate = picked;
-        // ✅ แก้ให้แสดง format ที่ถูกต้องพร้อม timestamp
-        birthdateController.text =
-            picked.toIso8601String(); // "2025-03-03T00:00:00.000"
-      });
-    }
-  }
-
-  // ✅ ฟังก์ชันแก้ไขโปรไฟล์ (ลบข้อมูลเก่าแล้วเพิ่มข้อมูลใหม่)
-  Future<void> editUserProfile({
-    required String name,
-    required String email,
-    required String postal,
-    required String phone,
-    required String birthdate,
-    required String? selectedGender,
-    required bool subscribeNewsletter,
-    required bool acceptTerms,
-    String? newEmail,
-    String? currentPassword,
-    String? newPassword,
-  }) async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user == null) throw Exception("User not logged in");
-
-    String uid = user.uid;
-    String finalEmail = user.email ?? email; // ✅ ดึงอีเมลจาก Authentication
-
-    try {
-      // ✅ 1. ดึงข้อมูลเก่าจาก Firestore
-      DocumentSnapshot oldData =
-          await FirebaseFirestore.instance.collection('users').doc(uid).get();
-
-      if (!oldData.exists) {
-        throw Exception("User data not found in Firestore");
-      }
-
-      print("✅ Old data found: ${oldData.data()}");
-
-      // ✅ 2. หากมีการเปลี่ยนอีเมล ต้องยืนยันตัวตนก่อน
-      if (newEmail != null && newEmail.isNotEmpty && newEmail != user.email) {
-        if (currentPassword == null || currentPassword.isEmpty) {
-          throw Exception(
-              "Please enter your current password to verify your identity.");
-        }
-        await reauthenticateUser(user.email!, currentPassword);
-
-        // ✅ อัพเดทอีเมลใน Firebase Authentication
-        await user.verifyBeforeUpdateEmail(newEmail);
-        finalEmail = newEmail; // ✅ เก็บอีเมลใหม่
-
-        _showInfoMessage("Please check your new email to verify the change.");
-      }
-
-      // ✅ 3. หากมีการเปลี่ยนรหัสผ่าน
-      if (newPassword != null && newPassword.isNotEmpty) {
-        if (currentPassword == null || currentPassword.isEmpty) {
-          throw Exception(
-              "Please enter your current password to change password.");
-        }
-        await reauthenticateUser(user.email!, currentPassword);
-
-        // ✅ อัพเดทรหัสผ่านใน Firebase Authentication
-        await user.updatePassword(newPassword);
-      }
-
-      // ✅ 4. อัพเดทข้อมูลใน Firestore (ใช้ update แทน delete + set)
-      await FirebaseFirestore.instance.collection('users').doc(uid).set({
-        'acceptTerms': acceptTerms,
-        'birthdate': birthdate,
-        'confirmPassword': newPassword ?? oldData['confirmPassword'] ?? '',
-        'createdAt': oldData['createdAt'] ?? FieldValue.serverTimestamp(),
-        'email': newEmail?.isNotEmpty == true ? newEmail : email,
-        'gender': selectedGender ?? '',
-        'name': name.trim(),
-        'password': newPassword ?? oldData['password'] ?? '',
-        'phone': phone.trim(),
-        'postal': postal.trim(),
-        'subscribeNewsletter': subscribeNewsletter,
-        'uid': uid,
-      });
-
-      print("✅ Data updated in Firestore");
-      print("✅ Email in Firestore: $finalEmail");
-      print("✅ Email in Authentication: ${user.email}");
-
-      _showSuccessMessage("Profile updated successfully 🎉");
-    } on FirebaseAuthException catch (e) {
-      _showError("Firebase Auth Error: ${e.message} ❌");
-      rethrow;
-    } catch (e) {
-      _showError("Error: $e ❌");
-      rethrow;
-    }
-  }
-
-  // ✅ ฟังก์ชันยืนยันตัวตนใหม่ด้วยอีเมลและรหัสผ่าน
-  Future<void> reauthenticateUser(String email, String password) async {
-    try {
-      if (FirebaseAuth.instance.currentUser != null) {
-        AuthCredential credential =
-            EmailAuthProvider.credential(email: email, password: password);
-
-        await FirebaseAuth.instance.currentUser!
-            .reauthenticateWithCredential(credential);
-
-        print("✅ Reauthentication successful");
-      } else {
-        throw FirebaseAuthException(
-            code: 'no-user', message: 'No user is logged in');
-      }
-    } on FirebaseAuthException catch (e) {
-      print('❌ Reauthentication failed: ${e.message}');
-
-      _showError(
-          "Authentication failed: ${e.message}. Please check your password.");
-      rethrow;
-    } catch (e) {
-      print('❌ Error: $e');
-      rethrow;
-    }
-  }
-
-  // ✅ ฟังก์ชันส่งข้อมูลที่แก้ไขแล้วไปยัง Firebase
-  void submitEdit() async {
-    // ตรวจสอบว่ารหัสผ่านใหม่และยืนยันรหัสผ่านตรงกันหรือไม่
-    if (newPasswordController.text.isNotEmpty &&
-        conNewPasswordController.text.isNotEmpty) {
-      if (newPasswordController.text != conNewPasswordController.text) {
-        _showInfoMessage("New password and confirm password do not match! ❌");
-        return;
-      }
-    }
-
-    try {
-      await editUserProfile(
-        name: nameController.text,
-        email: emailController.text,
-        postal: postalController.text,
-        phone: phoneController.text,
-        birthdate: birthdateController.text,
-        selectedGender: selectedGender,
-        subscribeNewsletter: subscribeNewsletter,
-        acceptTerms: acceptTerms,
-        newEmail:
-            newEmailController.text.isNotEmpty ? newEmailController.text : null,
-        currentPassword:
-            passwordController.text.isNotEmpty ? passwordController.text : null,
-        newPassword: newPasswordController.text.isNotEmpty
-            ? newPasswordController.text
-            : null,
-      );
-
-      Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => authPage()));
-    } catch (e) {
-      print("❌ Error in submitEdit: $e");
-    }
-  }
-
+  // ══════════════════════════════════════════════════════════════════════════
+  // BUILD
+  // ══════════════════════════════════════════════════════════════════════════
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.themeMode == ThemeMode.dark;
+    final textStyle = TextStyle(color: isDark ? Colors.white : Colors.black);
+    final dimStyle =
+        TextStyle(color: isDark ? Colors.white70 : Colors.black54);
 
-    // ✅ ลบ MaterialApp ออก เหลือแค่ Scaffold
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Container(
-          margin: EdgeInsets.all(20),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(height: 30),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    IconButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      icon: Icon(Icons.arrow_back),
-                      iconSize: 30,
-                    )
-                  ],
-                ),
-                Center(
-                  child: Text("Edit Profile",
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-                ),
-                SizedBox(height: 30),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              child: Container(
+                margin: const EdgeInsets.all(20),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 30),
+                      Row(
+                        children: [
+                          IconButton(
+                            onPressed: () => Navigator.pop(context),
+                            icon: const Icon(Icons.arrow_back),
+                            iconSize: 30,
+                          ),
+                        ],
+                      ),
+                      const Center(
+                        child: Text('Edit Profile',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 20)),
+                      ),
+                      const SizedBox(height: 30),
 
-                // Username
-                TextFormField(
-                  controller: nameController,
-                  maxLength: 30,
-                  decoration: const InputDecoration(
-                    labelText: 'Username',
-                  ),
-                  style: TextStyle(
-                      color: themeProvider.themeMode == ThemeMode.dark
-                          ? Colors.white
-                          : Colors.black),
-                  validator: (value) {
-                    final RegExp editNameRegex1 = RegExp(
-                        r'^(Mr|Ms)\. [A-Z][a-z]+(?: [A-Z][a-z]+)*(\.?)$');
-                    if (value == null || value.isEmpty) {
-                      return "Please input username.";
-                    } else if (value.length < 10 || value.length > 30) {
-                      return "The username should be between 10-30 characters";
-                    } else if (!editNameRegex1.hasMatch(value)) {
-                      return "Invalid username format: \nMr. Jake Smith / Ms. Emma Olivia";
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 15),
-
-                // Current Email
-                TextFormField(
-                  controller: emailController,
-                  enabled: false,
-                  maxLength: 50,
-                  decoration: InputDecoration(
-                    labelText: 'Current Email',
-                  ),
-                  style: TextStyle(
-                      color: themeProvider.themeMode == ThemeMode.dark
-                          ? Colors.white70
-                          : Colors.black54),
-                ),
-                SizedBox(height: 15),
-
-                // New Email
-                TextFormField(
-                  controller: newEmailController,
-                  maxLength: 50,
-                  decoration: InputDecoration(
-                    labelText: 'New Email (Optional)',
-                  ),
-                  style: TextStyle(
-                      color: themeProvider.themeMode == ThemeMode.dark
-                          ? Colors.white
-                          : Colors.black),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return null;
-                    }
-                    if (!value.contains('@') || !value.contains('.')) {
-                      return 'Please enter a valid email address';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 15),
-
-                // Phone
-                TextFormField(
-                  controller: phoneController,
-                  keyboardType: TextInputType.phone,
-                  maxLength: 10,
-                  decoration: InputDecoration(labelText: "Phone Number"),
-                  style: TextStyle(
-                      color: themeProvider.themeMode == ThemeMode.dark
-                          ? Colors.white
-                          : Colors.black),
-                  validator: (value) {
-                    final RegExp phoneRegex = RegExp(r'^0[0-9]{9}$');
-                    if (value == null || value.isEmpty) {
-                      return "Please input phone number";
-                    } else if (!phoneRegex.hasMatch(value)) {
-                      return "Invalid phone format: 0890489858";
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 15),
-
-                // Birthdate
-                TextFormField(
-                  controller: birthdateController,
-                  readOnly: true,
-                  decoration: InputDecoration(
-                    labelText: "Birthdate",
-                    suffixIcon: Icon(Icons.calendar_today),
-                  ),
-                  style: TextStyle(
-                      color: themeProvider.themeMode == ThemeMode.dark
-                          ? Colors.white
-                          : Colors.black),
-                  onTap: selectBirthdate,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return "Please select birthdate";
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 15),
-
-                // Postal Code
-                TextFormField(
-                  controller: postalController,
-                  keyboardType: TextInputType.number,
-                  maxLength: 5,
-                  decoration: InputDecoration(labelText: "Postal Code"),
-                  style: TextStyle(
-                      color: themeProvider.themeMode == ThemeMode.dark
-                          ? Colors.white
-                          : Colors.black),
-                  validator: (value) {
-                    final RegExp postalRegex = RegExp(r'^[0-9]{5}$');
-                    if (value == null || value.isEmpty) {
-                      return "Please input postal code";
-                    } else if (!postalRegex.hasMatch(value)) {
-                      return "Invalid postal code format: 10270";
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 15),
-
-                // Gender
-                Text("Gender"),
-                Row(
-                  children: [
-                    Radio(
-                      value: "Men",
-                      groupValue: selectedGender,
-                      onChanged: (value) {
-                        setState(() {
-                          selectedGender = value.toString();
-                        });
-                      },
-                    ),
-                    Text("Men"),
-                    Radio(
-                      value: "Women",
-                      groupValue: selectedGender,
-                      onChanged: (value) {
-                        setState(() {
-                          selectedGender = value.toString();
-                        });
-                      },
-                    ),
-                    Text("Women"),
-                    Radio(
-                      value: "Not selected",
-                      groupValue: selectedGender,
-                      onChanged: (value) {
-                        setState(() {
-                          selectedGender = value.toString();
-                        });
-                      },
-                    ),
-                    Text("Not selected"),
-                  ],
-                ),
-                SizedBox(height: 15),
-
-                // Current Password
-                TextFormField(
-                  controller: passwordController,
-                  obscureText: !visiblePassCon,
-                  maxLength: 20,
-                  decoration: InputDecoration(
-                      labelText: 'Current Password',
-                      suffixIcon: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            visiblePassCon = !visiblePassCon;
-                          });
+                      // ── Username ────────────────────────────────────────
+                      TextFormField(
+                        controller: _nameCtrl,
+                        maxLength: 30,
+                        decoration:
+                            const InputDecoration(labelText: 'Username'),
+                        style: textStyle,
+                        validator: (v) {
+                          final regex = RegExp(
+                              r'^(Mr|Ms)\. [A-Z][a-z]+(?: [A-Z][a-z]+)*(\.?)$');
+                          if (v == null || v.isEmpty) {
+                            return 'Please input username.';
+                          } else if (v.length < 10 || v.length > 30) {
+                            return 'The username should be between 10-30 characters';
+                          } else if (!regex.hasMatch(v)) {
+                            return 'Invalid username format: \nMr. Jake Smith / Ms. Emma Olivia';
+                          }
+                          return null;
                         },
-                        child: visiblePassCon
-                            ? Icon(Icons.visibility)
-                            : Icon(Icons.visibility_off),
-                      )),
-                  style: TextStyle(
-                      color: themeProvider.themeMode == ThemeMode.dark
-                          ? Colors.white
-                          : Colors.black),
-                  validator: (value) {
-                    if ((newEmailController.text.isNotEmpty ||
-                            newPasswordController.text.isNotEmpty) &&
-                        (value == null || value.isEmpty)) {
-                      return "Please enter current password to make changes.";
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 15),
+                      ),
+                      const SizedBox(height: 15),
 
-                // New Password
-                TextFormField(
-                  controller: newPasswordController,
-                  obscureText: !visiblePassCon1,
-                  maxLength: 20,
-                  decoration: InputDecoration(
-                      labelText: 'New Password (Optional)',
-                      suffixIcon: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            visiblePassCon1 = !visiblePassCon1;
-                          });
+                      // ── Current Email (read-only) ───────────────────────
+                      TextFormField(
+                        controller: _emailCtrl,
+                        enabled: false,
+                        maxLength: 50,
+                        decoration: const InputDecoration(
+                            labelText: 'Current Email'),
+                        style: dimStyle,
+                      ),
+                      const SizedBox(height: 15),
+
+                      // ── New Email ───────────────────────────────────────
+                      TextFormField(
+                        controller: _newEmailCtrl,
+                        maxLength: 50,
+                        decoration: const InputDecoration(
+                            labelText: 'New Email (Optional)'),
+                        style: textStyle,
+                        validator: (v) {
+                          if (v == null || v.isEmpty) return null;
+                          if (!v.contains('@') || !v.contains('.')) {
+                            return 'Please enter a valid email address';
+                          }
+                          return null;
                         },
-                        child: visiblePassCon1
-                            ? Icon(Icons.visibility)
-                            : Icon(Icons.visibility_off),
-                      )),
-                  style: TextStyle(
-                      color: themeProvider.themeMode == ThemeMode.dark
-                          ? Colors.white
-                          : Colors.black),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return null;
-                    }
-                    final RegExp passwordRegex = RegExp(
-                        r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&*])[A-Za-z\d@#$%^&*]{8,20}$');
-                    if (!passwordRegex.hasMatch(value)) {
-                      return "Password must contain uppercase, lowercase, number, and special character";
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 15),
+                      ),
+                      const SizedBox(height: 15),
 
-                // Confirm New Password
-                TextFormField(
-                  controller: conNewPasswordController,
-                  obscureText: !visiblePassCon2,
-                  maxLength: 20,
-                  decoration: InputDecoration(
-                      labelText: 'Confirm New Password',
-                      suffixIcon: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            visiblePassCon2 = !visiblePassCon2;
-                          });
+                      // ── Phone ───────────────────────────────────────────
+                      TextFormField(
+                        controller: _phoneCtrl,
+                        keyboardType: TextInputType.phone,
+                        maxLength: 10,
+                        decoration:
+                            const InputDecoration(labelText: 'Phone Number'),
+                        style: textStyle,
+                        validator: (v) {
+                          final regex = RegExp(r'^0[0-9]{9}$');
+                          if (v == null || v.isEmpty) {
+                            return 'Please input phone number';
+                          } else if (!regex.hasMatch(v)) {
+                            return 'Invalid phone format: 0890489858';
+                          }
+                          return null;
                         },
-                        child: visiblePassCon2
-                            ? Icon(Icons.visibility)
-                            : Icon(Icons.visibility_off),
-                      )),
-                  style: TextStyle(
-                      color: themeProvider.themeMode == ThemeMode.dark
-                          ? Colors.white
-                          : Colors.black),
-                  validator: (value) {
-                    if (newPasswordController.text.isNotEmpty) {
-                      if (value == null || value.isEmpty) {
-                        return "Please confirm your new password.";
-                      }
-                      if (value != newPasswordController.text) {
-                        return "Passwords do not match!";
-                      }
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 15),
+                      ),
+                      const SizedBox(height: 15),
 
-                // Subscribe Newsletter
-                CheckboxListTile(
-                  title: Text("Subscribe to the newsletter"),
-                  value: subscribeNewsletter,
-                  onChanged: (bool? value) {
-                    setState(() {
-                      subscribeNewsletter = value!;
-                    });
-                  },
-                ),
-                SizedBox(height: 15),
+                      // ── Birthdate ───────────────────────────────────────
+                      TextFormField(
+                        controller: _birthdateCtrl,
+                        readOnly: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Birthdate',
+                          suffixIcon: Icon(Icons.calendar_today),
+                        ),
+                        style: textStyle,
+                        onTap: _selectBirthdate,
+                        validator: (v) {
+                          if (v == null || v.isEmpty) {
+                            return 'Please select birthdate';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 15),
 
-                // Accept Terms
-                CheckboxListTile(
-                  title: Text("Accept terms and conditions"),
-                  value: acceptTerms,
-                  onChanged: (bool? value) {
-                    setState(() {
-                      acceptTerms = value!;
-                    });
-                  },
-                ),
-                SizedBox(height: 15),
+                      // ── Postal Code ─────────────────────────────────────
+                      TextFormField(
+                        controller: _postalCtrl,
+                        keyboardType: TextInputType.number,
+                        maxLength: 5,
+                        decoration:
+                            const InputDecoration(labelText: 'Postal Code'),
+                        style: textStyle,
+                        validator: (v) {
+                          final regex = RegExp(r'^[0-9]{5}$');
+                          if (v == null || v.isEmpty) {
+                            return 'Please input postal code';
+                          } else if (!regex.hasMatch(v)) {
+                            return 'Invalid postal code format: 10270';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 15),
 
-                // Confirm Button
-                ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      if (!acceptTerms) {
-                        _showInfoMessage("Please accept terms and conditions");
+                      // ── Gender ──────────────────────────────────────────
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text('Gender'),
+                      ),
+                      Row(
+                        children: ['Men', 'Women', 'Not selected']
+                            .map((g) => Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Radio<String>(
+                                      value: g,
+                                      groupValue: _selectedGender,
+                                      onChanged: (v) => setState(
+                                          () => _selectedGender = v),
+                                    ),
+                                    Text(g),
+                                  ],
+                                ))
+                            .toList(),
+                      ),
+                      const SizedBox(height: 15),
 
-                        return;
-                      }
-                      submitEdit();
-                    }
-                  },
-                  child: Text(
-                    'Confirm',
-                    style: TextStyle(fontSize: 16),
+                      // ── Current Password ────────────────────────────────
+                      TextFormField(
+                        controller: _passwordCtrl,
+                        obscureText: !_visibleCurrent,
+                        maxLength: 20,
+                        decoration: InputDecoration(
+                          labelText: 'Current Password',
+                          suffixIcon: GestureDetector(
+                            onTap: () => setState(
+                                () => _visibleCurrent = !_visibleCurrent),
+                            child: Icon(_visibleCurrent
+                                ? Icons.visibility
+                                : Icons.visibility_off),
+                          ),
+                        ),
+                        style: textStyle,
+                        validator: (v) {
+                          if ((_newEmailCtrl.text.isNotEmpty ||
+                                  _newPasswordCtrl.text.isNotEmpty) &&
+                              (v == null || v.isEmpty)) {
+                            return 'Please enter current password to make changes.';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 15),
+
+                      // ── New Password ────────────────────────────────────
+                      TextFormField(
+                        controller: _newPasswordCtrl,
+                        obscureText: !_visibleNew,
+                        maxLength: 20,
+                        decoration: InputDecoration(
+                          labelText: 'New Password (Optional)',
+                          suffixIcon: GestureDetector(
+                            onTap: () =>
+                                setState(() => _visibleNew = !_visibleNew),
+                            child: Icon(_visibleNew
+                                ? Icons.visibility
+                                : Icons.visibility_off),
+                          ),
+                        ),
+                        style: textStyle,
+                        validator: (v) {
+                          if (v == null || v.isEmpty) return null;
+                          final regex = RegExp(
+                              r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&*])[A-Za-z\d@#$%^&*]{8,20}$');
+                          if (!regex.hasMatch(v)) {
+                            return 'Password must contain uppercase, lowercase, number, and special character';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 15),
+
+                      // ── Confirm New Password ────────────────────────────
+                      TextFormField(
+                        controller: _conNewPasswordCtrl,
+                        obscureText: !_visibleConfirm,
+                        maxLength: 20,
+                        decoration: InputDecoration(
+                          labelText: 'Confirm New Password',
+                          suffixIcon: GestureDetector(
+                            onTap: () => setState(
+                                () => _visibleConfirm = !_visibleConfirm),
+                            child: Icon(_visibleConfirm
+                                ? Icons.visibility
+                                : Icons.visibility_off),
+                          ),
+                        ),
+                        style: textStyle,
+                        validator: (v) {
+                          if (_newPasswordCtrl.text.isNotEmpty) {
+                            if (v == null || v.isEmpty) {
+                              return 'Please confirm your new password.';
+                            }
+                            if (v != _newPasswordCtrl.text) {
+                              return 'Passwords do not match!';
+                            }
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 15),
+
+                      // ── Subscribe Newsletter ────────────────────────────
+                      CheckboxListTile(
+                        title: const Text('Subscribe to the newsletter'),
+                        value: _subscribeNewsletter,
+                        onChanged: (v) =>
+                            setState(() => _subscribeNewsletter = v!),
+                      ),
+                      const SizedBox(height: 15),
+
+                      // ── Accept Terms ────────────────────────────────────
+                      CheckboxListTile(
+                        title: const Text('Accept terms and conditions'),
+                        value: _acceptTerms,
+                        onChanged: (v) =>
+                            setState(() => _acceptTerms = v!),
+                      ),
+                      const SizedBox(height: 15),
+
+                      // ── Confirm Button ──────────────────────────────────
+                      ElevatedButton(
+                        onPressed: _isSubmitting ? null : _submit,
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 50),
+                        ),
+                        child: _isSubmitting
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white),
+                              )
+                            : const Text('Confirm',
+                                style: TextStyle(fontSize: 16)),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
                   ),
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: Size(double.infinity, 50),
-                  ),
                 ),
-                SizedBox(height: 20),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
     );
   }
 }
+
+enum _SnackType { success, info, error }

@@ -1,633 +1,504 @@
-// ----HomePage (Fixed with Firebase UID + Working Favourite)--------------------------------------------------------------------------
+// lib/components/home_page.dart
 
 import 'dart:convert';
-import 'dart:io';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter_application_1/api/service_fav_backet.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_application_1/blocs/cat_home/home_bloc.dart';
+import 'package:flutter_application_1/blocs/cat_item_detail/item_detail_bloc.dart';
 
 import 'package:flutter_application_1/provider/language_provider.dart';
-import 'package:http/http.dart' as http;
-import 'dart:async';
-
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
+import 'dart:async';
 
-class HomePage extends StatefulWidget {
+// ── SnackBar helper ────────────────────────────────────────────────────────
+void _showTopSnack(BuildContext context, String message,
+    {required bool isError}) {
+  showTopSnackBar(
+    Overlay.of(context),
+    isError
+        ? CustomSnackBar.error(message: message)
+        : CustomSnackBar.success(message: message),
+    animationDuration: const Duration(milliseconds: 1000),
+    reverseAnimationDuration: const Duration(milliseconds: 200),
+    displayDuration: const Duration(milliseconds: 1000),
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// HomePage
+// ════════════════════════════════════════════════════════════════════════════
+
+class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => HomeBloc()..add(const HomeAdsLoadRequested()),
+      child: const _HomeView(),
+    );
+  }
 }
 
-class _HomePageState extends State<HomePage> {
-  final PageController _pageController = PageController(initialPage: 1000);
-  List<Map<String, dynamic>> images = [];
-  int _currentPage = 0; // ✅ เพิ่มตรงนี้
-
-  Timer? timer;
-  bool isUserInteracting = false;
-  bool isLoading = true;
-  String? errorMessage;
-
-  String getBaseUrl() {
-    const String env = String.fromEnvironment('ENV', defaultValue: 'local');
-
-    if (env == 'prod') {
-      return 'https://catshop-backend-9pzq.onrender.com';
-    }
-
-    if (env == 'prod-v2') {
-      return 'https://catshop-backend-v2.onrender.com';
-    }
-
-    if (kIsWeb) {
-      return 'http://localhost:10000';
-    }
-
-    if (Platform.isAndroid) {
-      return 'http://10.0.2.2:10000';
-    }
-
-    return 'http://localhost:10000';
-  }
-
-  double parseDouble(dynamic value) {
-    if (value == null) return 0.0;
-    if (value is double) return value;
-    if (value is int) return value.toDouble();
-    if (value is String) {
-      return double.tryParse(value) ?? 0.0;
-    }
-    return 0.0;
-  }
+class _HomeView extends StatefulWidget {
+  const _HomeView();
 
   @override
-  void initState() {
-    super.initState();
-    fetchAdvertisements();
-  }
+  State<_HomeView> createState() => _HomeViewState();
+}
+
+class _HomeViewState extends State<_HomeView> {
+  final PageController _pageController = PageController(initialPage: 1000);
+  int _currentPage = 0;
+  Timer? _timer;
+  bool _isUserInteracting = false;
 
   @override
   void dispose() {
-    timer?.cancel();
+    _timer?.cancel();
     _pageController.dispose();
     super.dispose();
   }
 
-  Future<void> fetchAdvertisements() async {
-    try {
-      final baseUrl = getBaseUrl();
-      final url = '$baseUrl/api/home-advertiment';
-
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-      ).timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        final decodedBody = utf8.decode(response.bodyBytes);
-        final data = json.decode(decodedBody);
-
-        List<Map<String, dynamic>> parsedImages = [];
-
-        if (data is List) {
-          parsedImages = data.map<Map<String, dynamic>>((item) {
-            final rawImages = item['images'];
-            return {
-              ...item,
-              'images': rawImages is String ? jsonDecode(rawImages) : rawImages,
-            };
-          }).toList();
-        } else if (data is Map && data.containsKey('data')) {
-          parsedImages = List<Map<String, dynamic>>.from(
-            data['data'].map<Map<String, dynamic>>((item) {
-              final rawImages = item['images'];
-              return {
-                ...item,
-                'images':
-                    rawImages is String ? jsonDecode(rawImages) : rawImages,
-              };
-            }),
-          );
-        }
-
-        setState(() {
-          images = parsedImages;
-          isLoading = false;
-        });
-
-        _pageController.addListener(() {
-          if (images.isEmpty) return;
-          final page = (_pageController.page ?? 0).round() % images.length;
-          if (page != _currentPage && mounted) {
-            setState(() => _currentPage = page);
-          }
-        });
-
-        if (images.isNotEmpty) {
-          startAutoScroll();
-        }
-      } else {
-        setState(() {
-          errorMessage = 'ไม่สามารถโหลดข้อมูลได้ (${response.statusCode})';
-          isLoading = false;
-        });
-      }
-    } on SocketException {
-      setState(() {
-        errorMessage = 'ไม่สามารถเชื่อมต่อได้\nกรุณาตรวจสอบ Backend';
-        isLoading = false;
-      });
-    } on TimeoutException {
-      setState(() {
-        errorMessage = 'หมดเวลาการเชื่อมต่อ';
-        isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        errorMessage = 'เกิดข้อผิดพลาด: $e';
-        isLoading = false;
-      });
-    }
-  }
-
-  Future<Map<String, dynamic>?> fetchItemDetails(int itemId) async {
-    try {
-      final baseUrl = getBaseUrl();
-      final url = '$baseUrl/api/home-advertiment/$itemId';
-
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-      ).timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        final decodedBody = utf8.decode(response.bodyBytes);
-        final data = json.decode(decodedBody);
-
-        Map<String, dynamic>? item;
-
-        if (data is Map && data.containsKey('data')) {
-          item = Map<String, dynamic>.from(data['data']);
-        } else if (data is Map) {
-          item = Map<String, dynamic>.from(data);
-        }
-
-        if (item != null) {
-          final rawImages = item['images'];
-          if (rawImages is String) {
-            item['images'] = jsonDecode(rawImages);
-          } else if (rawImages == null) {
-            item['images'] = <String, dynamic>{};
-          }
-        }
-
-        return item;
-      } else {
-        return null;
-      }
-    } catch (e) {
-      print('❌ Error fetching item details: $e');
-      return null;
-    }
-  }
-
-  void showItemDetailsPopup(int itemId) async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
-
-    final itemDetails = await fetchItemDetails(itemId);
-
-    Navigator.of(context).pop();
-
-    if (itemDetails != null) {
-      showGeneralDialog(
-        context: context,
-        barrierDismissible: true,
-        barrierLabel:
-            MaterialLocalizations.of(context).modalBarrierDismissLabel,
-        barrierColor: Colors.black54,
-        transitionDuration: const Duration(milliseconds: 400),
-        pageBuilder: (context, animation, secondaryAnimation) {
-          return ItemDetailsCard(itemDetails: itemDetails);
-        },
-        transitionBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(0.0, -1.0);
-          const end = Offset.zero;
-          const curve = Curves.easeInOut;
-
-          var tween = Tween(begin: begin, end: end).chain(
-            CurveTween(curve: curve),
-          );
-
-          var offsetAnimation = animation.drive(tween);
-          var fadeAnimation = animation.drive(
-            Tween(begin: 0.0, end: 1.0).chain(
-              CurveTween(curve: curve),
-            ),
-          );
-
-          return SlideTransition(
-            position: offsetAnimation,
-            child: FadeTransition(
-              opacity: fadeAnimation,
-              child: child,
-            ),
-          );
-        },
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('ไม่สามารถโหลดข้อมูลได้'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  void startAutoScroll() {
-    timer?.cancel();
-    timer = Timer.periodic(const Duration(seconds: 10), (_) {
-      if (!isUserInteracting && images.isNotEmpty) {
-        if (_pageController.hasClients) {
-          final nextPage = (_pageController.page ?? 0) + 1;
-          _pageController.animateToPage(
-            nextPage.toInt(),
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeInOut,
-          );
-        }
+  void _startAutoScroll(int adsLength) {
+    _timer?.cancel();
+    if (adsLength == 0) return;
+    _timer = Timer.periodic(const Duration(seconds: 10), (_) {
+      if (!_isUserInteracting && _pageController.hasClients) {
+        _pageController.animateToPage(
+          ((_pageController.page ?? 0) + 1).toInt(),
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
       }
     });
   }
 
-  void stopAutoScroll() {
-    timer?.cancel();
+  void _showItemDetailPopup(
+      BuildContext blocCtx, Map<String, dynamic> itemDetail) {
+    showGeneralDialog(
+      context: blocCtx,
+      barrierDismissible: true,
+      barrierLabel: MaterialLocalizations.of(blocCtx).modalBarrierDismissLabel,
+      barrierColor: Colors.black54,
+      transitionDuration: const Duration(milliseconds: 400),
+      pageBuilder: (_, __, ___) {
+        return BlocProvider(
+          create: (_) => ItemDetailBloc()
+            ..add(ItemDetailFavCheckRequested(
+                itemDetail['uuid']?.toString() ?? '')),
+          child: ItemDetailsCard(itemDetails: itemDetail),
+        );
+      },
+      transitionBuilder: (_, animation, __, child) {
+        return SlideTransition(
+          position: animation.drive(
+            Tween(begin: const Offset(0.0, -1.0), end: Offset.zero)
+                .chain(CurveTween(curve: Curves.easeInOut)),
+          ),
+          child: FadeTransition(
+            opacity: animation.drive(
+              Tween(begin: 0.0, end: 1.0)
+                  .chain(CurveTween(curve: Curves.easeInOut)),
+            ),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+
+  double _parseDouble(dynamic v) {
+    if (v == null) return 0.0;
+    if (v is double) return v;
+    if (v is int) return v.toDouble();
+    if (v is String) return double.tryParse(v) ?? 0.0;
+    return 0.0;
   }
 
   @override
   Widget build(BuildContext context) {
     final languageProvider = Provider.of<LanguageProvider>(context);
 
-    if (isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
+    return BlocConsumer<HomeBloc, HomeState>(
+      listener: (ctx, state) {
+        // ads โหลดเสร็จ → เริ่ม auto scroll + ผูก listener
+        if (state is HomeLoaded && state.ads.isNotEmpty) {
+          _pageController.addListener(() {
+            if (state.ads.isEmpty) return;
+            final page = (_pageController.page ?? 0).round() % state.ads.length;
+            if (page != _currentPage && mounted) {
+              setState(() => _currentPage = page);
+            }
+          });
+          _startAutoScroll(state.ads.length);
+        }
 
-    if (errorMessage != null) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 60, color: Colors.red),
-              const SizedBox(height: 16),
-              Text(errorMessage!, textAlign: TextAlign.center),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    isLoading = true;
-                    errorMessage = null;
-                  });
-                  fetchAdvertisements();
-                },
-                child: const Text('ลองใหม่'),
+        // item detail โหลดเสร็จ → เปิด popup
+        if (state is HomeItemDetailLoaded) {
+          _showItemDetailPopup(ctx, state.itemDetail);
+        }
+
+        // item detail ล้มเหลว
+        if (state is HomeItemDetailFailure) {
+          ScaffoldMessenger.of(ctx).showSnackBar(
+            const SnackBar(
+              content: Text('ไม่สามารถโหลดข้อมูลได้'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+
+        // basket สำเร็จ/ล้มเหลว
+        if (state is HomeBasketActionSuccess) {
+          _showTopSnack(
+            ctx,
+            languageProvider.translate(
+                en: 'Added to Basket successfully!',
+                th: 'เพิ่มลงตะกร้าสำเร็จ!'),
+            isError: false,
+          );
+        } else if (state is HomeBasketActionFailure) {
+          _showTopSnack(
+            ctx,
+            languageProvider.translate(
+                en: 'Failed to add to Basket', th: 'เพิ่มลงตะกร้าไม่สำเร็จ'),
+            isError: true,
+          );
+        }
+      },
+      builder: (ctx, state) {
+        // ── Loading ─────────────────────────────────────────────────────────
+        if (state is HomeInitial || state is HomeLoading) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // ── Failure ─────────────────────────────────────────────────────────
+        if (state is HomeFailure) {
+          return Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 60, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(state.message, textAlign: TextAlign.center),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () =>
+                        ctx.read<HomeBloc>().add(const HomeAdsLoadRequested()),
+                    child: const Text('ลองใหม่'),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-      );
-    }
+            ),
+          );
+        }
 
-    if (images.isEmpty) {
-      return const Scaffold(
-        body: Center(child: Text('ไม่มีข้อมูลโฆษณา')),
-      );
-    }
+        // ── ดึง ads จาก state ───────────────────────────────────────────────
+        final ads = _adsFromState(state);
+        final isDetailLoading = state is HomeItemDetailLoading;
+        final isBasketLoading = state is HomeBasketActionInProgress;
 
-    return Scaffold(
-      body: Stack(
-        // ✅ เปลี่ยนจาก GestureDetector เป็น Stack
-        children: [
-          GestureDetector(
-            // ✅ GestureDetector ย้ายมาอยู่ใน Stack
-            onPanDown: (_) {
-              isUserInteracting = true;
-              stopAutoScroll();
-            },
-            onPanCancel: () {
-              isUserInteracting = false;
-              startAutoScroll();
-            },
-            onPanEnd: (_) {
-              isUserInteracting = false;
-              startAutoScroll();
-            },
-            child: PageView.builder(
-              controller: _pageController,
-              scrollDirection: Axis.vertical,
-              itemCount: null,
-              onPageChanged: (index) {
-                if (images.isEmpty) return;
-                setState(() => _currentPage = index % images.length);
-              },
-              itemBuilder: (context, index) {
-                final item = images[index % images.length];
-                final discountPrice = parseDouble(item['discount_price']);
-                final hasDiscount = discountPrice > 0;
+        if (ads.isEmpty) {
+          return const Scaffold(
+            body: Center(child: Text('ไม่มีข้อมูลโฆษณา')),
+          );
+        }
 
-                final rawImages = item['images'];
-                final Map<String, dynamic> imagesMap = rawImages is String
-                    ? Map<String, dynamic>.from(jsonDecode(rawImages))
-                    : rawImages is Map
-                        ? Map<String, dynamic>.from(rawImages)
-                        : {};
+        return Scaffold(
+          body: Stack(
+            children: [
+              GestureDetector(
+                onPanDown: (_) {
+                  _isUserInteracting = true;
+                  _timer?.cancel();
+                },
+                onPanCancel: () {
+                  _isUserInteracting = false;
+                  _startAutoScroll(ads.length);
+                },
+                onPanEnd: (_) {
+                  _isUserInteracting = false;
+                  _startAutoScroll(ads.length);
+                },
+                child: PageView.builder(
+                  controller: _pageController,
+                  scrollDirection: Axis.vertical,
+                  itemCount: null,
+                  onPageChanged: (index) {
+                    if (ads.isEmpty) return;
+                    setState(() => _currentPage = index % ads.length);
+                  },
+                  itemBuilder: (_, index) {
+                    final item = ads[index % ads.length];
+                    final discountPrice = _parseDouble(item['discount_price']);
+                    final hasDiscount = discountPrice > 0;
 
-                return Stack(
-                  children: [
-                    CachedNetworkImage(
-                      imageUrl: item['image_url'] ?? '',
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: double.infinity,
-                      placeholder: (context, url) =>
-                          const Center(child: CircularProgressIndicator()),
-                      errorWidget: (context, url, error) =>
-                          const Center(child: Icon(Icons.error)),
-                    ),
-                    Positioned(
-                      bottom: 170,
-                      left: 20,
-                      width: 300,
-                      child: Text(
-                        item['clothing_name'] ?? '',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 30,
-                          fontWeight: FontWeight.bold,
-                          shadows: [
-                            Shadow(
-                              blurRadius: 20,
-                              color: Colors.black.withOpacity(0.7),
-                              offset: const Offset(2, 2),
-                            ),
-                          ],
+                    final rawImages = item['images'];
+                    final imagesMap = rawImages is String
+                        ? Map<String, dynamic>.from(jsonDecode(rawImages))
+                        : rawImages is Map
+                            ? Map<String, dynamic>.from(rawImages)
+                            : <String, dynamic>{};
+
+                    return Stack(
+                      children: [
+                        CachedNetworkImage(
+                          imageUrl: item['image_url'] ?? '',
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                          placeholder: (_, __) =>
+                              const Center(child: CircularProgressIndicator()),
+                          errorWidget: (_, __, ___) =>
+                              const Center(child: Icon(Icons.error)),
                         ),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 130,
-                      left: 20,
-                      right: 20,
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          if (hasDiscount)
-                            Text(
-                              '฿${item['price']?.toString() ?? ''}',
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 20,
-                                decoration: TextDecoration.lineThrough,
-                                decorationColor: Colors.white70,
-                                decorationThickness: 2,
-                                shadows: [
-                                  Shadow(
-                                    blurRadius: 20,
-                                    color: Colors.black.withOpacity(0.7),
-                                    offset: const Offset(2, 2),
-                                  )
-                                ],
-                              ),
-                            ),
-                          if (hasDiscount) const SizedBox(width: 10),
-                          Text(
-                            hasDiscount
-                                ? '฿${discountPrice.toStringAsFixed(0)}'
-                                : '฿${item['price']?.toString() ?? ''}',
+
+                        // ชื่อสินค้า
+                        Positioned(
+                          bottom: 170,
+                          left: 20,
+                          width: 300,
+                          child: Text(
+                            item['clothing_name'] ?? '',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              color: hasDiscount
-                                  ? const Color.fromARGB(255, 255, 244, 125)
-                                  : Colors.white,
-                              fontSize: 25,
+                              color: Colors.white,
+                              fontSize: 30,
                               fontWeight: FontWeight.bold,
                               shadows: [
                                 Shadow(
                                   blurRadius: 20,
                                   color: Colors.black.withOpacity(0.7),
                                   offset: const Offset(2, 2),
-                                )
+                                ),
                               ],
                             ),
                           ),
-                          if (hasDiscount) const SizedBox(width: 10),
-                          if (hasDiscount)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.red,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                '-${item['discount_percent']?.toString() ?? '0'}%',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    Positioned(
-                      left: 20,
-                      right: 20,
-                      bottom: 40,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
+                        ),
+
+                        // ราคา
+                        Positioned(
+                          bottom: 130,
+                          left: 20,
+                          right: 20,
+                          child: Row(
                             children: [
-                              FloatingActionButton.small(
-                                onPressed: () async {
-                                  try {
-                                    await BasketApiService().addToBasket(
-                                      clothingUuid: item['uuid'],
-                                    );
-                                    showTopSnackBar(
-                                      Overlay.of(context),
-                                      CustomSnackBar.success(
-                                        message: languageProvider.translate(
-                                          en: 'Added to Basket successfully!',
-                                          th: 'เพิ่มลงตะกร้าสำเร็จ!',
-                                        ),
-                                      ),
-                                      animationDuration: const Duration(
-                                          milliseconds:
-                                              1000), // เร็วแค่ไหนตอน popup
-                                      reverseAnimationDuration: const Duration(
-                                          milliseconds:
-                                              200), //  เร็วแค่ไหนตอนหาย
-                                      displayDuration: const Duration(
-                                          milliseconds: 1000), // แสดงนานแค่ไหน
-                                    );
-                                  } catch (e) {
-                                    showTopSnackBar(
-                                      Overlay.of(context),
-                                      CustomSnackBar.error(
-                                        message: languageProvider.translate(
-                                          en: 'Failed to add to Basket: $e',
-                                          th: 'เพิ่มลงตะกร้าไม่สำเร็จ: $e',
-                                        ),
-                                      ),
-                                      animationDuration:
-                                          const Duration(milliseconds: 1000),
-                                      reverseAnimationDuration:
-                                          const Duration(milliseconds: 200),
-                                      displayDuration:
-                                          const Duration(milliseconds: 1000),
-                                    );
-                                  }
-                                },
-                                backgroundColor: Theme.of(context)
-                                    .floatingActionButtonTheme
-                                    .backgroundColor,
-                                child: Icon(
-                                  Icons.shopping_cart_outlined,
-                                  size: 30,
-                                  color: Theme.of(context)
-                                      .floatingActionButtonTheme
-                                      .foregroundColor,
+                              if (hasDiscount)
+                                Text(
+                                  '฿${item['price']?.toString() ?? ''}',
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 20,
+                                    decoration: TextDecoration.lineThrough,
+                                    decorationColor: Colors.white70,
+                                    decorationThickness: 2,
+                                    shadows: [
+                                      Shadow(
+                                        blurRadius: 20,
+                                        color: Colors.black.withOpacity(0.7),
+                                        offset: const Offset(2, 2),
+                                      )
+                                    ],
+                                  ),
+                                ),
+                              if (hasDiscount) const SizedBox(width: 10),
+                              Text(
+                                hasDiscount
+                                    ? '฿${discountPrice.toStringAsFixed(0)}'
+                                    : '฿${item['price']?.toString() ?? ''}',
+                                style: TextStyle(
+                                  color: hasDiscount
+                                      ? const Color.fromARGB(255, 255, 244, 125)
+                                      : Colors.white,
+                                  fontSize: 25,
+                                  fontWeight: FontWeight.bold,
+                                  shadows: [
+                                    Shadow(
+                                      blurRadius: 20,
+                                      color: Colors.black.withOpacity(0.7),
+                                      offset: const Offset(2, 2),
+                                    )
+                                  ],
                                 ),
                               ),
-                              const SizedBox(width: 5),
-                              ElevatedButton(
-                                onPressed: () {
-                                  final itemId = int.tryParse(
-                                          item['id']?.toString() ?? '0') ??
-                                      0;
-                                  showItemDetailsPopup(itemId);
-                                },
-                                child: Text(
-                                  languageProvider.translate(
-                                    en: 'Learn More',
-                                    th: 'ดูเพิ่มเติม',
+                              if (hasDiscount) const SizedBox(width: 10),
+                              if (hasDiscount)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    borderRadius: BorderRadius.circular(6),
                                   ),
+                                  child: Text(
+                                    '-${item['discount_percent']?.toString() ?? '0'}%',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+
+                        // ปุ่มล่าง
+                        Positioned(
+                          left: 20,
+                          right: 20,
+                          bottom: 40,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  FloatingActionButton.small(
+                                    onPressed:
+                                        (isBasketLoading || isDetailLoading)
+                                            ? null
+                                            : () {
+                                                ctx.read<HomeBloc>().add(
+                                                      HomeAddToBasketRequested(
+                                                          item['uuid']
+                                                                  ?.toString() ??
+                                                              ''),
+                                                    );
+                                              },
+                                    backgroundColor: Theme.of(context)
+                                        .floatingActionButtonTheme
+                                        .backgroundColor,
+                                    child: isBasketLoading
+                                        ? const SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: Colors.white),
+                                          )
+                                        : Icon(
+                                            Icons.shopping_cart_outlined,
+                                            size: 30,
+                                            color: Theme.of(context)
+                                                .floatingActionButtonTheme
+                                                .foregroundColor,
+                                          ),
+                                  ),
+                                  const SizedBox(width: 5),
+                                  ElevatedButton(
+                                    
+                                      onPressed: (isDetailLoading ||
+                                              isBasketLoading)
+                                          ? null
+                                          : () {
+                                              final itemId = int.tryParse(
+                                                      item['id']?.toString() ??
+                                                          '0') ??
+                                                  0;
+                                              ctx.read<HomeBloc>().add(
+                                                  HomeItemDetailRequested(
+                                                      itemId));
+                                            },
+                                      child: Text(
+                                        languageProvider.translate(
+                                            en: 'Learn More',
+                                            th: 'ดูเพิ่มเติม'),
+                                      ),
+                                    ),
+                                  
+                                ],
+                              ),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: CachedNetworkImage(
+                                  imageUrl: imagesMap['image_clothing'] ?? '',
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                  placeholder: (_, __) => const Center(
+                                      child: CircularProgressIndicator()),
+                                  errorWidget: (_, __, ___) =>
+                                      const Icon(Icons.error),
                                 ),
                               ),
                             ],
                           ),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: CachedNetworkImage(
-                              imageUrl: imagesMap['image_clothing'] ?? '',
-                              width: 100,
-                              height: 100,
-                              fit: BoxFit.cover,
-                              placeholder: (context, url) => const Center(
-                                  child: CircularProgressIndicator()),
-                              errorWidget: (context, url, error) =>
-                                  const Icon(Icons.error),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
-
-          // ✅ จุด Indicator แนวตั้งด้านขวา (อยู่ใน HomePage Stack)
-          Positioned(
-            right: 12,
-            top: 0,
-            bottom: 0,
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: List.generate(images.length, (index) {
-                  final isActive = _currentPage == index;
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    margin: const EdgeInsets.symmetric(vertical: 4),
-                    width: 8,
-                    height: isActive ? 24 : 8,
-                    decoration: BoxDecoration(
-                      color: isActive
-                          ? Colors.deepOrange
-                          : Colors.white.withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  );
-                }),
+                        ),
+                      ],
+                    );
+                  },
+                ),
               ),
-            ),
+
+              // Vertical page indicator
+              Positioned(
+                right: 12,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: List.generate(ads.length, (index) {
+                      final isActive = _currentPage == index;
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        width: 8,
+                        height: isActive ? 24 : 8,
+                        decoration: BoxDecoration(
+                          color: isActive
+                              ? Colors.deepOrange
+                              : Colors.white.withOpacity(0.5),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
+  }
+
+  List<Map<String, dynamic>> _adsFromState(HomeState state) {
+    if (state is HomeLoaded) return state.ads;
+    if (state is HomeItemDetailLoading) return state.ads;
+    if (state is HomeItemDetailLoaded) return state.ads;
+    if (state is HomeItemDetailFailure) return state.ads;
+    if (state is HomeBasketActionInProgress) return state.ads;
+    if (state is HomeBasketActionSuccess) return state.ads;
+    if (state is HomeBasketActionFailure) return state.ads;
+    return [];
   }
 }
 
-// ============================================================================
-// Item Details Card with Firebase UID
-// ============================================================================
+// ════════════════════════════════════════════════════════════════════════════
+// ItemDetailsCard — ใช้ ItemDetailBloc
+// ════════════════════════════════════════════════════════════════════════════
 
 class ItemDetailsCard extends StatefulWidget {
   final Map<String, dynamic> itemDetails;
 
-  const ItemDetailsCard({
-    super.key,
-    required this.itemDetails,
-  });
+  const ItemDetailsCard({super.key, required this.itemDetails});
 
   @override
   State<ItemDetailsCard> createState() => _ItemDetailsCardState();
 }
 
 class _ItemDetailsCardState extends State<ItemDetailsCard> {
-  bool _isFavourite = false;
-  bool _isProcessing = false;
-
   final PageController _imagePageController = PageController();
   int _currentImagePage = 0;
-
-  double parseDouble(dynamic value) {
-    if (value == null) return 0.0;
-    if (value is double) return value;
-    if (value is int) return value.toDouble();
-    if (value is String) return double.tryParse(value) ?? 0.0;
-    return 0.0;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _checkFavouriteStatus();
-  }
 
   @override
   void dispose() {
@@ -635,417 +506,373 @@ class _ItemDetailsCardState extends State<ItemDetailsCard> {
     super.dispose();
   }
 
-  Future<void> _checkFavouriteStatus() async {
-    try {
-      final isFav = await FavouriteApiService().checkFavourite(
-        clothingUuid: widget.itemDetails['uuid'],
-      );
-      if (mounted) setState(() => _isFavourite = isFav);
-    } catch (e) {
-      print('❌ Error checking favourite: $e');
-    }
-  }
-
-  Future<void> _toggleFavourite() async {
-    if (_isProcessing) return;
-    setState(() => _isProcessing = true);
-
-    try {
-      final languageProvider =
-          Provider.of<LanguageProvider>(context, listen: false);
-
-      if (_isFavourite) {
-        await FavouriteApiService().removeFromFavourite(
-          clothingUuid: widget.itemDetails['uuid'],
-        );
-        if (mounted) {
-          setState(() => _isFavourite = false);
-          showTopSnackBar(
-            Overlay.of(context),
-            CustomSnackBar.success(
-              message: languageProvider.translate(
-                en: 'Removed from favourites!',
-                th: 'ลบออกจากรายการโปรดแล้ว',
-              ),
-            ),
-            animationDuration:
-                const Duration(milliseconds: 1000), // เร็วแค่ไหนตอน popup
-            reverseAnimationDuration:
-                const Duration(milliseconds: 200), // เร็วแค่ไหนตอนหาย
-            displayDuration:
-                const Duration(milliseconds: 1000), // แสดงนานแค่ไหน
-          );
-        }
-      } else {
-        await FavouriteApiService().addToFavourite(
-          clothingUuid: widget.itemDetails['uuid'],
-        );
-        if (mounted) {
-          setState(() => _isFavourite = true);
-          showTopSnackBar(
-            Overlay.of(context),
-            CustomSnackBar.success(
-              message: languageProvider.translate(
-                en: 'Added to favourites successfully!',
-                th: 'เพิ่มลงรายการโปรดแล้ว!',
-              ),
-            ),
-            animationDuration:
-                const Duration(milliseconds: 1000), // เร็วแค่ไหนตอน popup
-            reverseAnimationDuration:
-                const Duration(milliseconds: 200), // เร็วแค่ไหนตอนหาย
-            displayDuration:
-                const Duration(milliseconds: 1000), // แสดงนานแค่ไหน
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        final languageProvider =
-            Provider.of<LanguageProvider>(context, listen: false);
-        showTopSnackBar(
-          Overlay.of(context),
-          CustomSnackBar.error(
-            message: languageProvider.translate(
-              en: 'Failed to add to favourites: $e',
-              th: 'เพิ่มลงรายการโปรดไม่สำเร็จ: $e',
-            ),
-          ),
-          animationDuration: const Duration(milliseconds: 1000),
-          reverseAnimationDuration: const Duration(milliseconds: 200),
-          displayDuration: const Duration(milliseconds: 1000),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isProcessing = false);
-    }
+  double _parseDouble(dynamic v) {
+    if (v == null) return 0.0;
+    if (v is double) return v;
+    if (v is int) return v.toDouble();
+    if (v is String) return double.tryParse(v) ?? 0.0;
+    return 0.0;
   }
 
   @override
   Widget build(BuildContext context) {
-    final discountPrice = parseDouble(widget.itemDetails['discount_price']);
     final languageProvider = Provider.of<LanguageProvider>(context);
+    final discountPrice = _parseDouble(widget.itemDetails['discount_price']);
     final hasDiscount = discountPrice > 0;
+    final uuid = widget.itemDetails['uuid']?.toString() ?? '';
 
     final rawImages = widget.itemDetails['images'];
-    final Map<String, dynamic> imagesMap = rawImages is String
+    final imagesMap = rawImages is String
         ? Map<String, dynamic>.from(jsonDecode(rawImages))
         : rawImages is Map
             ? Map<String, dynamic>.from(rawImages)
-            : {};
+            : <String, dynamic>{};
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: Material(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            elevation: 10,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.75,
-                maxWidth: 400,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // ✅ รูป Slideshow + ปุ่มหัวใจ + จุด indicator
-                  Stack(
+    return BlocConsumer<ItemDetailBloc, ItemDetailState>(
+      listener: (ctx, state) {
+        if (state is ItemDetailFavToggleSuccess) {
+          _showTopSnack(
+            ctx,
+            state.isFavourite
+                ? languageProvider.translate(
+                    en: 'Added to favourites successfully!',
+                    th: 'เพิ่มลงรายการโปรดแล้ว!')
+                : languageProvider.translate(
+                    en: 'Removed from favourites!',
+                    th: 'ลบออกจากรายการโปรดแล้ว'),
+            isError: false,
+          );
+        } else if (state is ItemDetailBasketSuccess) {
+          Navigator.of(ctx).pop();
+          _showTopSnack(
+            ctx,
+            languageProvider.translate(
+                en: 'Added to Basket successfully!',
+                th: 'เพิ่มลงตะกร้าสำเร็จ!'),
+            isError: false,
+          );
+        } else if (state is ItemDetailActionFailure) {
+          final msg = state.message;
+          final display = msg.startsWith('basket_failed:')
+              ? languageProvider.translate(
+                  en: 'Failed to add to Basket', th: 'เพิ่มลงตะกร้าไม่สำเร็จ')
+              : languageProvider.translate(
+                  en: 'Failed to update favourites',
+                  th: 'อัปเดตรายการโปรดไม่สำเร็จ');
+          _showTopSnack(ctx, display, isError: true);
+        }
+      },
+      builder: (ctx, state) {
+        final isFavourite = _isFavFromState(state);
+        final isProcessing = state is ItemDetailActionInProgress;
+
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Material(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                elevation: 10,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.75,
+                    maxWidth: 400,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      ClipRRect(
-                        borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(20)),
-                        child: SizedBox(
-                          height: 300,
-                          child: PageView(
-                            controller: _imagePageController,
-                            onPageChanged: (index) {
-                              setState(() => _currentImagePage = index);
-                            },
-                            children: [
-                              CachedNetworkImage(
-                                imageUrl: widget.itemDetails['image_url'] ?? '',
-                                width: double.infinity,
-                                height: 300,
-                                fit: BoxFit.cover,
-                                placeholder: (context, url) => const SizedBox(
-                                  height: 300,
-                                  child: Center(
-                                      child: CircularProgressIndicator()),
-                                ),
-                                errorWidget: (context, url, error) =>
-                                    const SizedBox(
-                                  height: 300,
-                                  child: Center(child: Icon(Icons.error)),
-                                ),
-                              ),
-                              CachedNetworkImage(
-                                imageUrl: imagesMap['image_clothing'] ?? '',
-                                width: double.infinity,
-                                height: 300,
-                                fit: BoxFit.cover,
-                                placeholder: (context, url) => const SizedBox(
-                                  height: 300,
-                                  child: Center(
-                                      child: CircularProgressIndicator()),
-                                ),
-                                errorWidget: (context, url, error) =>
-                                    const SizedBox(
-                                  height: 300,
-                                  child: Center(child: Icon(Icons.error)),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // ✅ จุด Page Indicator แนวนอน
-                      Positioned(
-                        bottom: 12,
-                        left: 0,
-                        right: 0,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: List.generate(2, (index) {
-                            return AnimatedContainer(
-                              duration: const Duration(milliseconds: 300),
-                              margin: const EdgeInsets.symmetric(horizontal: 4),
-                              width: _currentImagePage == index ? 20 : 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: _currentImagePage == index
-                                    ? Colors.deepOrange
-                                    : const Color.fromARGB(255, 0, 0, 0)
-                                        .withOpacity(0.5),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            );
-                          }),
-                        ),
-                      ),
-
-                      // ✅ ปุ่มหัวใจ
-                      Positioned(
-                        top: 16,
-                        right: 16,
-                        child: GestureDetector(
-                          onTap: _isProcessing ? null : _toggleFavourite,
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: _isFavourite
-                                  ? Colors.red.withOpacity(0.8)
-                                  : Colors.black.withOpacity(0.5),
-                              shape: BoxShape.circle,
-                            ),
-                            child: _isProcessing
-                                ? const SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                          Colors.white),
+                      // ── Image Slideshow ──────────────────────────────
+                      Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(20)),
+                            child: SizedBox(
+                              height: 300,
+                              child: PageView(
+                                controller: _imagePageController,
+                                onPageChanged: (i) =>
+                                    setState(() => _currentImagePage = i),
+                                children: [
+                                  CachedNetworkImage(
+                                    imageUrl:
+                                        widget.itemDetails['image_url'] ?? '',
+                                    width: double.infinity,
+                                    height: 300,
+                                    fit: BoxFit.cover,
+                                    placeholder: (_, __) => const SizedBox(
+                                      height: 300,
+                                      child: Center(
+                                          child: CircularProgressIndicator()),
                                     ),
-                                  )
-                                : Icon(
-                                    _isFavourite
-                                        ? Icons.favorite
-                                        : Icons.favorite_border,
-                                    color: Colors.white,
-                                    size: 24,
+                                    errorWidget: (_, __, ___) => const SizedBox(
+                                      height: 300,
+                                      child: Center(child: Icon(Icons.error)),
+                                    ),
                                   ),
+                                  CachedNetworkImage(
+                                    imageUrl: imagesMap['image_clothing'] ?? '',
+                                    width: double.infinity,
+                                    height: 300,
+                                    fit: BoxFit.cover,
+                                    placeholder: (_, __) => const SizedBox(
+                                      height: 300,
+                                      child: Center(
+                                          child: CircularProgressIndicator()),
+                                    ),
+                                    errorWidget: (_, __, ___) => const SizedBox(
+                                      height: 300,
+                                      child: Center(child: Icon(Icons.error)),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          // Page indicator
+                          Positioned(
+                            bottom: 12,
+                            left: 0,
+                            right: 0,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: List.generate(2, (i) {
+                                return AnimatedContainer(
+                                  duration: const Duration(milliseconds: 300),
+                                  margin:
+                                      const EdgeInsets.symmetric(horizontal: 4),
+                                  width: _currentImagePage == i ? 20 : 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: _currentImagePage == i
+                                        ? Colors.deepOrange
+                                        : Colors.black.withOpacity(0.5),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                );
+                              }),
+                            ),
+                          ),
+
+                          // ปุ่มหัวใจ
+                          Positioned(
+                            top: 16,
+                            right: 16,
+                            child: GestureDetector(
+                              onTap: isProcessing
+                                  ? null
+                                  : () {
+                                      ctx.read<ItemDetailBloc>().add(
+                                            ItemDetailFavToggleRequested(
+                                              clothingUuid: uuid,
+                                              currentlyFavourite: isFavourite,
+                                            ),
+                                          );
+                                    },
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: isFavourite
+                                      ? Colors.red.withOpacity(0.8)
+                                      : Colors.black.withOpacity(0.5),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: isProcessing
+                                    ? const SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                  Colors.white),
+                                        ),
+                                      )
+                                    : Icon(
+                                        isFavourite
+                                            ? Icons.favorite
+                                            : Icons.favorite_border,
+                                        color: Colors.white,
+                                        size: 24,
+                                      ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      // ── Content ──────────────────────────────────────
+                      Flexible(
+                        child: SingleChildScrollView(
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.itemDetails['clothing_name'] ?? '',
+                                  style: const TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 5),
+                                _DetailRow(
+                                  label: languageProvider.translate(
+                                      en: 'Category', th: 'หมวดหมู่'),
+                                  value: widget.itemDetails['category'] ?? '',
+                                ),
+                                _DetailRow(
+                                  label: languageProvider.translate(
+                                      en: 'Size', th: 'ขนาด'),
+                                  value:
+                                      widget.itemDetails['size_category'] ?? '',
+                                ),
+                                _DetailRow(
+                                  label: languageProvider.translate(
+                                      en: 'Gender', th: 'เพศ'),
+                                  value: formatGender(
+                                      widget.itemDetails['gender'],
+                                      languageProvider),
+                                ),
+                                _DetailRow(
+                                  label: languageProvider.translate(
+                                      en: 'Stock', th: 'สต็อก'),
+                                  value:
+                                      widget.itemDetails['stock']?.toString() ??
+                                          '',
+                                ),
+                                _DetailRow(
+                                  label: languageProvider.translate(
+                                      en: 'Breed', th: 'สายพันธุ์'),
+                                  value: widget.itemDetails['breed'] ?? '',
+                                ),
+                                if (widget.itemDetails['description'] != null)
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Text('รายละเอียด',
+                                          style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold)),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        widget.itemDetails['description'] ?? '',
+                                        style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.grey[700]),
+                                      ),
+                                      const SizedBox(height: 16),
+                                    ],
+                                  ),
+
+                                // ราคา
+                                Row(
+                                  children: [
+                                    if (hasDiscount)
+                                      Text(
+                                        '฿${widget.itemDetails['price']?.toString() ?? ''}',
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          color: Colors.grey,
+                                          decoration:
+                                              TextDecoration.lineThrough,
+                                          decorationThickness: 2,
+                                        ),
+                                      ),
+                                    if (hasDiscount) const SizedBox(width: 10),
+                                    Text(
+                                      hasDiscount
+                                          ? '฿${discountPrice.toStringAsFixed(0)}'
+                                          : '฿${widget.itemDetails['price']?.toString() ?? ''}',
+                                      style: TextStyle(
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.bold,
+                                        color: hasDiscount
+                                            ? Colors.red
+                                            : Colors.black,
+                                      ),
+                                    ),
+                                    if (hasDiscount) const SizedBox(width: 10),
+                                    if (hasDiscount)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.red,
+                                          borderRadius:
+                                              BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          '-${widget.itemDetails['discount_percent']?.toString() ?? '0'}%',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w900,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+
+                                // ปุ่ม Add to Cart
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 60,
+                                  child: ElevatedButton.icon(
+                                    onPressed: isProcessing
+                                        ? null
+                                        : () {
+                                            ctx.read<ItemDetailBloc>().add(
+                                                  ItemDetailAddToBasketRequested(
+                                                      uuid),
+                                                );
+                                          },
+                                    icon: const Icon(
+                                        Icons.add_shopping_cart_sharp),
+                                    label: Text(
+                                      languageProvider.translate(
+                                          en: 'Add to Cart',
+                                          th: 'เพิ่มลงตะกร้า'),
+                                      style: const TextStyle(fontSize: 16),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 16),
+                                      backgroundColor: Colors.black,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     ],
                   ),
-
-                  // ✅ Content ที่เลื่อนได้
-                  Flexible(
-                    child: SingleChildScrollView(
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.itemDetails['clothing_name'] ?? '',
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 5),
-                            _DetailRow(
-                              label: languageProvider.translate(
-                                  en: 'Category', th: 'หมวดหมู่'),
-                              value: widget.itemDetails['category'] ?? '',
-                            ),
-                            _DetailRow(
-                              label: languageProvider.translate(
-                                  en: 'Size', th: 'ขนาด'),
-                              value: widget.itemDetails['size_category'] ?? '',
-                            ),
-                            _DetailRow(
-                              label: languageProvider.translate(
-                                  en: 'Gender', th: 'เพศ'),
-                              value: formatGender(widget.itemDetails['gender'],
-                                  languageProvider),
-                            ),
-                            _DetailRow(
-                              label: languageProvider.translate(
-                                  en: 'Stock', th: 'สต็อก'),
-                              value:
-                                  widget.itemDetails['stock']?.toString() ?? '',
-                            ),
-                            _DetailRow(
-                              label: languageProvider.translate(
-                                  en: 'Breed', th: 'สายพันธุ์'),
-                              value: widget.itemDetails['breed'] ?? '',
-                            ),
-                            if (widget.itemDetails['description'] != null)
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'รายละเอียด',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    widget.itemDetails['description'] ?? '',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.grey[700],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                ],
-                              ),
-                            Row(
-                              children: [
-                                if (hasDiscount)
-                                  Text(
-                                    '฿${widget.itemDetails['price']?.toString() ?? ''}',
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      color: Colors.grey,
-                                      decoration: TextDecoration.lineThrough,
-                                      decorationThickness: 2,
-                                    ),
-                                  ),
-                                if (hasDiscount) const SizedBox(width: 10),
-                                Text(
-                                  hasDiscount
-                                      ? '฿${discountPrice.toStringAsFixed(0)}'
-                                      : '฿${widget.itemDetails['price']?.toString() ?? ''}',
-                                  style: TextStyle(
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.bold,
-                                    color:
-                                        hasDiscount ? Colors.red : Colors.black,
-                                  ),
-                                ),
-                                if (hasDiscount) const SizedBox(width: 10),
-                                if (hasDiscount)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: Colors.red,
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Text(
-                                      '-${widget.itemDetails['discount_percent']?.toString() ?? '0'}%',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w900,
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            SizedBox(
-                              width: double.infinity,
-                              height: 60,
-                              child: ElevatedButton.icon(
-                                onPressed: () async {
-                                  try {
-                                    await BasketApiService().addToBasket(
-                                      clothingUuid: widget.itemDetails['uuid'],
-                                    );
-                                    Navigator.of(context).pop();
-                                    showTopSnackBar(
-                                      Overlay.of(context),
-                                      CustomSnackBar.success(
-                                        message: languageProvider.translate(
-                                          en: 'Added to Basket successfully!',
-                                          th: 'เพิ่มลงตะกร้าสำเร็จ!',
-                                        ),
-                                      ),
-                                      animationDuration: const Duration(
-                                          milliseconds:
-                                              1000), // เร็วแค่ไหนตอน popup
-                                      reverseAnimationDuration: const Duration(
-                                          milliseconds:
-                                              200), //  เร็วแค่ไหนตอนหาย
-                                      displayDuration: const Duration(
-                                          milliseconds: 1000), // แสดงนานแค่ไหน
-                                    );
-                                  } catch (e) {
-                                    showTopSnackBar(
-                                      Overlay.of(context),
-                                      CustomSnackBar.error(
-                                        message: languageProvider.translate(
-                                          en: 'Failed to add to Basket: $e',
-                                          th: 'เพิ่มลงตะกร้าไม่สำเร็จ: $e',
-                                        ),
-                                      ),
-                                      animationDuration:
-                                          const Duration(milliseconds: 1000),
-                                      reverseAnimationDuration:
-                                          const Duration(milliseconds: 200),
-                                      displayDuration:
-                                          const Duration(milliseconds: 1000),
-                                    );
-                                  }
-                                },
-                                icon: const Icon(Icons.add_shopping_cart_sharp),
-                                label: Text(
-                                  languageProvider.translate(
-                                      en: 'Add to Cart', th: 'เพิ่มลงตะกร้า'),
-                                  style: const TextStyle(fontSize: 16),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 16),
-                                  backgroundColor: Colors.black,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
+  }
+
+  bool _isFavFromState(ItemDetailState state) {
+    if (state is ItemDetailLoaded) return state.isFavourite;
+    if (state is ItemDetailActionInProgress) return state.isFavourite;
+    if (state is ItemDetailFavToggleSuccess) return state.isFavourite;
+    if (state is ItemDetailActionFailure) return state.isFavourite;
+    if (state is ItemDetailBasketSuccess) return state.isFavourite;
+    return false;
   }
 }
 
+// ── Detail Row (เหมือนเดิม) ────────────────────────────────────────────────
 class _DetailRow extends StatelessWidget {
   final String label;
   final String value;
@@ -1055,7 +882,6 @@ class _DetailRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (value.isEmpty) return const SizedBox.shrink();
-
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -1063,23 +889,17 @@ class _DetailRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 100,
-            child: Text(
-              '$label:',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
+            child: Text('$label:',
+                style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface)),
           ),
           Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: 14,
-                color: Theme.of(context).colorScheme.secondary,
-              ),
-            ),
+            child: Text(value,
+                style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context).colorScheme.secondary)),
           ),
         ],
       ),

@@ -1,14 +1,15 @@
-// NotificationPage
+// NotificationPage — refactored with BLoC
 
 import 'dart:convert';
-import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/foundation.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/api/service_fav_backet.dart';
+import 'package:flutter_application_1/blocs/cat_notification/notification_bloc.dart';
 
 import 'package:flutter_application_1/provider/language_provider.dart';
-import 'package:http/http.dart' as http;
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
@@ -29,7 +30,6 @@ double _parseDouble(dynamic value) {
   return 0.0;
 }
 
-// ✅ Safe parse images ทุกกรณี
 Map<String, dynamic> _parseImagesMap(dynamic rawImages) {
   if (rawImages is String && rawImages.isNotEmpty) {
     try {
@@ -44,398 +44,486 @@ Map<String, dynamic> _parseImagesMap(dynamic rawImages) {
 }
 
 // ============================================================================
-// API Configuration
+// NotificationPage — entry point
 // ============================================================================
 
-String getBaseUrl() {
-  const String env = String.fromEnvironment('ENV', defaultValue: 'local');
-  if (env == 'prod') return 'https://catshop-backend-9pzq.onrender.com';
-  if (env == 'prod-v2') return 'https://catshop-backend-v2.onrender.com';
-  if (kIsWeb) return 'http://localhost:10000';
-  if (Platform.isAndroid) return 'http://10.0.2.2:10000';
-  return 'http://localhost:10000';
-}
-
-class ApiConfig {
-  static String get baseUrl => getBaseUrl();
-  static const Duration apiTimeout = Duration(seconds: 10);
-
-  static Uri getMessagesUri() =>
-      Uri.parse('$baseUrl/api/notifications/messages');
-  static Uri getMessageDetailUri(String id) =>
-      Uri.parse('$baseUrl/api/notifications/messages/$id');
-  static Uri getNewsUri() => Uri.parse('$baseUrl/api/notifications/news');
-  static Uri getNewsDetailUri(String id) =>
-      Uri.parse('$baseUrl/api/notifications/news/$id');
-}
-
-// ============================================================================
-// Main Notification Page
-// ============================================================================
-
-class NotificationPage extends StatefulWidget {
+class NotificationPage extends StatelessWidget {
   const NotificationPage({super.key});
 
   @override
-  State<NotificationPage> createState() => _NotificationPageState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => NotificationBloc()..add(const NotificationLoadRequested()),
+      child: const _NotificationView(),
+    );
+  }
 }
 
-class _NotificationPageState extends State<NotificationPage> {
-  PageController? _bannerController;
-  PageController? _contentTypeController;
-  PageController? _messageController;
-  PageController? _newsController;
+// ============================================================================
+// _NotificationView
+// ============================================================================
+
+class _NotificationView extends StatefulWidget {
+  const _NotificationView();
+
+  @override
+  State<_NotificationView> createState() => _NotificationViewState();
+}
+
+class _NotificationViewState extends State<_NotificationView> {
+  final PageController _bannerController = PageController();
+  final PageController _contentTypeController = PageController();
+  final PageController _messageController = PageController();
+  final PageController _newsController = PageController();
 
   int _currentBannerIndex = 0;
   int _currentContentType = 0;
 
-  List<NotificationItemMess> _messages = [];
-  List<NotificationItemNews> _news = [];
-
-  bool _isLoadingMessages = true;
-  bool _isLoadingNews = true;
-  bool _isRefreshing = false;
-
-  String? _messagesError;
-  String? _newsError;
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeControllers();
-    _loadInitialData();
-  }
-
-  void _initializeControllers() {
-    _bannerController = PageController();
-    _contentTypeController = PageController();
-    _messageController = PageController();
-    _newsController = PageController();
-  }
-
-  Future<void> _loadInitialData() async {
-    await Future.wait([_fetchMessages(), _fetchNews()]);
-  }
-
   @override
   void dispose() {
-    _bannerController?.dispose();
-    _contentTypeController?.dispose();
-    _messageController?.dispose();
-    _newsController?.dispose();
+    _bannerController.dispose();
+    _contentTypeController.dispose();
+    _messageController.dispose();
+    _newsController.dispose();
     super.dispose();
   }
 
-  // ============================================================================
-  // API Calls
-  // ============================================================================
-
-  Future<void> _fetchMessages() async {
-    if (!mounted) return;
-    setState(() {
-      _isLoadingMessages = true;
-      _messagesError = null;
-    });
-
-    try {
-      final response = await http
-          .get(ApiConfig.getMessagesUri())
-          .timeout(ApiConfig.apiTimeout);
-      if (!mounted) return;
-
-      if (response.statusCode == 200) {
-        final decodedBody = utf8.decode(response.bodyBytes);
-        final List<dynamic> data = json.decode(decodedBody);
-        setState(() {
-          _messages =
-              data.map((json) => NotificationItemMess.fromJson(json)).toList();
-          _isLoadingMessages = false;
-        });
-      } else {
-        setState(() {
-          _messagesError = 'Failed to load messages (${response.statusCode})';
-          _isLoadingMessages = false;
-        });
-      }
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _messagesError = _getErrorMessage(e);
-        _isLoadingMessages = false;
-      });
-    }
-  }
-
-  Future<void> _fetchNews() async {
-    if (!mounted) return;
-    setState(() {
-      _isLoadingNews = true;
-      _newsError = null;
-    });
-
-    try {
-      final response =
-          await http.get(ApiConfig.getNewsUri()).timeout(ApiConfig.apiTimeout);
-      if (!mounted) return;
-
-      if (response.statusCode == 200) {
-        final decodedBody = utf8.decode(response.bodyBytes);
-        final List<dynamic> data = json.decode(decodedBody);
-        setState(() {
-          _news =
-              data.map((json) => NotificationItemNews.fromJson(json)).toList();
-          _isLoadingNews = false;
-        });
-      } else {
-        setState(() {
-          _newsError = 'Failed to load news (${response.statusCode})';
-          _isLoadingNews = false;
-        });
-      }
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _newsError = _getErrorMessage(e);
-        _isLoadingNews = false;
-      });
-    }
-  }
-
-  Future<void> _refreshData() async {
-    if (_isRefreshing) return;
-    setState(() => _isRefreshing = true);
-    await Future.wait([_fetchMessages(), _fetchNews()]);
-    if (mounted) setState(() => _isRefreshing = false);
-  }
-
-  String _getErrorMessage(dynamic error) {
-    if (error.toString().contains('TimeoutException')) {
-      return 'Request timeout. Please check your connection.';
-    } else if (error.toString().contains('SocketException')) {
-      return 'No internet connection';
-    }
-    return 'Error: ${error.toString()}';
-  }
-
-  // ============================================================================
-  // Detail Fetch & Popup
-  // ============================================================================
-
-  Future<void> _showMessageDetail(String id) async {
-    final languageProvider =
-        Provider.of<LanguageProvider>(context, listen: false);
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
-    );
-
-    try {
-      final response = await http
-          .get(ApiConfig.getMessageDetailUri(id))
-          .timeout(ApiConfig.apiTimeout);
-      if (!mounted) return;
-      Navigator.of(context).pop();
-
-      if (response.statusCode == 200) {
-        final decodedBody = utf8.decode(response.bodyBytes);
-        final data = json.decode(decodedBody);
-        final item = NotificationItemMess.fromJson(data);
-        _showDetailPopup(context, item);
-      } else {
-        _showError(languageProvider.translate(
-          en: 'Failed to load message details',
-          th: 'ไม่สามารถโหลดรายละเอียดข้อความได้',
-        ));
-      }
-    } catch (e) {
-      if (!mounted) return;
-      Navigator.of(context).pop();
-      _showError(languageProvider.translate(
-        en: 'Error loading details',
-        th: 'เกิดข้อผิดพลาดในการโหลดรายละเอียด',
-      ));
-    }
-  }
-
-  Future<void> _showNewsDetail(String id) async {
-    final languageProvider =
-        Provider.of<LanguageProvider>(context, listen: false);
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
-    );
-
-    try {
-      final response = await http
-          .get(ApiConfig.getNewsDetailUri(id))
-          .timeout(ApiConfig.apiTimeout);
-      if (!mounted) return;
-      Navigator.of(context).pop();
-
-      if (response.statusCode == 200) {
-        final decodedBody = utf8.decode(response.bodyBytes);
-        final data = json.decode(decodedBody);
-        final item = NotificationItemNews.fromJson(data);
-        _showDetailPopup(context, item);
-      } else {
-        _showError(languageProvider.translate(
-          en: 'Failed to load news details',
-          th: 'ไม่สามารถโหลดรายละเอียดข่าวได้',
-        ));
-      }
-    } catch (e) {
-      if (!mounted) return;
-      Navigator.of(context).pop();
-      _showError(languageProvider.translate(
-        en: 'Error loading details',
-        th: 'เกิดข้อผิดพลาดในการโหลดรายละเอียด',
-      ));
-    }
-  }
-
-  void _showError(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red.shade700,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 3),
-      ),
+  void _showDetailPopup(BuildContext ctx, dynamic item) {
+    showGeneralDialog(
+      context: ctx,
+      barrierDismissible: true,
+      barrierLabel: MaterialLocalizations.of(ctx).modalBarrierDismissLabel,
+      barrierColor: Colors.black54,
+      transitionDuration: const Duration(milliseconds: 400),
+      pageBuilder: (_, __, ___) => _NotificationDetailCard(item: item),
+      transitionBuilder: (_, animation, __, child) {
+        return SlideTransition(
+          position: animation.drive(
+            Tween(begin: const Offset(0.0, -1.0), end: Offset.zero)
+                .chain(CurveTween(curve: Curves.easeInOut)),
+          ),
+          child: FadeTransition(
+            opacity: animation.drive(
+              Tween(begin: 0.0, end: 1.0)
+                  .chain(CurveTween(curve: Curves.easeInOut)),
+            ),
+            child: child,
+          ),
+        );
+      },
     );
   }
 
-  void _navigateToBanner(int index) {
-    _bannerController?.animateToPage(index,
-        duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+  List<NotificationItemMess> _messagesFromState(NotificationState state) {
+    if (state is NotificationLoaded) return state.messages;
+    if (state is NotificationDetailLoading) return state.messages;
+    if (state is NotificationDetailLoaded) return state.messages;
+    if (state is NotificationDetailFailure) return state.messages;
+    if (state is NotificationBasketInProgress) return state.messages;
+    if (state is NotificationBasketSuccess) return state.messages;
+    if (state is NotificationBasketFailure) return state.messages;
+    return [];
   }
 
-  void _navigateToContentType(int index) {
-    _contentTypeController?.animateToPage(index,
-        duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+  List<NotificationItemNews> _newsFromState(NotificationState state) {
+    if (state is NotificationLoaded) return state.news;
+    if (state is NotificationDetailLoading) return state.news;
+    if (state is NotificationDetailLoaded) return state.news;
+    if (state is NotificationDetailFailure) return state.news;
+    if (state is NotificationBasketInProgress) return state.news;
+    if (state is NotificationBasketSuccess) return state.news;
+    if (state is NotificationBasketFailure) return state.news;
+    return [];
   }
-
-  // ============================================================================
-  // Build UI
-  // ============================================================================
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: _refreshData,
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        child: Column(
-          children: [
-            _BannerCarousel(
-              controller: _bannerController!,
-              currentIndex: _currentBannerIndex,
-              onPageChanged: (index) =>
-                  setState(() => _currentBannerIndex = index),
+    final languageProvider = Provider.of<LanguageProvider>(context);
+
+    return BlocConsumer<NotificationBloc, NotificationState>(
+      listener: (ctx, state) {
+        // เปิด popup เมื่อ detail โหลดเสร็จ
+        if (state is NotificationDetailLoaded) {
+          _showDetailPopup(ctx, state.itemDetail);
+        }
+
+        // detail ล้มเหลว
+        if (state is NotificationDetailFailure) {
+          ScaffoldMessenger.of(ctx).showSnackBar(
+            SnackBar(
+              content: Text(state.errorMessage),
+              backgroundColor: Colors.red.shade700,
+              behavior: SnackBarBehavior.floating,
             ),
-            const SizedBox(height: 10),
-            _BannerIndicators(
-              count: NotificationData.bannerImages.length,
-              currentIndex: _currentBannerIndex,
-              onTap: _navigateToBanner,
+          );
+        }
+
+        // basket สำเร็จ/ล้มเหลว
+        if (state is NotificationBasketSuccess) {
+          showTopSnackBar(
+            Overlay.of(ctx),
+            CustomSnackBar.success(
+              message: languageProvider.translate(
+                en: 'Added to Basket successfully!',
+                th: 'เพิ่มลงตะกร้าสำเร็จ!',
+              ),
             ),
-            const SizedBox(height: 20),
-            _ContentTypeTabs(
-              currentType: _currentContentType,
-              onTabChanged: _navigateToContentType,
+            animationDuration: const Duration(milliseconds: 1000),
+            reverseAnimationDuration: const Duration(milliseconds: 200),
+            displayDuration: const Duration(milliseconds: 1000),
+          );
+        } else if (state is NotificationBasketFailure) {
+          showTopSnackBar(
+            Overlay.of(ctx),
+            CustomSnackBar.error(
+              message: languageProvider.translate(
+                en: 'Failed to add to Basket',
+                th: 'เพิ่มลงตะกร้าไม่สำเร็จ',
+              ),
             ),
-            Divider(color: Theme.of(context).colorScheme.onSurface, height: 2),
-            SizedBox(
-              height: 280,
-              child: PageView(
-                controller: _contentTypeController,
-                onPageChanged: (index) =>
-                    setState(() => _currentContentType = index),
+            animationDuration: const Duration(milliseconds: 1000),
+            reverseAnimationDuration: const Duration(milliseconds: 200),
+            displayDuration: const Duration(milliseconds: 1000),
+          );
+        }
+      },
+      builder: (ctx, state) {
+        // ── Loading ────────────────────────────────────────────────────────
+        if (state is NotificationInitial || state is NotificationLoading) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // ── Failure (โหลดครั้งแรกล้มเหลว) ────────────────────────────────
+        if (state is NotificationFailure) {
+          return Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildMessagesTab(),
-                  _buildNewsTab(),
+                  const Icon(Icons.error_outline, size: 60, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(state.message, textAlign: TextAlign.center),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () => ctx
+                        .read<NotificationBloc>()
+                        .add(const NotificationLoadRequested()),
+                    icon: const Icon(Icons.refresh),
+                    label: Text(languageProvider.translate(
+                        en: 'Retry', th: 'ลองอีกครั้ง')),
+                  ),
                 ],
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
+          );
+        }
 
-  Widget _buildMessagesTab() {
-    final languageProvider = Provider.of<LanguageProvider>(context);
-    if (_isLoadingMessages)
-      return const Center(child: CircularProgressIndicator());
-    if (_messagesError != null) {
-      return _ErrorView(message: _messagesError!, onRetry: _fetchMessages);
-    }
-    if (_messages.isEmpty) {
-      return Center(
-        child: Text(languageProvider.translate(
-            en: 'No messages available', th: 'ไม่มีข้อความ')),
-      );
-    }
-    return _ContentList(
-      controller: _messageController!,
-      items: _messages,
-      onLearnMore: _showMessageDetail,
-    );
-  }
+        final messages = _messagesFromState(state);
+        final news = _newsFromState(state);
+        final isDetailLoading = state is NotificationDetailLoading;
+        final isBasketLoading = state is NotificationBasketInProgress;
 
-  Widget _buildNewsTab() {
-    final languageProvider = Provider.of<LanguageProvider>(context);
-    if (_isLoadingNews) return const Center(child: CircularProgressIndicator());
-    if (_newsError != null) {
-      return _ErrorView(message: _newsError!, onRetry: _fetchNews);
-    }
-    if (_news.isEmpty) {
-      return Center(
-        child: Text(languageProvider.translate(
-            en: 'No news available', th: 'ไม่มีข่าว')),
-      );
-    }
-    return _ContentList(
-      controller: _newsController!,
-      items: _news,
-      onLearnMore: _showNewsDetail,
+        return Scaffold(
+          body: RefreshIndicator(
+            onRefresh: () async {
+              ctx
+                  .read<NotificationBloc>()
+                  .add(const NotificationRefreshRequested());
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                children: [
+                  // Banner
+                  _BannerCarousel(
+                    controller: _bannerController,
+                    currentIndex: _currentBannerIndex,
+                    onPageChanged: (i) =>
+                        setState(() => _currentBannerIndex = i),
+                  ),
+                  const SizedBox(height: 10),
+                  _BannerIndicators(
+                    count: NotificationData.bannerImages.length,
+                    currentIndex: _currentBannerIndex,
+                    onTap: (i) => _bannerController.animateToPage(
+                      i,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  _ContentTypeTabs(
+                    currentType: _currentContentType,
+                    onTabChanged: (i) {
+                      setState(() => _currentContentType = i);
+                      _contentTypeController.animateToPage(
+                        i,
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    },
+                  ),
+                  Divider(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      height: 2),
+                  SizedBox(
+                    height: 280,
+                    child: PageView(
+                      controller: _contentTypeController,
+                      onPageChanged: (i) =>
+                          setState(() => _currentContentType = i),
+                      children: [
+                        // Messages Tab
+                        messages.isEmpty
+                            ? Center(
+                                child: Text(languageProvider.translate(
+                                    en: 'No messages available',
+                                    th: 'ไม่มีข้อความ')),
+                              )
+                            : _ContentList(
+                                controller: _messageController,
+                                items: messages,
+                                isLoading: isDetailLoading || isBasketLoading,
+                                onLearnMore: (id) => ctx
+                                    .read<NotificationBloc>()
+                                    .add(NotificationMessageDetailRequested(id)),
+                                onAddToBasket: (uuid) => ctx
+                                    .read<NotificationBloc>()
+                                    .add(NotificationAddToBasketRequested(uuid)),
+                                basketLoadingUuid: isBasketLoading
+                                    ? state.uuid
+                                    : null,
+                              ),
+
+                        // News Tab
+                        news.isEmpty
+                            ? Center(
+                                child: Text(languageProvider.translate(
+                                    en: 'No news available', th: 'ไม่มีข่าว')),
+                              )
+                            : _ContentList(
+                                controller: _newsController,
+                                items: news,
+                                isLoading: isDetailLoading || isBasketLoading,
+                                onLearnMore: (id) => ctx
+                                    .read<NotificationBloc>()
+                                    .add(NotificationNewsDetailRequested(id)),
+                                onAddToBasket: (uuid) => ctx
+                                    .read<NotificationBloc>()
+                                    .add(NotificationAddToBasketRequested(uuid)),
+                               basketLoadingUuid: isBasketLoading
+                                    ? state.uuid
+                                    : null,
+                              ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
 
 // ============================================================================
-// Error View
+// _ContentList
 // ============================================================================
 
-class _ErrorView extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
+class _ContentList extends StatelessWidget {
+  final PageController controller;
+  final List<dynamic> items;
+  final bool isLoading;
+  final Function(String) onLearnMore;
+  final Function(String) onAddToBasket;
+  final String? basketLoadingUuid;
 
-  const _ErrorView({required this.message, required this.onRetry});
+  const _ContentList({
+    required this.controller,
+    required this.items,
+    required this.isLoading,
+    required this.onLearnMore,
+    required this.onAddToBasket,
+    this.basketLoadingUuid,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final languageProvider = Provider.of<LanguageProvider>(context);
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+    return PageView.builder(
+      controller: controller,
+      itemCount: items.length,
+      scrollDirection: Axis.vertical,
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return _ContentCard(
+          item: item,
+          isLoading: isLoading,
+          onLearnMore: onLearnMore,
+          onAddToBasket: onAddToBasket,
+          isBasketLoading: basketLoadingUuid == item.uuid,
+        );
+      },
+    );
+  }
+}
+
+// ============================================================================
+// _ContentCard
+// ============================================================================
+
+class _ContentCard extends StatelessWidget {
+  final dynamic item;
+  final bool isLoading;
+  final Function(String) onLearnMore;
+  final Function(String) onAddToBasket;
+  final bool isBasketLoading;
+
+  const _ContentCard({
+    required this.item,
+    required this.isLoading,
+    required this.onLearnMore,
+    required this.onAddToBasket,
+    required this.isBasketLoading,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final price = _parseDouble(item.price);
+    final discountPrice = item is NotificationItemMess
+        ? _parseDouble((item as NotificationItemMess).discount_price)
+        : 0.0;
+    final hasDiscount = discountPrice > 0 && discountPrice < price;
+    final isMessage = item is NotificationItemMess;
+    final discountPercentRaw =
+        isMessage ? (item as NotificationItemMess).discount_percent : '';
+    final discountPercentClean = discountPercentRaw.replaceAll('%', '').trim();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      child: Row(
         children: [
-          Icon(Icons.error_outline, size: 48, color: Colors.red.shade300),
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Text(message, textAlign: TextAlign.center),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: CachedNetworkImage(
+              imageUrl: item.image_url ?? '',
+              fit: BoxFit.cover,
+              width: 180,
+              height: 180,
+              placeholder: (_, __) =>
+                  const CircularProgressIndicator.adaptive(),
+              errorWidget: (_, __, ___) => Container(
+                width: 180,
+                height: 180,
+                color: Colors.grey.shade200,
+                child: const Icon(Icons.error, size: 40),
+              ),
+            ),
           ),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: onRetry,
-            icon: const Icon(Icons.refresh),
-            label: Text(
-                languageProvider.translate(en: 'Retry', th: 'ลองอีกครั้ง')),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              height: 200,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isMessage
+                        ? '${item.clothing_name} ลดพิเศษ!'
+                        : item.clothing_name ?? '',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _formatDate(item.create_at ?? '', context),
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontSize: 14,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (hasDiscount && discountPercentClean.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '-$discountPercentClean%',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const Spacer(),
+                  // ปุ่ม
+                  Row(
+                    children: [
+                      FloatingActionButton.small(
+                        heroTag: 'notif_cart_${item.id}',
+                        onPressed: (isLoading || isBasketLoading)
+                            ? null
+                            : () => onAddToBasket(item.uuid ?? ''),
+                        backgroundColor: isBasketLoading
+                            ? Colors.grey
+                            : Theme.of(context)
+                                .floatingActionButtonTheme
+                                .backgroundColor,
+                        child: isBasketLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Icon(
+                                Icons.shopping_cart_outlined,
+                                size: 30,
+                                color: Theme.of(context)
+                                    .floatingActionButtonTheme
+                                    .foregroundColor,
+                              ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: isLoading
+                              ? null
+                              : () => onLearnMore(item.id ?? ''),
+                          child:
+                              const Icon(Icons.read_more_outlined, size: 30),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -444,43 +532,11 @@ class _ErrorView extends StatelessWidget {
 }
 
 // ============================================================================
-// Detail Popup
-// ============================================================================
-
-void _showDetailPopup(BuildContext context, dynamic item) {
-  showGeneralDialog(
-    context: context,
-    barrierDismissible: true,
-    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-    barrierColor: Colors.black54,
-    transitionDuration: const Duration(milliseconds: 400),
-    pageBuilder: (context, animation, secondaryAnimation) {
-      return _NotificationDetailCard(item: item);
-    },
-    transitionBuilder: (context, animation, secondaryAnimation, child) {
-      const begin = Offset(0.0, -1.0);
-      const end = Offset.zero;
-      const curve = Curves.easeInOut;
-      var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-      return SlideTransition(
-        position: animation.drive(tween),
-        child: FadeTransition(
-          opacity: animation.drive(
-              Tween(begin: 0.0, end: 1.0).chain(CurveTween(curve: curve))),
-          child: child,
-        ),
-      );
-    },
-  );
-}
-
-// ============================================================================
-// Notification Detail Card
+// Detail Card (ยังคง StatefulWidget เพราะจัดการ fav/basket เป็น local)
 // ============================================================================
 
 class _NotificationDetailCard extends StatefulWidget {
   final dynamic item;
-
   const _NotificationDetailCard({required this.item});
 
   @override
@@ -491,17 +547,11 @@ class _NotificationDetailCard extends StatefulWidget {
 class _NotificationDetailCardState extends State<_NotificationDetailCard> {
   bool _isFavourite = false;
   bool _isProcessing = false;
-
   final PageController _imagePageController = PageController();
   int _currentImagePage = 0;
 
-  //  ดึง uuid จาก item
   String get _uuid => widget.item.uuid ?? '';
-
-  //  ดึง image_url จาก item
   String get _imageUrl => widget.item.image_url ?? '';
-
-  // Safe parse images จาก item.images (String หรือ Map)
   Map<String, dynamic> get _imagesMap => _parseImagesMap(widget.item.images);
 
   @override
@@ -517,76 +567,61 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
   }
 
   Future<void> _checkFavouriteStatus() async {
+    if (_uuid.isEmpty) return;
     try {
-      if (_uuid.isEmpty) return;
       final isFav =
           await FavouriteApiService().checkFavourite(clothingUuid: _uuid);
       if (mounted) setState(() => _isFavourite = isFav);
-    } catch (e) {
-      print('❌ Error checking favourite: $e');
-    }
+    } catch (_) {}
   }
 
   Future<void> _toggleFavourite() async {
     if (_isProcessing) return;
     setState(() => _isProcessing = true);
-
+    final languageProvider =
+        Provider.of<LanguageProvider>(context, listen: false);
     try {
-      final languageProvider =
-          Provider.of<LanguageProvider>(context, listen: false);
-
       if (_isFavourite) {
         await FavouriteApiService().removeFromFavourite(clothingUuid: _uuid);
+        if (mounted) setState(() => _isFavourite = false);
         if (mounted) {
-          setState(() => _isFavourite = false);
           showTopSnackBar(
             Overlay.of(context),
             CustomSnackBar.info(
               message: languageProvider.translate(
-                en: 'Removed from favourites!',
-                th: 'ลบออกจากรายการโปรดแล้ว',
-              ),
+                  en: 'Removed from favourites!',
+                  th: 'ลบออกจากรายการโปรดแล้ว'),
             ),
-            animationDuration:
-                const Duration(milliseconds: 1000), // เร็วแค่ไหนตอน popup
-            reverseAnimationDuration:
-                const Duration(milliseconds: 200), // เร็วแค่ไหนตอนหาย
-            displayDuration:
-                const Duration(milliseconds: 1000), // แสดงนานแค่ไหน
+            animationDuration: const Duration(milliseconds: 1000),
+            reverseAnimationDuration: const Duration(milliseconds: 200),
+            displayDuration: const Duration(milliseconds: 1000),
           );
         }
       } else {
         await FavouriteApiService().addToFavourite(clothingUuid: _uuid);
+        if (mounted) setState(() => _isFavourite = true);
         if (mounted) {
-          setState(() => _isFavourite = true);
           showTopSnackBar(
             Overlay.of(context),
             CustomSnackBar.success(
               message: languageProvider.translate(
-                en: 'Added to favourites successfully!',
-                th: 'เพิ่มลงรายการโปรดแล้ว!',
-              ),
+                  en: 'Added to favourites successfully!',
+                  th: 'เพิ่มลงรายการโปรดแล้ว!'),
             ),
-            animationDuration:
-                const Duration(milliseconds: 1000), // เร็วแค่ไหนตอน popup
-            reverseAnimationDuration:
-                const Duration(milliseconds: 200), // เร็วแค่ไหนตอนหาย
-            displayDuration:
-                const Duration(milliseconds: 1000), // แสดงนานแค่ไหน
+            animationDuration: const Duration(milliseconds: 1000),
+            reverseAnimationDuration: const Duration(milliseconds: 200),
+            displayDuration: const Duration(milliseconds: 1000),
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        final languageProvider =
-            Provider.of<LanguageProvider>(context, listen: false);
         showTopSnackBar(
           Overlay.of(context),
           CustomSnackBar.error(
             message: languageProvider.translate(
-              en: 'Failed to add to favourites: $e',
-              th: 'เพิ่มลงรายการโปรดไม่สำเร็จ: $e',
-            ),
+                en: 'Failed to update favourites',
+                th: 'อัปเดตรายการโปรดไม่สำเร็จ'),
           ),
           animationDuration: const Duration(milliseconds: 1000),
           reverseAnimationDuration: const Duration(milliseconds: 200),
@@ -609,15 +644,11 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
           Overlay.of(context),
           CustomSnackBar.success(
             message: languageProvider.translate(
-              en: 'Added to Basket successfully!',
-              th: 'เพิ่มลงตะกร้าสำเร็จ!',
-            ),
+                en: 'Added to Basket successfully!', th: 'เพิ่มลงตะกร้าสำเร็จ!'),
           ),
-          animationDuration:
-              const Duration(milliseconds: 1000), // เร็วแค่ไหนตอน popup
-          reverseAnimationDuration:
-              const Duration(milliseconds: 200), // เร็วแค่ไหนตอนหาย
-          displayDuration: const Duration(milliseconds: 1000), // แสดงนานแค่ไหน
+          animationDuration: const Duration(milliseconds: 1000),
+          reverseAnimationDuration: const Duration(milliseconds: 200),
+          displayDuration: const Duration(milliseconds: 1000),
         );
       }
     } catch (e) {
@@ -626,9 +657,7 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
           Overlay.of(context),
           CustomSnackBar.error(
             message: languageProvider.translate(
-              en: 'Failed to add to Basket: $e',
-              th: 'เพิ่มลงตะกร้าไม่สำเร็จ: $e',
-            ),
+                en: 'Failed to add to Basket', th: 'เพิ่มลงตะกร้าไม่สำเร็จ'),
           ),
           animationDuration: const Duration(milliseconds: 1000),
           reverseAnimationDuration: const Duration(milliseconds: 200),
@@ -669,7 +698,6 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // ✅ รูป Slideshow + ปุ่มหัวใจ + จุด indicator
                   Stack(
                     children: [
                       ClipRRect(
@@ -679,75 +707,66 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
                           height: 300,
                           child: PageView(
                             controller: _imagePageController,
-                            onPageChanged: (index) {
-                              setState(() => _currentImagePage = index);
-                            },
+                            onPageChanged: (i) =>
+                                setState(() => _currentImagePage = i),
                             children: [
-                              // รูปหลัก
                               CachedNetworkImage(
                                 imageUrl: _imageUrl,
                                 width: double.infinity,
                                 height: 300,
                                 fit: BoxFit.cover,
-                                placeholder: (context, url) => const SizedBox(
-                                  height: 300,
-                                  child: Center(
-                                      child: CircularProgressIndicator()),
-                                ),
-                                errorWidget: (context, url, error) =>
-                                    const SizedBox(
-                                  height: 300,
-                                  child: Center(child: Icon(Icons.error)),
-                                ),
+                                placeholder: (_, __) => const SizedBox(
+                                    height: 300,
+                                    child: Center(
+                                        child: CircularProgressIndicator())),
+                                errorWidget: (_, __, ___) => const SizedBox(
+                                    height: 300,
+                                    child:
+                                        Center(child: Icon(Icons.error))),
                               ),
-                              // รูปเสื้อผ้า
                               CachedNetworkImage(
                                 imageUrl: _imagesMap['image_clothing'] ?? '',
                                 width: double.infinity,
                                 height: 300,
                                 fit: BoxFit.cover,
-                                placeholder: (context, url) => const SizedBox(
-                                  height: 300,
-                                  child: Center(
-                                      child: CircularProgressIndicator()),
-                                ),
-                                errorWidget: (context, url, error) =>
-                                    const SizedBox(
-                                  height: 300,
-                                  child: Center(child: Icon(Icons.error)),
-                                ),
+                                placeholder: (_, __) => const SizedBox(
+                                    height: 300,
+                                    child: Center(
+                                        child: CircularProgressIndicator())),
+                                errorWidget: (_, __, ___) => const SizedBox(
+                                    height: 300,
+                                    child:
+                                        Center(child: Icon(Icons.error))),
                               ),
                             ],
                           ),
                         ),
                       ),
-
-                      // ✅ จุด Page Indicator
+                      // Page indicator
                       Positioned(
                         bottom: 12,
                         left: 0,
                         right: 0,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.end,
-                          children: List.generate(2, (index) {
+                          children: List.generate(2, (i) {
                             return AnimatedContainer(
                               duration: const Duration(milliseconds: 300),
-                              margin: const EdgeInsets.symmetric(horizontal: 4),
-                              width: _currentImagePage == index ? 20 : 8,
+                              margin:
+                                  const EdgeInsets.symmetric(horizontal: 4),
+                              width: _currentImagePage == i ? 20 : 8,
                               height: 8,
                               decoration: BoxDecoration(
-                                color: _currentImagePage == index
+                                color: _currentImagePage == i
                                     ? Colors.deepOrange
-                                    : const Color.fromARGB(255, 0, 0, 0)
-                                        .withOpacity(0.5),
+                                    : Colors.black.withOpacity(0.5),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                             );
                           }),
                         ),
                       ),
-
-                      // ✅ ปุ่มหัวใจ
+                      // ปุ่มหัวใจ
                       Positioned(
                         top: 16,
                         right: 16,
@@ -767,8 +786,9 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
                                     height: 24,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                          Colors.white),
+                                      valueColor:
+                                          AlwaysStoppedAnimation<Color>(
+                                              Colors.white),
                                     ),
                                   )
                                 : Icon(
@@ -783,8 +803,6 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
                       ),
                     ],
                   ),
-
-                  // Content ที่เลื่อนได้
                   Flexible(
                     child: SingleChildScrollView(
                       child: Padding(
@@ -865,8 +883,9 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
                                   style: TextStyle(
                                     fontSize: 28,
                                     fontWeight: FontWeight.bold,
-                                    color:
-                                        hasDiscount ? Colors.red : Colors.black,
+                                    color: hasDiscount
+                                        ? Colors.red
+                                        : Colors.black,
                                   ),
                                 ),
                                 if (hasDiscount) const SizedBox(width: 10),
@@ -903,8 +922,8 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
                                   style: const TextStyle(fontSize: 16),
                                 ),
                                 style: ElevatedButton.styleFrom(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 16),
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 16),
                                   backgroundColor: Colors.black,
                                 ),
                               ),
@@ -931,7 +950,6 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
 class _DetailRow extends StatelessWidget {
   final String label;
   final String value;
-
   const _DetailRow({required this.label, required this.value});
 
   @override
@@ -944,21 +962,17 @@ class _DetailRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 100,
-            child: Text(
-              '$label:',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
+            child: Text('$label:',
+                style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface)),
           ),
           Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                  fontSize: 14, color: Theme.of(context).colorScheme.secondary),
-            ),
+            child: Text(value,
+                style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context).colorScheme.secondary)),
           ),
         ],
       ),
@@ -989,18 +1003,16 @@ class _BannerCarousel extends StatelessWidget {
         controller: controller,
         itemCount: NotificationData.bannerImages.length,
         onPageChanged: onPageChanged,
-        itemBuilder: (context, index) {
-          return CachedNetworkImage(
-            imageUrl: NotificationData.bannerImages[index],
-            fit: BoxFit.cover,
-            width: double.infinity,
-            height: double.infinity,
-            placeholder: (context, url) =>
-                const Center(child: CircularProgressIndicator()),
-            errorWidget: (context, url, error) =>
-                const Center(child: Icon(Icons.error)),
-          );
-        },
+        itemBuilder: (_, index) => CachedNetworkImage(
+          imageUrl: NotificationData.bannerImages[index],
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+          placeholder: (_, __) =>
+              const Center(child: CircularProgressIndicator()),
+          errorWidget: (_, __, ___) =>
+              const Center(child: Icon(Icons.error)),
+        ),
       ),
     );
   }
@@ -1025,18 +1037,19 @@ class _BannerIndicators extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(count, (index) {
-        return Padding(
+      children: List.generate(
+        count,
+        (i) => Padding(
           padding: const EdgeInsets.symmetric(horizontal: 2),
           child: GestureDetector(
-            onTap: () => onTap(index),
+            onTap: () => onTap(i),
             child: Icon(
-              currentIndex == index ? Icons.circle : Icons.circle_outlined,
+              currentIndex == i ? Icons.circle : Icons.circle_outlined,
               size: 15,
             ),
           ),
-        );
-      }),
+        ),
+      ),
     );
   }
 }
@@ -1054,17 +1067,17 @@ class _ContentTypeTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final languageProvider = Provider.of<LanguageProvider>(context);
+    final lang = Provider.of<LanguageProvider>(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         _TabButton(
-          label: languageProvider.translate(en: "Message", th: "ข้อความ"),
+          label: lang.translate(en: 'Message', th: 'ข้อความ'),
           isSelected: currentType == 0,
           onTap: () => onTabChanged(0),
         ),
         _TabButton(
-          label: languageProvider.translate(en: "News", th: "ข่าว"),
+          label: lang.translate(en: 'News', th: 'ข่าว'),
           isSelected: currentType == 1,
           onTap: () => onTabChanged(1),
         ),
@@ -1110,278 +1123,6 @@ class _TabButton extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-// ============================================================================
-// Content List
-// ============================================================================
-
-class _ContentList extends StatelessWidget {
-  final PageController controller;
-  final List<dynamic> items;
-  final Function(String) onLearnMore;
-
-  const _ContentList({
-    required this.controller,
-    required this.items,
-    required this.onLearnMore,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return PageView.builder(
-      controller: controller,
-      itemCount: items.length,
-      scrollDirection: Axis.vertical,
-      itemBuilder: (context, index) {
-        return _ContentCard(item: items[index], onLearnMore: onLearnMore);
-      },
-    );
-  }
-}
-
-// ============================================================================
-// Content Card
-// ============================================================================
-
-class _ContentCard extends StatelessWidget {
-  final dynamic item;
-  final Function(String) onLearnMore;
-
-  const _ContentCard({required this.item, required this.onLearnMore});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-      child: Row(
-        children: [
-          _ContentImage(imageUrl: item.image_url ?? ''),
-          const SizedBox(width: 10),
-          Expanded(
-              child: _ContentDetails(item: item, onLearnMore: onLearnMore)),
-        ],
-      ),
-    );
-  }
-}
-
-class _ContentImage extends StatelessWidget {
-  final String imageUrl;
-
-  const _ContentImage({required this.imageUrl});
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: CachedNetworkImage(
-        imageUrl: imageUrl,
-        fit: BoxFit.cover,
-        width: 180,
-        height: 180,
-        placeholder: (context, url) => const CircularProgressIndicator.adaptive(
-          backgroundColor: Colors.white,
-          valueColor:
-              AlwaysStoppedAnimation<Color>(Color.fromARGB(75, 50, 50, 50)),
-        ),
-        errorWidget: (context, url, error) => Container(
-          width: 180,
-          height: 180,
-          color: Colors.grey.shade200,
-          child: const Icon(Icons.error, size: 40),
-        ),
-      ),
-    );
-  }
-}
-
-class _ContentDetails extends StatelessWidget {
-  final dynamic item;
-  final Function(String) onLearnMore;
-
-  const _ContentDetails({required this.item, required this.onLearnMore});
-
-  @override
-  Widget build(BuildContext context) {
-    final price = _parseDouble(item.price);
-    final discountPrice = item is NotificationItemMess
-        ? _parseDouble((item as NotificationItemMess).discount_price)
-        : 0.0;
-    final hasDiscount = discountPrice > 0 && discountPrice < price;
-    final isMessage = item is NotificationItemMess;
-    final discountPercentRaw =
-        isMessage ? (item as NotificationItemMess).discount_percent : '';
-    final discountPercentClean = discountPercentRaw.replaceAll('%', '').trim();
-
-    return Container(
-      padding: const EdgeInsets.all(8),
-      height: 200,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            isMessage
-                ? '${item.clothing_name} ลดพิเศษ!'
-                : item.clothing_name ?? '',
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.primary,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  _formatDate(item.create_at ?? '', context),
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 1, // บังคับให้อยู่บรรทัดเดียว
-                  overflow: TextOverflow.ellipsis, // ถ้าเวลายาวเกินให้ขึ้น ...
-                ),
-              ),
-              if (hasDiscount && discountPercentClean.isNotEmpty) ...[
-                const SizedBox(width: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.red,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    '-$discountPercentClean%',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-          const Spacer(),
-          _ActionButtons(
-            itemId: item.id ?? '',
-            itemUuid: item.uuid ?? '',
-            onLearnMore: onLearnMore,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ============================================================================
-// Action Buttons
-// ============================================================================
-
-class _ActionButtons extends StatefulWidget {
-  final String itemId;
-  final String itemUuid;
-  final Function(String) onLearnMore;
-
-  const _ActionButtons({
-    required this.itemId,
-    required this.itemUuid,
-    required this.onLearnMore,
-  });
-
-  @override
-  State<_ActionButtons> createState() => _ActionButtonsState();
-}
-
-class _ActionButtonsState extends State<_ActionButtons> {
-  bool _isAddingToCart = false;
-
-  Future<void> _handleAddToCart() async {
-    if (_isAddingToCart) return;
-    setState(() => _isAddingToCart = true);
-    final languageProvider =
-        Provider.of<LanguageProvider>(context, listen: false);
-    try {
-      //  ดึง uuid จาก item
-      await BasketApiService().addToBasket(clothingUuid: widget.itemUuid);
-      if (mounted) {
-        showTopSnackBar(
-          Overlay.of(context),
-          CustomSnackBar.success(
-            message: languageProvider.translate(
-              en: 'Added to Basket successfully!',
-              th: 'เพิ่มลงตะกร้าสำเร็จ!',
-            ),
-          ),
-          animationDuration: const Duration(milliseconds: 1000),
-          reverseAnimationDuration: const Duration(milliseconds: 200),
-          displayDuration: const Duration(milliseconds: 1000),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        showTopSnackBar(
-          Overlay.of(context),
-          CustomSnackBar.error(
-            message: languageProvider.translate(
-              en: 'Failed to add to Basket: $e',
-              th: 'เพิ่มลงตะกร้าไม่สำเร็จ: $e',
-            ),
-          ),
-          animationDuration: const Duration(milliseconds: 1000),
-          reverseAnimationDuration: const Duration(milliseconds: 200),
-          displayDuration: const Duration(milliseconds: 1000),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isAddingToCart = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: [
-        FloatingActionButton.small(
-          heroTag: 'notif_cart_${widget.itemId}',
-          onPressed: _isAddingToCart ? null : _handleAddToCart,
-          backgroundColor: _isAddingToCart
-              ? Colors.grey
-              : Theme.of(context).floatingActionButtonTheme.backgroundColor,
-          child: _isAddingToCart
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-              : Icon(
-                  Icons.shopping_cart_outlined,
-                  size: 30,
-                  color: Theme.of(context)
-                      .floatingActionButtonTheme
-                      .foregroundColor,
-                ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: ElevatedButton(
-            onPressed: () => widget.onLearnMore(widget.itemId),
-            child: const Icon(Icons.read_more_outlined, size: 30),
-          ),
-        ),
-      ],
     );
   }
 }
@@ -1525,47 +1266,39 @@ class NotificationData {
 }
 
 // ============================================================================
-// Helper Functions
+// Helpers
 // ============================================================================
 
 String _formatDate(String dateString, BuildContext context) {
   if (dateString.isEmpty) return '';
-  final languageProvider =
-      Provider.of<LanguageProvider>(context, listen: false);
+  final lang = Provider.of<LanguageProvider>(context, listen: false);
   try {
-    DateTime dateTime;
+    DateTime dt;
     if (dateString.contains('T')) {
-      dateTime = DateTime.parse(dateString);
+      dt = DateTime.parse(dateString);
     } else if (dateString.contains('-') && dateString.length >= 10) {
-      dateTime = DateTime.parse(dateString.replaceAll(' ', 'T'));
+      dt = DateTime.parse(dateString.replaceAll(' ', 'T'));
     } else {
       return dateString;
     }
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-    if (difference.inMinutes < 1) {
-      return languageProvider.translate(en: 'Just now', th: 'เมื่อสักครู่');
-    } else if (difference.inMinutes < 60) {
-      return languageProvider.translate(
-        en: '${difference.inMinutes} min ago',
-        th: '${difference.inMinutes} นาทีที่แล้ว',
-      );
-    } else if (difference.inHours < 24) {
-      final hours = difference.inHours;
-      return languageProvider.translate(
-        en: '$hours hour${hours > 1 ? 's' : ''} ago',
-        th: '$hours ชั่วโมงที่แล้ว',
-      );
-    } else if (difference.inDays < 7) {
-      final days = difference.inDays;
-      return languageProvider.translate(
-        en: '$days day${days > 1 ? 's' : ''} ago',
-        th: '$days วันที่แล้ว',
-      );
+    final diff = DateTime.now().difference(dt);
+    if (diff.inMinutes < 1) {
+      return lang.translate(en: 'Just now', th: 'เมื่อสักครู่');
+    } else if (diff.inMinutes < 60) {
+      return lang.translate(
+          en: '${diff.inMinutes} min ago', th: '${diff.inMinutes} นาทีที่แล้ว');
+    } else if (diff.inHours < 24) {
+      final h = diff.inHours;
+      return lang.translate(
+          en: '$h hour${h > 1 ? 's' : ''} ago', th: '$h ชั่วโมงที่แล้ว');
+    } else if (diff.inDays < 7) {
+      final d = diff.inDays;
+      return lang.translate(
+          en: '$d day${d > 1 ? 's' : ''} ago', th: '$d วันที่แล้ว');
     } else {
-      return DateFormat('MMM dd, yyyy').format(dateTime);
+      return DateFormat('MMM dd, yyyy').format(dt);
     }
-  } catch (e) {
+  } catch (_) {
     return dateString;
   }
 }

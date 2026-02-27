@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_1/provider/theme_provider.dart';
-import 'package:flutter_application_1/screen/edit_profile.dart';
+import 'package:flutter_application_1/screen/Edit_Profile.dart';
 import 'package:flutter_application_1/screen/signin_user.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
@@ -138,7 +138,7 @@ class _ProfileState extends State<Profile> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => editProfilePage(),
+                                  builder: (context) => EditProfilePage(),
                                 ),
                               );
                             },

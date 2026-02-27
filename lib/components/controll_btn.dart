@@ -13,7 +13,7 @@ import 'package:flutter_application_1/provider/theme_provider.dart';
 import 'package:flutter_application_1/screen/basket_page.dart';
 import 'package:flutter_application_1/screen/favorite_page.dart';
 import 'package:provider/provider.dart';
-import '../screen/Measue_SizeCat.dart';
+import '../screen/measure_size_cat.dart';
 
 class MyControll extends StatefulWidget {
   const MyControll({super.key});
