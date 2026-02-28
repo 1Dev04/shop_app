@@ -3,6 +3,7 @@
 import 'dart:convert';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/api/service_fav_backet.dart';
@@ -288,13 +289,14 @@ class _NotificationViewState extends State<_NotificationView> {
                                 isLoading: isDetailLoading || isBasketLoading,
                                 onLearnMore: (id) => ctx
                                     .read<NotificationBloc>()
-                                    .add(NotificationMessageDetailRequested(id)),
+                                    .add(
+                                        NotificationMessageDetailRequested(id)),
                                 onAddToBasket: (uuid) => ctx
                                     .read<NotificationBloc>()
-                                    .add(NotificationAddToBasketRequested(uuid)),
-                                basketLoadingUuid: isBasketLoading
-                                    ? state.uuid
-                                    : null,
+                                    .add(
+                                        NotificationAddToBasketRequested(uuid)),
+                                basketLoadingUuid:
+                                    isBasketLoading ? state.uuid : null,
                               ),
 
                         // News Tab
@@ -312,10 +314,10 @@ class _NotificationViewState extends State<_NotificationView> {
                                     .add(NotificationNewsDetailRequested(id)),
                                 onAddToBasket: (uuid) => ctx
                                     .read<NotificationBloc>()
-                                    .add(NotificationAddToBasketRequested(uuid)),
-                               basketLoadingUuid: isBasketLoading
-                                    ? state.uuid
-                                    : null,
+                                    .add(
+                                        NotificationAddToBasketRequested(uuid)),
+                                basketLoadingUuid:
+                                    isBasketLoading ? state.uuid : null,
                               ),
                       ],
                     ),
@@ -401,7 +403,7 @@ class _ContentCard extends StatelessWidget {
     final discountPercentRaw =
         isMessage ? (item as NotificationItemMess).discount_percent : '';
     final discountPercentClean = discountPercentRaw.replaceAll('%', '').trim();
-
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       child: Row(
@@ -486,7 +488,31 @@ class _ContentCard extends StatelessWidget {
                         heroTag: 'notif_cart_${item.id}',
                         onPressed: (isLoading || isBasketLoading)
                             ? null
-                            : () => onAddToBasket(item.uuid ?? ''),
+                            : () {
+                                if (FirebaseAuth.instance.currentUser?.email ==
+                                    'guest678@gmail.com') {
+                                  showDialog(
+                                    context: context,
+                                    builder: (_) => AlertDialog(
+                                      backgroundColor: isDark
+                                          ? Colors.grey[900]
+                                          : Colors.white,
+                                      title: const Text('Members Only'),
+                                      content: const Text(
+                                          'Please login to edit your profile.'),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context),
+                                          child: const Text('Cancel'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                  return;
+                                }
+                                onAddToBasket(item.uuid ?? '');
+                              },
                         backgroundColor: isBasketLoading
                             ? Colors.grey
                             : Theme.of(context)
@@ -515,8 +541,7 @@ class _ContentCard extends StatelessWidget {
                           onPressed: isLoading
                               ? null
                               : () => onLearnMore(item.id ?? ''),
-                          child:
-                              const Icon(Icons.read_more_outlined, size: 30),
+                          child: const Icon(Icons.read_more_outlined, size: 30),
                         ),
                       ),
                     ],
@@ -576,8 +601,28 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
   }
 
   Future<void> _toggleFavourite() async {
+    if (FirebaseAuth.instance.currentUser?.email == 'guest678@gmail.com') {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          backgroundColor: isDark ? Colors.grey[900] : Colors.white,
+          title: const Text('Members Only'),
+          content: const Text('Please login to edit your profile.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
     if (_isProcessing) return;
     setState(() => _isProcessing = true);
+
+    
     final languageProvider =
         Provider.of<LanguageProvider>(context, listen: false);
     try {
@@ -589,8 +634,7 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
             Overlay.of(context),
             CustomSnackBar.info(
               message: languageProvider.translate(
-                  en: 'Removed from favourites!',
-                  th: 'ลบออกจากรายการโปรดแล้ว'),
+                  en: 'Removed from favourites!', th: 'ลบออกจากรายการโปรดแล้ว'),
             ),
             animationDuration: const Duration(milliseconds: 1000),
             reverseAnimationDuration: const Duration(milliseconds: 200),
@@ -634,6 +678,25 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
   }
 
   Future<void> _addToBasket() async {
+    if (FirebaseAuth.instance.currentUser?.email == 'guest678@gmail.com') {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          backgroundColor: isDark ? Colors.grey[900] : Colors.white,
+          title: const Text('Members Only'),
+          content: const Text('Please login to edit your profile.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     final languageProvider =
         Provider.of<LanguageProvider>(context, listen: false);
     try {
@@ -644,7 +707,8 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
           Overlay.of(context),
           CustomSnackBar.success(
             message: languageProvider.translate(
-                en: 'Added to Basket successfully!', th: 'เพิ่มลงตะกร้าสำเร็จ!'),
+                en: 'Added to Basket successfully!',
+                th: 'เพิ่มลงตะกร้าสำเร็จ!'),
           ),
           animationDuration: const Duration(milliseconds: 1000),
           reverseAnimationDuration: const Duration(milliseconds: 200),
@@ -721,8 +785,7 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
                                         child: CircularProgressIndicator())),
                                 errorWidget: (_, __, ___) => const SizedBox(
                                     height: 300,
-                                    child:
-                                        Center(child: Icon(Icons.error))),
+                                    child: Center(child: Icon(Icons.error))),
                               ),
                               CachedNetworkImage(
                                 imageUrl: _imagesMap['image_clothing'] ?? '',
@@ -735,8 +798,7 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
                                         child: CircularProgressIndicator())),
                                 errorWidget: (_, __, ___) => const SizedBox(
                                     height: 300,
-                                    child:
-                                        Center(child: Icon(Icons.error))),
+                                    child: Center(child: Icon(Icons.error))),
                               ),
                             ],
                           ),
@@ -752,8 +814,7 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
                           children: List.generate(2, (i) {
                             return AnimatedContainer(
                               duration: const Duration(milliseconds: 300),
-                              margin:
-                                  const EdgeInsets.symmetric(horizontal: 4),
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
                               width: _currentImagePage == i ? 20 : 8,
                               height: 8,
                               decoration: BoxDecoration(
@@ -786,9 +847,8 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
                                     height: 24,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      valueColor:
-                                          AlwaysStoppedAnimation<Color>(
-                                              Colors.white),
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.white),
                                     ),
                                   )
                                 : Icon(
@@ -883,9 +943,8 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
                                   style: TextStyle(
                                     fontSize: 28,
                                     fontWeight: FontWeight.bold,
-                                    color: hasDiscount
-                                        ? Colors.red
-                                        : Colors.black,
+                                    color:
+                                        hasDiscount ? Colors.red : Colors.black,
                                   ),
                                 ),
                                 if (hasDiscount) const SizedBox(width: 10),
@@ -922,8 +981,8 @@ class _NotificationDetailCardState extends State<_NotificationDetailCard> {
                                   style: const TextStyle(fontSize: 16),
                                 ),
                                 style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                      vertical: 16),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
                                   backgroundColor: Colors.black,
                                 ),
                               ),
@@ -1010,8 +1069,7 @@ class _BannerCarousel extends StatelessWidget {
           height: double.infinity,
           placeholder: (_, __) =>
               const Center(child: CircularProgressIndicator()),
-          errorWidget: (_, __, ___) =>
-              const Center(child: Icon(Icons.error)),
+          errorWidget: (_, __, ___) => const Center(child: Icon(Icons.error)),
         ),
       ),
     );

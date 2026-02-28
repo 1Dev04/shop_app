@@ -1,9 +1,9 @@
 // ----Control Button--------------------------------------------------------------------------
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_application_1/components/home_page.dart';
-
 import 'package:flutter_application_1/components/menu_page.dart';
 import 'package:flutter_application_1/components/notification_page.dart';
 import 'package:flutter_application_1/components/search_page.dart';
@@ -12,6 +12,7 @@ import 'package:flutter_application_1/provider/language_provider.dart';
 import 'package:flutter_application_1/provider/theme_provider.dart';
 import 'package:flutter_application_1/screen/basket_page.dart';
 import 'package:flutter_application_1/screen/favorite_page.dart';
+import 'package:flutter_application_1/screen/signin_user.dart';
 import 'package:provider/provider.dart';
 import '../screen/measure_size_cat.dart';
 
@@ -23,14 +24,10 @@ class MyControll extends StatefulWidget {
 }
 
 class _MyControllState extends State<MyControll> {
-  //Change Screen
   var screenIndex = 1;
-  //Active Button
   int activeButton = 1;
-  //Push Screen
   var screenPushIndex = 0;
 
-  //Page Screen
   final mobileScreen = [
     SearchPage(),
     HomePage(),
@@ -39,38 +36,70 @@ class _MyControllState extends State<MyControll> {
     MenuPage(),
   ];
 
-  //Set Header Title EN
-  String setTitleEN() {
-    if (screenIndex == 0) {
-      return "Search";
-    } else if (screenIndex == 1) {
-      return "ABC shop";
-    } else if (screenIndex == 2) {
-      return "Shops";
-    } else if (screenIndex == 3) {
-      return "Notification";
-    } else if (screenIndex == 4) {
-      return "Menu";
-    }
+  // ── Guest helper ──────────────────────────────────────────────────────────
+  bool get _isGuest =>
+      FirebaseAuth.instance.currentUser?.email == 'guest678@gmail.com';
 
-    return setTitleEN();
+  void _showGuestDialog(BuildContext context) {
+    final languageProvider =
+        Provider.of<LanguageProvider>(context, listen: false);
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        
+        backgroundColor: isDark ? Colors.grey[900] : Colors.white,
+        title: Text(languageProvider.translate(
+          en: 'Members Only',
+          th: 'สำหรับสมาชิกเท่านั้น',
+        )),
+        content: Text(languageProvider.translate(
+          en: 'Please register or login to access this feature.',
+          th: 'กรุณาสมัครสมาชิก หรือเข้าสู่ระบบเพื่อใช้งาน',
+        )),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(languageProvider.translate(
+              en: 'Cancel',
+              th: 'ยกเลิก',
+            )),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const Login()),
+              );
+            },
+            child: Text(languageProvider.translate(
+              en: 'Login / Register',
+              th: 'เข้าสู่ระบบ / สมัครสมาชิก',
+            )),
+          ),
+        ],
+      ),
+    );
   }
 
-  //Set Header Title TH
-  String setTitleTH() {
-    if (screenIndex == 0) {
-      return "ค้นหา";
-    } else if (screenIndex == 1) {
-      return "ร้าน ABC";
-    } else if (screenIndex == 2) {
-      return "ร้านค้า";
-    } else if (screenIndex == 3) {
-      return "การแจ้งเตือน";
-    } else if (screenIndex == 4) {
-      return "เมนู";
-    }
+  // ── Title helpers ─────────────────────────────────────────────────────────
+  String setTitleEN() {
+    if (screenIndex == 0) return "Search";
+    if (screenIndex == 1) return "ABC shop";
+    if (screenIndex == 2) return "Shops";
+    if (screenIndex == 3) return "Notification";
+    if (screenIndex == 4) return "Menu";
+    return "ABC shop";
+  }
 
-    return setTitleTH();
+  String setTitleTH() {
+    if (screenIndex == 0) return "ค้นหา";
+    if (screenIndex == 1) return "ร้าน ABC";
+    if (screenIndex == 2) return "ร้านค้า";
+    if (screenIndex == 3) return "การแจ้งเตือน";
+    if (screenIndex == 4) return "เมนู";
+    return "ร้าน ABC";
   }
 
   @override
@@ -115,33 +144,39 @@ class _MyControllState extends State<MyControll> {
               color: AppBarTheme.of(context).iconTheme?.color,
             ),
           ),
-          SizedBox(
-            width: 10,
-          ),
+          const SizedBox(width: 10),
           IconButton(
-              onPressed: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => FavouritePage()));
-              },
-              icon: Icon(
-                Icons.favorite_border_outlined,
-                color: AppBarTheme.of(context).iconTheme?.color,
-                size: 30,
-              )),
-          SizedBox(
-            width: 10,
+            onPressed: () {
+              if (_isGuest) {
+                _showGuestDialog(context);
+                return;
+              }
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => FavouritePage()));
+            },
+            icon: Icon(
+              Icons.favorite_border_outlined,
+              color: AppBarTheme.of(context).iconTheme?.color,
+              size: 30,
+            ),
           ),
+          const SizedBox(width: 10),
           IconButton(
-              onPressed: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => BasketPage()));
-              },
-              icon: Icon(
-                Icons.add_shopping_cart_sharp,
-                color: AppBarTheme.of(context).iconTheme?.color,
-                size: 30,
-              )),
-          SizedBox(width: 10)
+            onPressed: () {
+              if (_isGuest) {
+                _showGuestDialog(context);
+                return;
+              }
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => BasketPage()));
+            },
+            icon: Icon(
+              Icons.add_shopping_cart_sharp,
+              color: AppBarTheme.of(context).iconTheme?.color,
+              size: 30,
+            ),
+          ),
+          const SizedBox(width: 10),
         ],
       ),
 
@@ -158,59 +193,51 @@ class _MyControllState extends State<MyControll> {
           color: themeProvider.themeMode == ThemeMode.dark
               ? Colors.black
               : Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(0),
-            topRight: Radius.circular(0),
-          ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
+            // Home
             GestureDetector(
-              onTap: () {
-                setState(() {
-                  screenIndex = 1;
-                  activeButton = 1;
-                });
-              },
+              onTap: () => setState(() {
+                screenIndex = 1;
+                activeButton = 1;
+              }),
               child: Icon(
                 screenIndex == 1 ? Icons.home : Icons.home_outlined,
                 size: 30,
-                color: activeButton == 1
-                    ? AppBarTheme.of(context).iconTheme?.color
-                    : AppBarTheme.of(context).iconTheme?.color,
+                color: AppBarTheme.of(context).iconTheme?.color,
               ),
             ),
+            // Shop
             GestureDetector(
-              onTap: () {
-                setState(() {
-                  screenIndex = 2;
-                  activeButton = 2;
-                });
-              },
+              onTap: () => setState(() {
+                screenIndex = 2;
+                activeButton = 2;
+              }),
               child: Icon(
                 screenIndex == 2
                     ? Icons.shopping_bag
                     : Icons.shopping_bag_outlined,
                 size: 30,
-                color: activeButton == 2
-                    ? AppBarTheme.of(context).iconTheme?.color
-                    : AppBarTheme.of(context).iconTheme?.color,
+                color: AppBarTheme.of(context).iconTheme?.color,
               ),
             ),
+            // Measure cat
             GestureDetector(
               onTap: () {
+                if (_isGuest) {
+                  _showGuestDialog(context);
+                  return;
+                }
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => MeasureSizeCat()),
                 ).then((_) {
-                  // ✅ กลับมาให้ reset เป็น home แทน
-                  if (mounted) {
-                    setState(() {
-                      screenIndex = 1;
-                      activeButton = 1;
-                    });
-                  }
+                  if (mounted) setState(() {
+                    screenIndex = 1;
+                    activeButton = 1;
+                  });
                 });
               },
               child: Image.network(
@@ -220,25 +247,27 @@ class _MyControllState extends State<MyControll> {
                 color: AppBarTheme.of(context).iconTheme?.color,
               ),
             ),
+            // Notification
             GestureDetector(
-              onTap: () {
-                setState(() {
-                  screenIndex = 3;
-                  activeButton = 3;
-                });
-              },
+              onTap: () => setState(() {
+                screenIndex = 3;
+                activeButton = 3;
+              }),
               child: Icon(
                 screenIndex == 3
                     ? Icons.notifications
                     : Icons.notifications_outlined,
                 size: 30,
-                color: activeButton == 3
-                    ? AppBarTheme.of(context).iconTheme?.color
-                    : AppBarTheme.of(context).iconTheme?.color,
+                color: AppBarTheme.of(context).iconTheme?.color,
               ),
             ),
+            // Menu
             GestureDetector(
               onTap: () {
+                if (_isGuest) {
+                  _showGuestDialog(context);
+                  return;
+                }
                 setState(() {
                   screenIndex = 4;
                   activeButton = 4;
@@ -247,9 +276,7 @@ class _MyControllState extends State<MyControll> {
               child: Icon(
                 screenIndex == 4 ? Icons.menu_open : Icons.menu,
                 size: 30,
-                color: activeButton == 4
-                    ? AppBarTheme.of(context).iconTheme?.color
-                    : AppBarTheme.of(context).iconTheme?.color,
+                color: AppBarTheme.of(context).iconTheme?.color,
               ),
             ),
           ],

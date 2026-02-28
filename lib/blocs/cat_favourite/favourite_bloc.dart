@@ -128,4 +128,8 @@ class FavouriteBloc extends Bloc<FavouriteEvent, FavouriteState> {
     if (s is FavouriteToggleSuccess) return s.items;
     return [];
   }
+
+
+  
 }
+

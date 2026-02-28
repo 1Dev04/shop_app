@@ -22,6 +22,8 @@ String getBaseUrl() {
     return 'https://catshop-backend-v2.onrender.com';
   }
 
+  if (env == 'prod-v3') return 'https://cat-shop-backend.onrender.com';
+
   if (kIsWeb) {
     return 'http://localhost:10000';
   }

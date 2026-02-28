@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/api/service_fav_backet.dart';
 import 'package:flutter_application_1/blocs/cat_search/search_bloc.dart';
@@ -45,7 +46,8 @@ class SearchCategory {
   final String name;
   final String categoryType;
 
-  SearchCategory({required this.id, required this.name, required this.categoryType});
+  SearchCategory(
+      {required this.id, required this.name, required this.categoryType});
 
   factory SearchCategory.fromJson(Map<String, dynamic> json) {
     return SearchCategory(
@@ -157,8 +159,8 @@ class GradientText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ShaderMask(
-      shaderCallback: (bounds) =>
-          gradient.createShader(Rect.fromLTWH(0, 0, bounds.width, bounds.height)),
+      shaderCallback: (bounds) => gradient
+          .createShader(Rect.fromLTWH(0, 0, bounds.width, bounds.height)),
       child: Text(text, style: style.copyWith(color: Colors.white)),
     );
   }
@@ -174,8 +176,7 @@ class SearchPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => SearchBloc()
-        ..add(const SearchAutocompleteRequested('')),
+      create: (_) => SearchBloc()..add(const SearchAutocompleteRequested('')),
       child: const _SearchView(),
     );
   }
@@ -304,7 +305,8 @@ class _SearchViewState extends State<_SearchView> {
         final showGenderFilters = _showGenderFiltersFromState(state);
         final hasSelected = _hasSelectedFromState(state);
         final selectedGender = _selectedGenderFromState(state);
-        final basketUuid = state is SearchBasketInProgress ? state.basketUuid : null;
+        final basketUuid =
+            state is SearchBasketInProgress ? state.basketUuid : null;
 
         final isResultsLoading = state is SearchResultsLoading;
         final isOutfitsLoading = state is SearchOutfitsLoading;
@@ -447,7 +449,8 @@ class _SearchViewState extends State<_SearchView> {
     required bool isOutfitsLoading,
     required String? basketUuid,
   }) {
-    if (isOutfitsLoading) return const Center(child: CircularProgressIndicator());
+    if (isOutfitsLoading)
+      return const Center(child: CircularProgressIndicator());
     if (outfits.isNotEmpty) {
       return _buildOutfitSuggestionsList(
         ctx: ctx,
@@ -456,7 +459,8 @@ class _SearchViewState extends State<_SearchView> {
         basketUuid: basketUuid,
       );
     }
-    if (isResultsLoading) return const Center(child: CircularProgressIndicator());
+    if (isResultsLoading)
+      return const Center(child: CircularProgressIndicator());
     if (results.isEmpty) return _buildEmptyState(languageProvider, isDark);
     return _buildSearchResultsGrid(ctx: ctx, results: results);
   }
@@ -475,7 +479,9 @@ class _SearchViewState extends State<_SearchView> {
           IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: currentPage > 1
-                ? () => ctx.read<SearchBloc>().add(SearchPageChanged(currentPage - 1))
+                ? () => ctx
+                    .read<SearchBloc>()
+                    .add(SearchPageChanged(currentPage - 1))
                 : null,
           ),
           Text(
@@ -488,7 +494,9 @@ class _SearchViewState extends State<_SearchView> {
           IconButton(
             icon: const Icon(Icons.arrow_forward),
             onPressed: currentPage < totalPages
-                ? () => ctx.read<SearchBloc>().add(SearchPageChanged(currentPage + 1))
+                ? () => ctx
+                    .read<SearchBloc>()
+                    .add(SearchPageChanged(currentPage + 1))
                 : null,
           ),
         ],
@@ -511,7 +519,9 @@ class _SearchViewState extends State<_SearchView> {
             label: languageProvider.translate(en: 'All', th: 'ทั้งหมด'),
             icon: Icons.pets,
             isSelected: selectedGender == null,
-            onTap: () => ctx.read<SearchBloc>().add(const SearchGenderFilterChanged(null)),
+            onTap: () => ctx
+                .read<SearchBloc>()
+                .add(const SearchGenderFilterChanged(null)),
             color: Colors.purple,
           ),
           const SizedBox(width: 8),
@@ -519,7 +529,8 @@ class _SearchViewState extends State<_SearchView> {
             label: languageProvider.translate(en: 'Unisex', th: 'ยูนิเซ็กซ์'),
             icon: Icons.all_inclusive,
             isSelected: selectedGender == 0,
-            onTap: () => ctx.read<SearchBloc>().add(const SearchGenderFilterChanged(0)),
+            onTap: () =>
+                ctx.read<SearchBloc>().add(const SearchGenderFilterChanged(0)),
             color: Colors.purple,
           ),
           const SizedBox(width: 8),
@@ -527,7 +538,8 @@ class _SearchViewState extends State<_SearchView> {
             label: languageProvider.translate(en: 'Male', th: 'เพศผู้'),
             icon: Icons.male,
             isSelected: selectedGender == 1,
-            onTap: () => ctx.read<SearchBloc>().add(const SearchGenderFilterChanged(1)),
+            onTap: () =>
+                ctx.read<SearchBloc>().add(const SearchGenderFilterChanged(1)),
             color: Colors.blue,
           ),
           const SizedBox(width: 8),
@@ -535,7 +547,8 @@ class _SearchViewState extends State<_SearchView> {
             label: languageProvider.translate(en: 'Female', th: 'เพศเมีย'),
             icon: Icons.female,
             isSelected: selectedGender == 2,
-            onTap: () => ctx.read<SearchBloc>().add(const SearchGenderFilterChanged(2)),
+            onTap: () =>
+                ctx.read<SearchBloc>().add(const SearchGenderFilterChanged(2)),
             color: Colors.pink,
           ),
           const SizedBox(width: 8),
@@ -543,7 +556,8 @@ class _SearchViewState extends State<_SearchView> {
             label: languageProvider.translate(en: 'Kitten', th: 'ลูกแมว'),
             icon: Icons.child_care,
             isSelected: selectedGender == 3,
-            onTap: () => ctx.read<SearchBloc>().add(const SearchGenderFilterChanged(3)),
+            onTap: () =>
+                ctx.read<SearchBloc>().add(const SearchGenderFilterChanged(3)),
             color: Colors.orange,
           ),
         ],
@@ -555,7 +569,8 @@ class _SearchViewState extends State<_SearchView> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(Icons.pets_rounded, size: 80, color: isDark ? Colors.grey[600] : Colors.grey[400]),
+        Icon(Icons.pets_rounded,
+            size: 80, color: isDark ? Colors.grey[600] : Colors.grey[400]),
         const SizedBox(height: 20),
         Text(
           languageProvider.translate(en: 'Not Found', th: 'ไม่พบข้อมูล'),
@@ -598,7 +613,8 @@ class _SearchViewState extends State<_SearchView> {
         final item = results[index];
         return _ResultCard(
           item: item,
-          onTap: () => ctx.read<SearchBloc>().add(SearchItemDetailRequested(item)),
+          onTap: () =>
+              ctx.read<SearchBloc>().add(SearchItemDetailRequested(item)),
         );
       },
     );
@@ -616,11 +632,14 @@ class _SearchViewState extends State<_SearchView> {
           padding: const EdgeInsets.all(16.0),
           child: Row(
             children: [
-              const Icon(Icons.lightbulb_outline, color: Colors.orange, size: 24),
+              const Icon(Icons.lightbulb_outline,
+                  color: Colors.orange, size: 24),
               const SizedBox(width: 8),
               Text(
-                languageProvider.translate(en: 'Recommended Outfits', th: 'ชุดแนะนำ'),
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                languageProvider.translate(
+                    en: 'Recommended Outfits', th: 'ชุดแนะนำ'),
+                style:
+                    const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const Spacer(),
               Text(
@@ -639,9 +658,11 @@ class _SearchViewState extends State<_SearchView> {
               return _OutfitSuggestionCard(
                 item: item,
                 isBasketLoading: basketUuid == item.uuid,
-                onTap: () => ctx.read<SearchBloc>().add(SearchItemDetailRequested(item)),
-                onAddToBasket: () =>
-                    ctx.read<SearchBloc>().add(SearchAddToBasketRequested(item)),
+                onTap: () =>
+                    ctx.read<SearchBloc>().add(SearchItemDetailRequested(item)),
+                onAddToBasket: () => ctx
+                    .read<SearchBloc>()
+                    .add(SearchAddToBasketRequested(item)),
               );
             },
           ),
@@ -676,7 +697,9 @@ class _SearchViewState extends State<_SearchView> {
                       borderRadius: BorderRadius.circular(30),
                       onTap: () {
                         _searchController.text = cat.name;
-                        ctx.read<SearchBloc>().add(SearchSuggestionSelected(cat));
+                        ctx
+                            .read<SearchBloc>()
+                            .add(SearchSuggestionSelected(cat));
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(
@@ -715,7 +738,8 @@ class _SearchViewState extends State<_SearchView> {
               }
             },
             decoration: InputDecoration(
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(50)),
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(50)),
               hintText: 'ᓚ₍⑅^- .-^₎ -ᶻ 𝗓 𐰁',
               prefixIcon: const Icon(Icons.search),
               suffixIcon: hasSelected
@@ -766,13 +790,19 @@ class _GenderFilterChip extends StatelessWidget {
           border: Border.all(
               color: isSelected ? color : Colors.grey[400]!, width: 2),
           boxShadow: isSelected
-              ? [BoxShadow(color: color.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 2))]
+              ? [
+                  BoxShadow(
+                      color: color.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2))
+                ]
               : [],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: isSelected ? Colors.white : Colors.grey[700], size: 20),
+            Icon(icon,
+                color: isSelected ? Colors.white : Colors.grey[700], size: 20),
             const SizedBox(width: 6),
             Text(
               label,
@@ -815,7 +845,8 @@ class _ResultCard extends StatelessWidget {
           children: [
             Expanded(
               child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(12)),
                 child: CachedNetworkImage(
                   imageUrl: item.imageUrl,
                   fit: BoxFit.cover,
@@ -832,7 +863,8 @@ class _ResultCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(item.clothingName,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 14),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 4),
@@ -935,7 +967,8 @@ class _OutfitSuggestionCard extends StatelessWidget {
                             style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.onSurface)),
+                                color:
+                                    Theme.of(context).colorScheme.onSurface)),
                       ],
                     ),
                     const SizedBox(height: 6),
@@ -949,11 +982,13 @@ class _OutfitSuggestionCard extends StatelessWidget {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        Icon(Icons.inventory_2_outlined, size: 14, color: Colors.grey[600]),
+                        Icon(Icons.inventory_2_outlined,
+                            size: 14, color: Colors.grey[600]),
                         const SizedBox(width: 4),
                         Text(
                           '${languageProvider.translate(en: "Stock", th: "สินค้า")}: ${item.stock}',
-                          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                          style:
+                              TextStyle(fontSize: 12, color: Colors.grey[600]),
                         ),
                       ],
                     ),
@@ -984,7 +1019,8 @@ class _OutfitSuggestionCard extends StatelessWidget {
                           if (hasDiscount && item.discountPercent != null) ...[
                             const SizedBox(width: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
                                   color: Colors.red,
                                   borderRadius: BorderRadius.circular(4)),
@@ -1005,10 +1041,38 @@ class _OutfitSuggestionCard extends StatelessWidget {
                 padding: const EdgeInsets.only(left: 4.0),
                 child: FloatingActionButton.small(
                   heroTag: 'basket_${item.uuid}_${item.id}',
-                  onPressed: isBasketLoading ? null : onAddToBasket,
+                  onPressed: isBasketLoading
+                      ? null
+                      : () {
+                          if (FirebaseAuth.instance.currentUser?.email ==
+                              'guest678@gmail.com') {
+                            showDialog(
+                              context: context,
+                              builder: (_) => AlertDialog(
+                                backgroundColor: isDark
+                                    ? Colors.grey[900]
+                                    : Colors.white,
+                                title: const Text('Members Only'),
+                                content: const Text(
+                                    'Please login to edit your profile.'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context),
+                                    child: const Text('Cancel'),
+                                  ),
+                                ],
+                              ),
+                            );
+                            return;
+                          }
+                          onAddToBasket();
+                        },
                   backgroundColor: isBasketLoading
                       ? Colors.grey
-                      : Theme.of(context).floatingActionButtonTheme.backgroundColor,
+                      : Theme.of(context)
+                          .floatingActionButtonTheme
+                          .backgroundColor,
                   child: isBasketLoading
                       ? const SizedBox(
                           width: 20,
@@ -1021,7 +1085,9 @@ class _OutfitSuggestionCard extends StatelessWidget {
                       : Icon(
                           Icons.shopping_cart_outlined,
                           size: 24,
-                          color: Theme.of(context).floatingActionButtonTheme.foregroundColor,
+                          color: Theme.of(context)
+                              .floatingActionButtonTheme
+                              .foregroundColor,
                         ),
                 ),
               ),
@@ -1034,10 +1100,14 @@ class _OutfitSuggestionCard extends StatelessWidget {
 
   Color _getGenderColor(int gender) {
     switch (gender) {
-      case 1: return Colors.blue;
-      case 2: return Colors.pink;
-      case 3: return Colors.orange;
-      default: return Colors.purple;
+      case 1:
+        return Colors.blue;
+      case 2:
+        return Colors.pink;
+      case 3:
+        return Colors.orange;
+      default:
+        return Colors.purple;
     }
   }
 }
@@ -1083,12 +1153,31 @@ class _ItemDetailCardState extends State<_ItemDetailCard> {
   Future<void> _checkFavouriteStatus() async {
     if (_uuid.isEmpty) return;
     try {
-      final isFav = await FavouriteApiService().checkFavourite(clothingUuid: _uuid);
+      final isFav =
+          await FavouriteApiService().checkFavourite(clothingUuid: _uuid);
       if (mounted) setState(() => _isFavourite = isFav);
     } catch (_) {}
   }
 
   Future<void> _toggleFavourite() async {
+    if (FirebaseAuth.instance.currentUser?.email == 'guest678@gmail.com') {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          backgroundColor: isDark ? Colors.grey[900] : Colors.white,
+          title: const Text('Members Only'),
+          content: const Text('Please login to edit your profile.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
     if (_isProcessing) return;
     setState(() => _isProcessing = true);
     final languageProvider =
@@ -1185,19 +1274,22 @@ class _ItemDetailCardState extends State<_ItemDetailCard> {
                               fit: BoxFit.cover,
                               placeholder: (_, __) => const SizedBox(
                                   height: 300,
-                                  child: Center(child: CircularProgressIndicator())),
+                                  child: Center(
+                                      child: CircularProgressIndicator())),
                               errorWidget: (_, __, ___) => const SizedBox(
                                   height: 300,
                                   child: Center(child: Icon(Icons.error))),
                             ),
                             CachedNetworkImage(
-                              imageUrl: widget.item.images['image_clothing'] ?? '',
+                              imageUrl:
+                                  widget.item.images['image_clothing'] ?? '',
                               width: double.infinity,
                               height: 300,
                               fit: BoxFit.cover,
                               placeholder: (_, __) => const SizedBox(
                                   height: 300,
-                                  child: Center(child: CircularProgressIndicator())),
+                                  child: Center(
+                                      child: CircularProgressIndicator())),
                               errorWidget: (_, __, ___) => const SizedBox(
                                   height: 300,
                                   child: Center(child: Icon(Icons.error))),
@@ -1247,11 +1339,14 @@ class _ItemDetailCardState extends State<_ItemDetailCard> {
                                   height: 24,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white),
                                   ),
                                 )
                               : Icon(
-                                  _isFavourite ? Icons.favorite : Icons.favorite_border,
+                                  _isFavourite
+                                      ? Icons.favorite
+                                      : Icons.favorite_border,
                                   color: Colors.white,
                                   size: 24,
                                 ),
@@ -1272,23 +1367,29 @@ class _ItemDetailCardState extends State<_ItemDetailCard> {
                                   fontSize: 24, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 5),
                           _DetailRow(
-                            label: languageProvider.translate(en: 'Category', th: 'หมวดหมู่'),
+                            label: languageProvider.translate(
+                                en: 'Category', th: 'หมวดหมู่'),
                             value: widget.item.category?.toString() ?? '',
                           ),
                           _DetailRow(
-                            label: languageProvider.translate(en: 'Size', th: 'ขนาด'),
+                            label: languageProvider.translate(
+                                en: 'Size', th: 'ขนาด'),
                             value: widget.item.sizeCategory,
                           ),
                           _DetailRow(
-                            label: languageProvider.translate(en: 'Gender', th: 'เพศ'),
-                            value: _formatGender(widget.item.gender, languageProvider),
+                            label: languageProvider.translate(
+                                en: 'Gender', th: 'เพศ'),
+                            value: _formatGender(
+                                widget.item.gender, languageProvider),
                           ),
                           _DetailRow(
-                            label: languageProvider.translate(en: 'Stock', th: 'สต็อก'),
+                            label: languageProvider.translate(
+                                en: 'Stock', th: 'สต็อก'),
                             value: widget.item.stock.toString(),
                           ),
                           _DetailRow(
-                            label: languageProvider.translate(en: 'Breed', th: 'สายพันธุ์'),
+                            label: languageProvider.translate(
+                                en: 'Breed', th: 'สายพันธุ์'),
                             value: widget.item.breed,
                           ),
                           if (widget.item.description.isNotEmpty)
@@ -1299,11 +1400,13 @@ class _ItemDetailCardState extends State<_ItemDetailCard> {
                                   languageProvider.translate(
                                       en: 'Description', th: 'รายละเอียด'),
                                   style: const TextStyle(
-                                      fontSize: 18, fontWeight: FontWeight.bold),
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold),
                                 ),
                                 const SizedBox(height: 8),
                                 Text(widget.item.description,
-                                    style: TextStyle(fontSize: 16, color: Colors.grey[700])),
+                                    style: TextStyle(
+                                        fontSize: 16, color: Colors.grey[700])),
                                 const SizedBox(height: 16),
                               ],
                             ),
@@ -1324,9 +1427,12 @@ class _ItemDetailCardState extends State<_ItemDetailCard> {
                                 style: TextStyle(
                                     fontSize: 28,
                                     fontWeight: FontWeight.bold,
-                                    color: hasDiscount ? Colors.red : Colors.black),
+                                    color: hasDiscount
+                                        ? Colors.red
+                                        : Colors.black),
                               ),
-                              if (hasDiscount && widget.item.discountPercent != null) ...[
+                              if (hasDiscount &&
+                                  widget.item.discountPercent != null) ...[
                                 const SizedBox(width: 10),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
@@ -1334,7 +1440,8 @@ class _ItemDetailCardState extends State<_ItemDetailCard> {
                                   decoration: BoxDecoration(
                                       color: Colors.red,
                                       borderRadius: BorderRadius.circular(6)),
-                                  child: Text('-${widget.item.discountPercent}%',
+                                  child: Text(
+                                      '-${widget.item.discountPercent}%',
                                       style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 16,
@@ -1349,6 +1456,30 @@ class _ItemDetailCardState extends State<_ItemDetailCard> {
                             height: 60,
                             child: ElevatedButton.icon(
                               onPressed: () async {
+                                if (FirebaseAuth.instance.currentUser?.email ==
+                                    'guest678@gmail.com') {
+                                  final isDark = Theme.of(context).brightness ==
+                                      Brightness.dark;
+                                  showDialog(
+                                    context: context,
+                                    builder: (_) => AlertDialog(
+                                      backgroundColor: isDark
+                                          ? Colors.grey[900]
+                                          : Colors.white,
+                                      title: const Text('Members Only'),
+                                      content: const Text(
+                                          'Please login to edit your profile.'),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context),
+                                          child: const Text('Cancel'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                  return;
+                                }
                                 try {
                                   await BasketApiService()
                                       .addToBasket(clothingUuid: _uuid);
@@ -1397,7 +1528,8 @@ class _ItemDetailCardState extends State<_ItemDetailCard> {
                                 style: const TextStyle(fontSize: 16),
                               ),
                               style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
                                 backgroundColor: Colors.black,
                               ),
                             ),
@@ -1460,11 +1592,16 @@ class _DetailRow extends StatelessWidget {
 
 String _formatGender(int gender, LanguageProvider lang) {
   switch (gender) {
-    case 0: return lang.translate(en: 'Unisex', th: 'ยูนิเซ็กซ์');
-    case 1: return lang.translate(en: 'Male', th: 'เพศผู้');
-    case 2: return lang.translate(en: 'Female', th: 'เพศเมีย');
-    case 3: return lang.translate(en: 'Kitten', th: 'ลูกแมว');
-    default: return lang.translate(en: 'Unknown', th: 'ไม่ระบุ');
+    case 0:
+      return lang.translate(en: 'Unisex', th: 'ยูนิเซ็กซ์');
+    case 1:
+      return lang.translate(en: 'Male', th: 'เพศผู้');
+    case 2:
+      return lang.translate(en: 'Female', th: 'เพศเมีย');
+    case 3:
+      return lang.translate(en: 'Kitten', th: 'ลูกแมว');
+    default:
+      return lang.translate(en: 'Unknown', th: 'ไม่ระบุ');
   }
 }
 
@@ -1478,18 +1615,57 @@ LinearGradient brightGradient(List<Color> colors) {
 }
 
 final Map<String, List<Color>> gradientMap = {
-  'Every Day': [const Color.fromARGB(255, 90, 102, 234), const Color.fromARGB(255, 109, 118, 202)],
-  'Pride Month': [const Color.fromARGB(255, 192, 92, 92), const Color.fromARGB(255, 192, 182, 92), const Color.fromARGB(255, 104, 200, 95), const Color.fromARGB(255, 101, 137, 190), const Color.fromARGB(255, 192, 92, 185)],
-  'Cyber': [const Color.fromARGB(255, 69, 105, 188), const Color.fromARGB(255, 48, 123, 118)],
-  'Chinese': [const Color.fromARGB(255, 160, 35, 35), const Color.fromARGB(255, 145, 137, 19)],
-  'Loy': [const Color.fromARGB(255, 65, 172, 202), const Color.fromARGB(255, 63, 65, 186)],
-  'Songkran': [const Color.fromARGB(255, 27, 150, 180), const Color.fromARGB(255, 45, 199, 132)],
-  'Valentine': [const Color.fromARGB(255, 218, 86, 128), const Color.fromARGB(255, 195, 58, 58)],
-  'Christmas': [const Color.fromARGB(255, 36, 159, 54), const Color.fromARGB(255, 169, 70, 70)],
-  'Winter': [const Color.fromARGB(255, 79, 128, 152), const Color.fromARGB(255, 40, 180, 183)],
-  'Summer': [const Color.fromARGB(255, 183, 107, 66), const Color.fromARGB(255, 185, 185, 63)],
-  'Rainy': [const Color.fromARGB(255, 68, 109, 144), const Color.fromARGB(255, 66, 109, 157)],
-  'Halloween': [const Color.fromARGB(255, 166, 102, 66), const Color.fromARGB(255, 184, 85, 85)],
+  'Every Day': [
+    const Color.fromARGB(255, 90, 102, 234),
+    const Color.fromARGB(255, 109, 118, 202)
+  ],
+  'Pride Month': [
+    const Color.fromARGB(255, 192, 92, 92),
+    const Color.fromARGB(255, 192, 182, 92),
+    const Color.fromARGB(255, 104, 200, 95),
+    const Color.fromARGB(255, 101, 137, 190),
+    const Color.fromARGB(255, 192, 92, 185)
+  ],
+  'Cyber': [
+    const Color.fromARGB(255, 69, 105, 188),
+    const Color.fromARGB(255, 48, 123, 118)
+  ],
+  'Chinese': [
+    const Color.fromARGB(255, 160, 35, 35),
+    const Color.fromARGB(255, 145, 137, 19)
+  ],
+  'Loy': [
+    const Color.fromARGB(255, 65, 172, 202),
+    const Color.fromARGB(255, 63, 65, 186)
+  ],
+  'Songkran': [
+    const Color.fromARGB(255, 27, 150, 180),
+    const Color.fromARGB(255, 45, 199, 132)
+  ],
+  'Valentine': [
+    const Color.fromARGB(255, 218, 86, 128),
+    const Color.fromARGB(255, 195, 58, 58)
+  ],
+  'Christmas': [
+    const Color.fromARGB(255, 36, 159, 54),
+    const Color.fromARGB(255, 169, 70, 70)
+  ],
+  'Winter': [
+    const Color.fromARGB(255, 79, 128, 152),
+    const Color.fromARGB(255, 40, 180, 183)
+  ],
+  'Summer': [
+    const Color.fromARGB(255, 183, 107, 66),
+    const Color.fromARGB(255, 185, 185, 63)
+  ],
+  'Rainy': [
+    const Color.fromARGB(255, 68, 109, 144),
+    const Color.fromARGB(255, 66, 109, 157)
+  ],
+  'Halloween': [
+    const Color.fromARGB(255, 166, 102, 66),
+    const Color.fromARGB(255, 184, 85, 85)
+  ],
 };
 
 LinearGradient getTextGradient(String type, String name) {

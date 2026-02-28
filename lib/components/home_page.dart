@@ -2,6 +2,7 @@
 
 import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/blocs/cat_home/home_bloc.dart';
 import 'package:flutter_application_1/blocs/cat_item_detail/item_detail_bloc.dart';
@@ -204,6 +205,7 @@ class _HomeViewState extends State<_HomeView> {
         final ads = _adsFromState(state);
         final isDetailLoading = state is HomeItemDetailLoading;
         final isBasketLoading = state is HomeBasketActionInProgress;
+             final isDark = Theme.of(context).brightness == Brightness.dark;
 
         if (ads.isEmpty) {
           return const Scaffold(
@@ -362,17 +364,44 @@ class _HomeViewState extends State<_HomeView> {
                               Row(
                                 children: [
                                   FloatingActionButton.small(
-                                    onPressed:
-                                        (isBasketLoading || isDetailLoading)
-                                            ? null
-                                            : () {
-                                                ctx.read<HomeBloc>().add(
-                                                      HomeAddToBasketRequested(
-                                                          item['uuid']
-                                                                  ?.toString() ??
-                                                              ''),
-                                                    );
-                                              },
+                                    onPressed: (isBasketLoading ||
+                                            isDetailLoading)
+                                        ? null
+                                        : () {
+                                            if (FirebaseAuth.instance
+                                                    .currentUser?.email ==
+                                                'guest678@gmail.com') {
+                                              // reuse _showGuestDialog หรือ showDialog inline
+                                              showDialog(
+                                                context: context,
+                                                builder: (_) => AlertDialog(
+                                                  backgroundColor: isDark
+                                                      ? Colors.grey[900]
+                                                      : Colors.white,
+                                                  title: const Text(
+                                                      'Members Only'),
+                                                  content: const Text(
+                                                      'Please login to edit your profile.'),
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed: () =>
+                                                          Navigator.pop(
+                                                              context),
+                                                      child:
+                                                          const Text('Cancel'),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                              return;
+                                            }
+                                            ctx.read<HomeBloc>().add(
+                                                  HomeAddToBasketRequested(
+                                                      item['uuid']
+                                                              ?.toString() ??
+                                                          ''),
+                                                );
+                                          },
                                     backgroundColor: Theme.of(context)
                                         .floatingActionButtonTheme
                                         .backgroundColor,
@@ -394,26 +423,23 @@ class _HomeViewState extends State<_HomeView> {
                                   ),
                                   const SizedBox(width: 5),
                                   ElevatedButton(
-                                    
-                                      onPressed: (isDetailLoading ||
-                                              isBasketLoading)
-                                          ? null
-                                          : () {
-                                              final itemId = int.tryParse(
-                                                      item['id']?.toString() ??
-                                                          '0') ??
-                                                  0;
-                                              ctx.read<HomeBloc>().add(
-                                                  HomeItemDetailRequested(
-                                                      itemId));
-                                            },
-                                      child: Text(
-                                        languageProvider.translate(
-                                            en: 'Learn More',
-                                            th: 'ดูเพิ่มเติม'),
-                                      ),
+                                    onPressed: (isDetailLoading ||
+                                            isBasketLoading)
+                                        ? null
+                                        : () {
+                                            final itemId = int.tryParse(
+                                                    item['id']?.toString() ??
+                                                        '0') ??
+                                                0;
+                                            ctx.read<HomeBloc>().add(
+                                                HomeItemDetailRequested(
+                                                    itemId));
+                                          },
+                                    child: Text(
+                                      languageProvider.translate(
+                                          en: 'Learn More', th: 'ดูเพิ่มเติม'),
                                     ),
-                                  
+                                  ),
                                 ],
                               ),
                               ClipRRect(
@@ -565,7 +591,7 @@ class _ItemDetailsCardState extends State<ItemDetailsCard> {
       builder: (ctx, state) {
         final isFavourite = _isFavFromState(state);
         final isProcessing = state is ItemDetailActionInProgress;
-
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return Center(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
@@ -664,6 +690,30 @@ class _ItemDetailsCardState extends State<ItemDetailsCard> {
                               onTap: isProcessing
                                   ? null
                                   : () {
+                                      if (FirebaseAuth
+                                              .instance.currentUser?.email ==
+                                          'guest678@gmail.com') {
+                                        // reuse _showGuestDialog หรือ showDialog inline
+                                        showDialog(
+                                          context: context,
+                                          builder: (_) => AlertDialog(
+                                            backgroundColor: isDark
+                                                ? Colors.grey[900]
+                                                : Colors.white,
+                                            title: const Text('Members Only'),
+                                            content: const Text(
+                                                'Please login to edit your profile.'),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () =>
+                                                    Navigator.pop(context),
+                                                child: const Text('Cancel'),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                        return;
+                                      }
                                       ctx.read<ItemDetailBloc>().add(
                                             ItemDetailFavToggleRequested(
                                               clothingUuid: uuid,
@@ -826,6 +876,33 @@ class _ItemDetailsCardState extends State<ItemDetailsCard> {
                                     onPressed: isProcessing
                                         ? null
                                         : () {
+                                            if (FirebaseAuth.instance
+                                                    .currentUser?.email ==
+                                                'guest678@gmail.com') {
+                                              // reuse _showGuestDialog หรือ showDialog inline
+                                              showDialog(
+                                                context: context,
+                                                builder: (_) => AlertDialog(
+                                                  backgroundColor: isDark
+                                                      ? Colors.grey[900]
+                                                      : Colors.white,
+                                                  title: const Text(
+                                                      'Members Only'),
+                                                  content: const Text(
+                                                      'Please login to edit your profile.'),
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed: () =>
+                                                          Navigator.pop(
+                                                              context),
+                                                      child:
+                                                          const Text('Cancel'),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                              return;
+                                            }
                                             ctx.read<ItemDetailBloc>().add(
                                                   ItemDetailAddToBasketRequested(
                                                       uuid),

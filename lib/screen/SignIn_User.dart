@@ -1,7 +1,10 @@
 // lib/screen/signin_user.dart
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/blocs/cat_auth/auth_bloc.dart';
+import 'package:flutter_application_1/documents/privacy_policy.dart';
+import 'package:flutter_application_1/documents/terms_of_use.dart';
 import 'package:flutter_application_1/provider/language_provider.dart';
 import 'package:flutter_application_1/provider/theme.dart';
 import 'package:flutter_application_1/provider/theme_provider.dart';
@@ -71,8 +74,7 @@ class _LoginViewState extends State<_LoginView> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final languageProvider = Provider.of<LanguageProvider>(context);
     final isDark = themeProvider.themeMode == ThemeMode.dark;
-    final textStyle =
-        TextStyle(color: isDark ? Colors.white : Colors.black);
+    final textStyle = TextStyle(color: isDark ? Colors.white : Colors.black);
 
     return BlocConsumer<AuthBloc, AuthState>(
       listener: (ctx, state) {
@@ -202,14 +204,12 @@ class _LoginViewState extends State<_LoginView> {
 
                       // ── Email ─────────────────────────────────────────
                       Container(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
                         child: TextFormField(
                           controller: _emailCtrl,
                           autofocus: true,
                           maxLength: 50,
-                          decoration:
-                              const InputDecoration(labelText: 'Email'),
+                          decoration: const InputDecoration(labelText: 'Email'),
                           style: textStyle,
                           validator: (v) {
                             final regex1 = RegExp(
@@ -232,8 +232,7 @@ class _LoginViewState extends State<_LoginView> {
 
                       // ── Password ──────────────────────────────────────
                       Container(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
                         child: TextFormField(
                           controller: _passwordCtrl,
                           obscureText: !_visibleP,
@@ -270,13 +269,19 @@ class _LoginViewState extends State<_LoginView> {
 
                       // ── Terms & Privacy ───────────────────────────────
                       Container(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             GestureDetector(
-                              onTap: () {},
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          const TermsOfUsePage()),
+                                );
+                              },
                               child: const Text(
                                 'Terms of Use',
                                 style: TextStyle(
@@ -286,7 +291,14 @@ class _LoginViewState extends State<_LoginView> {
                             ),
                             const SizedBox(height: 5),
                             GestureDetector(
-                              onTap: () {},
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          const PrivacyPolicyPage()),
+                                );
+                              },
                               child: const Text(
                                 'Privacy Policy',
                                 style: TextStyle(
@@ -340,33 +352,69 @@ class _LoginViewState extends State<_LoginView> {
                                   },
                             child: CircleAvatar(
                               radius: 20,
-                              backgroundColor: isLoading
-                                  ? Colors.grey.shade300
-                                  : null,
+                              backgroundColor:
+                                  isLoading ? Colors.grey.shade300 : null,
                               child: const Icon(Icons.g_mobiledata),
                             ),
                           ),
                           const SizedBox(width: 10),
+                          OutlinedButton.icon(
+                            
+                            onPressed: isLoading
+                                ? null
+                                : () async {
+                                    try {
+                                      await FirebaseAuth.instance
+                                          .signInWithEmailAndPassword(
+                                        email: 'guest678@gmail.com',
+                                        password: 'guest678@',
+                                      );
+                                      if (!ctx.mounted) return;
+                                      Navigator.pushReplacement(
+                                        ctx,
+                                        MaterialPageRoute(
+                                            builder: (_) => authPage()),
+                                      );
+                                    } catch (e) {
+                                      if (!ctx.mounted) return;
+                                      showTopSnackBar(
+                                        Overlay.of(ctx),
+                                        CustomSnackBar.error(
+                                            message: 'Guest login failed: $e'),
+                                      );
+                                    }
+                                  },
+                            icon: Icon(Icons.person_outline,
+                                color: isDark ? Colors.white : Colors.black),
+                            label: Text(
+                              languageProvider.translate(
+                                en: 'Continue as Guest',
+                                th: 'เข้าใช้งานในฐานะผู้เยี่ยมชม',
+                              ),
+                              style: TextStyle(
+                                color: isDark ? Colors.white : Colors.black,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 10),
 
                       // ── Forgot Password ───────────────────────────────
-                      Container(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 10),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Text(
-                              'Forgot password',
-                              style: TextStyle(
-                                  decoration: TextDecoration.underline,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                      ),
+                      // Container(
+                      //   padding: const EdgeInsets.symmetric(horizontal: 10),
+                      //   child: const Row(
+                      //     mainAxisAlignment: MainAxisAlignment.end,
+                      //     children: [
+                      //       Text(
+                      //         'Forgot password',
+                      //         style: TextStyle(
+                      //             decoration: TextDecoration.underline,
+                      //             fontWeight: FontWeight.bold),
+                      //       ),
+                      //     ],
+                      //   ),
+                      // ),
                       const SizedBox(height: 20),
 
                       // ── Create Account Section ────────────────────────
@@ -388,8 +436,7 @@ class _LoginViewState extends State<_LoginView> {
                       ),
                       const SizedBox(height: 20),
                       Container(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
                         child: const Text(
                             'Create an account for convenient use and faster payment.'),
                       ),
@@ -402,8 +449,7 @@ class _LoginViewState extends State<_LoginView> {
 
                       // ── Footer ────────────────────────────────────────
                       Container(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
                         child: Divider(
                           color: isDark
                               ? const Color.fromRGBO(255, 255, 255, 0.929)
@@ -413,8 +459,7 @@ class _LoginViewState extends State<_LoginView> {
                       ),
                       const SizedBox(height: 5),
                       Container(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [

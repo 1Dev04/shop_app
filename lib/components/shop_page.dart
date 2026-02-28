@@ -3,6 +3,7 @@
 import 'dart:convert';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/api/service_fav_backet.dart';
 import 'package:flutter_application_1/blocs/cat_shop/shop_bloc.dart';
@@ -177,8 +178,7 @@ class _ShopViewState extends State<_ShopView> {
         final sellerItems = _sellerFromState(state);
         final isDetailLoading = state is ShopItemDetailLoading;
         final isBasketLoading = state is ShopBasketInProgress;
-        final basketUuid =
-            state is ShopBasketInProgress ? state.uuid : null;
+        final basketUuid = state is ShopBasketInProgress ? state.uuid : null;
 
         // ── Failure (สำหรับทั้งคู่) ─────────────────────────────────────────
         if (state is ShopFailure) {
@@ -193,9 +193,8 @@ class _ShopViewState extends State<_ShopView> {
                   if (state.sellerError.isNotEmpty) Text(state.sellerError),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
-                    onPressed: () => ctx
-                        .read<ShopBloc>()
-                        .add(const ShopLoadRequested()),
+                    onPressed: () =>
+                        ctx.read<ShopBloc>().add(const ShopLoadRequested()),
                     icon: const Icon(Icons.refresh),
                     label: Text(languageProvider.translate(
                         en: 'Retry', th: 'ลองอีกครั้ง')),
@@ -228,8 +227,7 @@ class _ShopViewState extends State<_ShopView> {
                           valueColor: AlwaysStoppedAnimation<Color>(
                               Color.fromARGB(75, 50, 50, 50)),
                         ),
-                        errorWidget: (_, __, ___) =>
-                            const Icon(Icons.error),
+                        errorWidget: (_, __, ___) => const Icon(Icons.error),
                       ),
                     ],
                   ),
@@ -325,20 +323,21 @@ class _ShopViewState extends State<_ShopView> {
                                     final itemId = int.tryParse(
                                             item['id']?.toString() ?? '0') ??
                                         0;
-                                    ctx.read<ShopBloc>().add(
-                                        ShopItemDetailRequested(itemId));
+                                    ctx
+                                        .read<ShopBloc>()
+                                        .add(ShopItemDetailRequested(itemId));
                                   },
                             child: Stack(
                               alignment: Alignment.center,
                               children: [
                                 CachedNetworkImage(
-                                  imageUrl:
-                                      item['image_url']?.toString() ?? '',
+                                  imageUrl: item['image_url']?.toString() ?? '',
                                   fit: BoxFit.cover,
                                   width: double.infinity,
                                   height: 350,
                                   placeholder: (_, __) =>
-                                      const CircularProgressIndicator.adaptive(),
+                                      const CircularProgressIndicator
+                                          .adaptive(),
                                   errorWidget: (_, __, ___) =>
                                       const Icon(Icons.error),
                                 ),
@@ -417,8 +416,7 @@ class _ShopViewState extends State<_ShopView> {
                                       '฿${price.toStringAsFixed(0)}',
                                       style: const TextStyle(
                                         fontSize: 16,
-                                        decoration:
-                                            TextDecoration.lineThrough,
+                                        decoration: TextDecoration.lineThrough,
                                         color: Colors.grey,
                                       ),
                                     ),
@@ -445,8 +443,7 @@ class _ShopViewState extends State<_ShopView> {
                                           horizontal: 4, vertical: 2),
                                       decoration: BoxDecoration(
                                         color: Colors.red,
-                                        borderRadius:
-                                            BorderRadius.circular(6),
+                                        borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Text(
                                         '-${item['discount_percent']?.toString() ?? '0'}%',
@@ -461,12 +458,39 @@ class _ShopViewState extends State<_ShopView> {
                                 ],
                               ),
                               FloatingActionButton.small(
-                                heroTag:
-                                    'shop_cart_${itemUuid}_$index',
+                                heroTag: 'shop_cart_${itemUuid}_$index',
                                 onPressed: (thisIsLoading || isDetailLoading)
                                     ? null
-                                    : () => ctx.read<ShopBloc>().add(
-                                        ShopAddToBasketRequested(itemUuid)),
+                                    : () {
+                                        if (FirebaseAuth
+                                                .instance.currentUser?.email ==
+                                            'guest678@gmail.com') {
+                                          final isDark =
+                                              Theme.of(context).brightness ==
+                                                  Brightness.dark;
+                                          showDialog(
+                                            context: context,
+                                            builder: (_) => AlertDialog(
+                                              backgroundColor: isDark
+                                                  ? Colors.grey[900]
+                                                  : Colors.white,
+                                              title: const Text('Members Only'),
+                                              content: const Text(
+                                                  'Please login to edit your profile.'),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () =>
+                                                      Navigator.pop(context),
+                                                  child: const Text('Cancel'),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                          return;
+                                        }
+                                        ctx.read<ShopBloc>().add(
+                                            ShopAddToBasketRequested(itemUuid));
+                                      },
                                 backgroundColor: thisIsLoading
                                     ? Colors.grey
                                     : Theme.of(context)
@@ -505,11 +529,16 @@ class _ShopViewState extends State<_ShopView> {
     final code =
         gender is int ? gender : int.tryParse(gender?.toString() ?? '');
     switch (code) {
-      case 0: return lang.translate(en: 'Unisex', th: 'ยูนิเซ็กซ์');
-      case 1: return lang.translate(en: 'Male', th: 'เพศผู้');
-      case 2: return lang.translate(en: 'Female', th: 'เพศเมีย');
-      case 3: return lang.translate(en: 'Kitten', th: 'ลูกแมว');
-      default: return lang.translate(en: 'Unknown', th: 'ไม่ระบุ');
+      case 0:
+        return lang.translate(en: 'Unisex', th: 'ยูนิเซ็กซ์');
+      case 1:
+        return lang.translate(en: 'Male', th: 'เพศผู้');
+      case 2:
+        return lang.translate(en: 'Female', th: 'เพศเมีย');
+      case 3:
+        return lang.translate(en: 'Kitten', th: 'ลูกแมว');
+      default:
+        return lang.translate(en: 'Unknown', th: 'ไม่ระบุ');
     }
   }
 }
@@ -531,6 +560,7 @@ class _ShopItemDetailsCardState extends State<_ShopItemDetailsCard> {
   bool _isProcessing = false;
 
   final PageController _imagePageController = PageController();
+
   int _currentImagePage = 0;
 
   double _pd(dynamic v) => _parseDouble(v);
@@ -557,6 +587,24 @@ class _ShopItemDetailsCardState extends State<_ShopItemDetailsCard> {
   }
 
   Future<void> _toggleFavourite() async {
+    if (FirebaseAuth.instance.currentUser?.email == 'guest678@gmail.com') {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          backgroundColor: isDark ? Colors.grey[900] : Colors.white,
+          title: const Text('Members Only'),
+          content: const Text('Please login to edit your profile.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
     if (_isProcessing) return;
     setState(() => _isProcessing = true);
     final languageProvider =
@@ -571,8 +619,7 @@ class _ShopItemDetailsCardState extends State<_ShopItemDetailsCard> {
             Overlay.of(context),
             CustomSnackBar.info(
               message: languageProvider.translate(
-                  en: 'Removed from favourites!',
-                  th: 'ลบออกจากรายการโปรดแล้ว'),
+                  en: 'Removed from favourites!', th: 'ลบออกจากรายการโปรดแล้ว'),
             ),
             animationDuration: const Duration(milliseconds: 1000),
             reverseAnimationDuration: const Duration(milliseconds: 200),
@@ -617,6 +664,24 @@ class _ShopItemDetailsCardState extends State<_ShopItemDetailsCard> {
   }
 
   Future<void> _addToBasket() async {
+    if (FirebaseAuth.instance.currentUser?.email == 'guest678@gmail.com') {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          backgroundColor: isDark ? Colors.grey[900] : Colors.white,
+          title: const Text('Members Only'),
+          content: const Text('Please login to edit your profile.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
     final languageProvider =
         Provider.of<LanguageProvider>(context, listen: false);
     try {
@@ -628,7 +693,8 @@ class _ShopItemDetailsCardState extends State<_ShopItemDetailsCard> {
           Overlay.of(context),
           CustomSnackBar.success(
             message: languageProvider.translate(
-                en: 'Added to Basket successfully!', th: 'เพิ่มลงตะกร้าสำเร็จ!'),
+                en: 'Added to Basket successfully!',
+                th: 'เพิ่มลงตะกร้าสำเร็จ!'),
           ),
           animationDuration: const Duration(milliseconds: 1000),
           reverseAnimationDuration: const Duration(milliseconds: 200),
@@ -686,8 +752,8 @@ class _ShopItemDetailsCardState extends State<_ShopItemDetailsCard> {
                 Stack(
                   children: [
                     ClipRRect(
-                      borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(20)),
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(20)),
                       child: SizedBox(
                         height: 300,
                         child: PageView(
@@ -696,8 +762,7 @@ class _ShopItemDetailsCardState extends State<_ShopItemDetailsCard> {
                               setState(() => _currentImagePage = i),
                           children: [
                             CachedNetworkImage(
-                              imageUrl:
-                                  widget.itemDetails['image_url'] ?? '',
+                              imageUrl: widget.itemDetails['image_url'] ?? '',
                               width: double.infinity,
                               height: 300,
                               fit: BoxFit.cover,
@@ -801,8 +866,7 @@ class _ShopItemDetailsCardState extends State<_ShopItemDetailsCard> {
                           _DetailRow(
                             label: languageProvider.translate(
                                 en: 'Category', th: 'หมวดหมู่'),
-                            value: widget.itemDetails['category']
-                                    ?.toString() ??
+                            value: widget.itemDetails['category']?.toString() ??
                                 '',
                           ),
                           _DetailRow(
@@ -912,8 +976,8 @@ class _ShopItemDetailsCardState extends State<_ShopItemDetailsCard> {
                                 style: const TextStyle(fontSize: 16),
                               ),
                               style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 16),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
                                 backgroundColor: Colors.black,
                               ),
                             ),
@@ -975,13 +1039,17 @@ class _DetailRow extends StatelessWidget {
 // ============================================================================
 
 String _formatGender(dynamic value, LanguageProvider lang) {
-  final code =
-      value is int ? value : int.tryParse(value?.toString() ?? '');
+  final code = value is int ? value : int.tryParse(value?.toString() ?? '');
   switch (code) {
-    case 0: return lang.translate(en: 'Unisex', th: 'ยูนิเซ็กซ์');
-    case 1: return lang.translate(en: 'Male', th: 'เพศผู้');
-    case 2: return lang.translate(en: 'Female', th: 'เพศเมีย');
-    case 3: return lang.translate(en: 'Kitten', th: 'ลูกแมว');
-    default: return lang.translate(en: 'Unknown', th: 'ไม่ระบุ');
+    case 0:
+      return lang.translate(en: 'Unisex', th: 'ยูนิเซ็กซ์');
+    case 1:
+      return lang.translate(en: 'Male', th: 'เพศผู้');
+    case 2:
+      return lang.translate(en: 'Female', th: 'เพศเมีย');
+    case 3:
+      return lang.translate(en: 'Kitten', th: 'ลูกแมว');
+    default:
+      return lang.translate(en: 'Unknown', th: 'ไม่ระบุ');
   }
 }

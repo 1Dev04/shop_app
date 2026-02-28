@@ -13,6 +13,7 @@ String getBaseUrl() {
   const String env = String.fromEnvironment('ENV', defaultValue: 'local');
   if (env == 'prod') return 'https://catshop-backend-9pzq.onrender.com';
   if (env == 'prod-v2') return 'https://catshop-backend-v2.onrender.com';
+  if (env == 'prod-v3') return 'https://cat-shop-backend.onrender.com';
   if (kIsWeb) return 'http://localhost:10000';
   if (Platform.isAndroid) return 'http://10.0.2.2:10000';
   return 'http://localhost:10000';

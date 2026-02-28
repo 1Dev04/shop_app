@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_1/provider/theme_provider.dart';
-import 'package:flutter_application_1/screen/Edit_Profile.dart';
+import 'package:flutter_application_1/screen/edit_profile.dart';
 import 'package:flutter_application_1/screen/signin_user.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
@@ -46,20 +46,17 @@ class _ProfileState extends State<Profile> {
               ),
               ElevatedButton(
                 onPressed: () async {
-                  Navigator.of(context).pop();
+                  Navigator.of(context).pop(); // ปิด dialog อย่างเดียว
                   await signOut();
 
                   if (mounted) {
-                    Navigator.of(context).pop();
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(builder: (context) => Login()),
                     );
                   }
                 },
-                child: const Text(
-                  "Confirm",
-                ),
+                child: const Text("Confirm"),
               ),
             ],
           );
@@ -79,6 +76,22 @@ class _ProfileState extends State<Profile> {
   }
 
   void fetchUser() async {
+    // ดัก Guest — ไม่ต้องดึง Firestore
+    if (FirebaseAuth.instance.currentUser?.email == 'guest678@gmail.com') {
+      setState(() {
+        _name = 'Guest';
+        _email = 'guest678@gmail.com';
+        _phone = '-';
+        _postal = '-';
+        _birthdate = '';
+        _gender = '-';
+        _newsletter = '-';
+        _memberAgreement = '-';
+      });
+      return; // หยุดตรงนี้
+    }
+
+    // member ปกติ
     String uid = FirebaseAuth.instance.currentUser!.uid;
     DocumentSnapshot userDoc =
         await FirebaseFirestore.instance.collection('users').doc(uid).get();
@@ -104,8 +117,8 @@ class _ProfileState extends State<Profile> {
 
   @override
   Widget build(BuildContext context) {
-       final themeProvider = context.watch<ThemeProvider>();
-       final isDark = themeProvider.themeMode == ThemeMode.dark;
+    final themeProvider = context.watch<ThemeProvider>();
+    final isDark = themeProvider.themeMode == ThemeMode.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -134,28 +147,39 @@ class _ProfileState extends State<Profile> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => EditProfilePage(),
+                          onTap: () {
+                            // ดัก Guest
+                            if (FirebaseAuth.instance.currentUser?.email ==
+                                'guest678@gmail.com') {
+                              showDialog(
+                                context: context,
+                                builder: (_) => AlertDialog(
+                                  title: const Text('Members Only'),
+                                  content: const Text(
+                                      'Please login to edit your profile.'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text('OK'),
+                                    ),
+                                  ],
                                 ),
                               );
-                            },
-                            child: Column(
-                              children: [
-                                Icon(
-                                  Icons.edit_outlined,
-                                  size: 30,
-                                ),
-                                Text(
-                                  'Edit',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ],
-                            ))
+                              return;
+                            }
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => EditProfilePage()),
+                            );
+                          },
+                          child: Column(
+                            children: [
+                              Icon(Icons.edit_outlined, size: 30),
+                              Text('Edit', style: TextStyle(fontSize: 16)),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ],

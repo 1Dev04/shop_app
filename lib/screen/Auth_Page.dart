@@ -8,6 +8,8 @@ import 'package:flutter_application_1/screen/signin_user.dart';
 class authPage extends StatelessWidget {
   const authPage({super.key});
 
+  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
