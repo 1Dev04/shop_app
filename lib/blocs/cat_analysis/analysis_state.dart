@@ -23,10 +23,13 @@ class CatAnalysisAnalyzing extends CatAnalysisState {
   CatAnalysisAnalyzing(this.imageFile);
 }
 
-// สำเร็จ
+// สำเร็จ — พร้อม recommendations จาก backend
 class CatAnalysisSuccess extends CatAnalysisState {
   final CatData catData;
-  CatAnalysisSuccess(this.catData);
+  // ✅ recommendations มาจาก vision.py โดยตรง ไม่ต้อง call เพิ่ม
+  final List<Map<String, dynamic>> recommendations;
+
+  CatAnalysisSuccess(this.catData, {this.recommendations = const []});
 }
 
 // ไม่พบแมว
@@ -47,12 +50,15 @@ class CatAnalysisFailure extends CatAnalysisState {
 // กำลัง update/delete
 class CatDataUpdating extends CatAnalysisState {
   final CatData catData;
-  CatDataUpdating(this.catData);
+  final List<Map<String, dynamic>> recommendations;
+  CatDataUpdating(this.catData, {this.recommendations = const []});
 }
 
 // update/delete สำเร็จ
 class CatDataUpdateSuccess extends CatAnalysisState {
   final CatData catData;
   final String message;
-  CatDataUpdateSuccess(this.catData, this.message);
+  final List<Map<String, dynamic>> recommendations;
+  CatDataUpdateSuccess(this.catData, this.message,
+      {this.recommendations = const []});
 }

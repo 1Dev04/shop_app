@@ -43,16 +43,16 @@ class CatAnalysisBloc extends Bloc<CatAnalysisEvent, CatAnalysisState> {
     final imageFile = currentState.imageFile;
 
     try {
-      // Step 1: Upload
+      // Step 1: Upload to Cloudinary
       emit(CatAnalysisUploading(imageFile));
       final imageUrl = await _uploadToCloudinary(imageFile);
       if (imageUrl == null) {
         emit(CatAnalysisFailure('อัปโหลดรูปภาพไม่สำเร็จ'));
         emit(CatAnalysisInitial());
         return;
-      };
+      }
 
-      // Step 2: Get token
+      // Step 2: Get Firebase token
       final token = await _getFirebaseToken();
       if (token == null) {
         emit(CatAnalysisFailure('กรุณาเข้าสู่ระบบก่อนใช้งาน'));
@@ -60,17 +60,18 @@ class CatAnalysisBloc extends Bloc<CatAnalysisEvent, CatAnalysisState> {
         return;
       }
 
-      // Step 3: Analyze
+      // Step 3: Analyze — backend จะ INSERT cat + query recommendations ให้เลย
       emit(CatAnalysisAnalyzing(imageFile));
-      final response = await http.post(
-        Uri.parse('${_getBaseUrl()}/api/vision/analyze-cat'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        // ✅ FIX: ใช้ image_cat ให้ตรงกับที่ backend ต้องการ
-        body: jsonEncode({'image_cat': imageUrl}),
-      ).timeout(const Duration(seconds: 60));
+      final response = await http
+          .post(
+            Uri.parse('${_getBaseUrl()}/api/vision/analyze-cat'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+            body: jsonEncode({'image_cat': imageUrl}),
+          )
+          .timeout(const Duration(seconds: 60));
 
       final body = jsonDecode(utf8.decode(response.bodyBytes));
 
@@ -102,15 +103,19 @@ class CatAnalysisBloc extends Bloc<CatAnalysisEvent, CatAnalysisState> {
       }
 
       if (body['is_cat'] != true) {
-        // ✅ FIX: emit กลับไป CatImageReady เพื่อให้ยังเห็นรูปและกด Analyze ใหม่ได้
-        // แทนที่จะเป็น state ที่ไม่มี UI รองรับ
         emit(CatAnalysisNotFound(body['message'] ?? 'ไม่พบแมวในภาพ'));
-        // Reset กลับให้ user ถ่ายรูปใหม่
         emit(CatAnalysisInitial());
         return;
       }
 
-      emit(CatAnalysisSuccess(CatData.fromJson(body)));
+      // ✅ Parse recommendations จาก backend โดยตรง
+      // vision.py ส่ง recommendations[] มาพร้อมกันเลย ไม่ต้อง call เพิ่ม
+      final recommendations = _parseRecommendations(body['recommendations']);
+
+      emit(CatAnalysisSuccess(
+        CatData.fromJson(body),
+        recommendations: recommendations,
+      ));
     } on TimeoutException {
       emit(CatAnalysisFailure('Backend ใช้เวลานานเกินไป'));
       emit(CatAnalysisInitial());
@@ -134,17 +139,23 @@ class CatAnalysisBloc extends Bloc<CatAnalysisEvent, CatAnalysisState> {
     Emitter<CatAnalysisState> emit,
   ) async {
     final currentState = state;
-    if (currentState is! CatAnalysisSuccess &&
-        currentState is! CatDataUpdateSuccess) return;
 
-    final catData = currentState is CatAnalysisSuccess
-        ? currentState.catData
-        : (currentState as CatDataUpdateSuccess).catData;
+    // ดึง catData + recommendations จาก state ปัจจุบัน
+    CatData? catData;
+    List<Map<String, dynamic>> recommendations = const [];
 
-    if (catData.dbId == null) return;
+    if (currentState is CatAnalysisSuccess) {
+      catData = currentState.catData;
+      recommendations = currentState.recommendations;
+    } else if (currentState is CatDataUpdateSuccess) {
+      catData = currentState.catData;
+      recommendations = currentState.recommendations;
+    }
+
+    if (catData == null || catData.dbId == null) return;
 
     try {
-      emit(CatDataUpdating(catData));
+      emit(CatDataUpdating(catData, recommendations: recommendations));
       await _catApi.updateCat(catData.dbId!, event.updateData);
 
       final updated = CatData(
@@ -152,7 +163,8 @@ class CatAnalysisBloc extends Bloc<CatAnalysisEvent, CatAnalysisState> {
         breed: event.updateData['breed'] ?? catData.breed,
         age: event.updateData['age'] ?? catData.age,
         weight: catData.weight,
-        sizeCategory: event.updateData['size_category'] ?? catData.sizeCategory,
+        sizeCategory:
+            event.updateData['size_category'] ?? catData.sizeCategory,
         chestCm: catData.chestCm,
         neckCm: catData.neckCm,
         bodyLengthCm: catData.bodyLengthCm,
@@ -164,7 +176,12 @@ class CatAnalysisBloc extends Bloc<CatAnalysisEvent, CatAnalysisState> {
         dbId: catData.dbId,
       );
 
-      emit(CatDataUpdateSuccess(updated, 'บันทึกข้อมูลแล้ว ✅'));
+      // ✅ ส่ง recommendations ต่อไปให้ state ใหม่ด้วย — ไม่หายหลัง edit
+      emit(CatDataUpdateSuccess(
+        updated,
+        'บันทึกข้อมูลแล้ว ✅',
+        recommendations: recommendations,
+      ));
     } catch (e) {
       emit(CatAnalysisFailure(e.toString().replaceAll('Exception: ', '')));
     }
@@ -191,6 +208,20 @@ class CatAnalysisBloc extends Bloc<CatAnalysisEvent, CatAnalysisState> {
   }
 
   // ── Helpers ────────────────────────────────────────────
+
+  /// Parse recommendations[] จาก backend response
+  /// backend ส่ง List<Map> แต่ dynamic cast ต้องระวัง
+  List<Map<String, dynamic>> _parseRecommendations(dynamic raw) {
+    if (raw == null) return const [];
+    try {
+      return List<Map<String, dynamic>>.from(
+        (raw as List).map((e) => Map<String, dynamic>.from(e as Map)),
+      );
+    } catch (_) {
+      return const [];
+    }
+  }
+
   Future<String?> _getFirebaseToken() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
@@ -221,14 +252,13 @@ class CatAnalysisBloc extends Bloc<CatAnalysisEvent, CatAnalysisState> {
     }
   }
 
-  // ✅ FIX: เพิ่ม 'prod' env กลับมา (หายไปในโค้ดใหม่)
   String _getBaseUrl() {
     const String env = String.fromEnvironment('ENV', defaultValue: 'local');
     if (env == 'prod') return 'https://catshop-backend-9pzq.onrender.com';
     if (env == 'prod-v2') return 'https://catshop-backend-v2.onrender.com';
     if (env == 'prod-v3') return 'https://cat-shop-backend.onrender.com';
     if (kIsWeb) return 'http://localhost:10000';
-    if (Platform.isAndroid) return 'http://10.0.2.2:10000';
+    if (!kIsWeb && Platform.isAndroid) return 'http://10.0.2.2:10000';
     return 'http://localhost:10000';
   }
 }
