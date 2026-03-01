@@ -18,94 +18,143 @@ import 'package:image_picker/image_picker.dart';
 import 'package:camera/camera.dart';
 import 'package:google_mlkit_image_labeling/google_mlkit_image_labeling.dart';
 
-// ═══════════════════════════════════════════════════════════
-// MARK: - Config (ปรับ threshold ได้ในที่เดียว)
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+// MARK: - Config
+// ═══════════════════════════════════════════════════════════════════════════════
 
-class CatDetectorConfig {
-  // 🐱 Cat Score
-  static const double catScoreMin       = 0.45;
-  static const double catScoreConfident = 0.65;
-  static const double catScoreHigh      = 0.80; // bypass cartoon check
+class _Cfg {
+  // ── ML Kit threshold ─────────────────────────────────────────────────────
+  // ต่ำไว้ก่อน แล้วกรองด้วย logic เอง (มาตรฐาน Google ML Kit)
+  static const double mlkitThreshold = 0.40;
 
-  // 🎨 Art/Cartoon
-  static const double artScoreBlock  = 0.35;
-  static const double artScoreWeak   = 0.25;
-  static const double realAnimalMin  = 0.45;
+  // ── Cat gate ──────────────────────────────────────────────────────────────
+  static const double catMin       = 0.42; // ขั้นต่ำที่จะพิจารณาเป็นแมว
+  static const double catPass      = 0.55; // ผ่านขั้นสุดท้าย
+  static const double catHighConf  = 0.75; // bypass บางเงื่อนไข
 
-  // 🐾 Non-Cat Animal
-  static const double nonCatBlock = 0.45;
-  static const double dogBlock    = 0.40;
+  // ── Dog gate ──────────────────────────────────────────────────────────────
+  static const double dogHard      = 0.55; // block ทันที ไม่ดูอย่างอื่น
+  static const double dogSoft      = 0.35; // ต้องดู diff กับ cat ด้วย
+  static const double catDogMinDiff = 0.22; // cat - dog ต้องห่างกันเท่านี้
 
-  // 🐱🐱 Multi-Cat
-  static const double regionCatMin = 0.60;
-  static const double distRatio    = 0.30;
+  // ── Art / Cartoon ─────────────────────────────────────────────────────────
+  static const double artHard      = 0.50; // block ทันที
+  static const double artSoft      = 0.35; // ต้องผ่าน pixel check
+  static const int    cartoonSig   = 5;    // pixel signal >= นี้ = การ์ตูน
+
+  // ── Non-cat animal ────────────────────────────────────────────────────────
+  static const double nonCatHard   = 0.55;
+
+  // ── Real animal signal ────────────────────────────────────────────────────
+  static const double realMin      = 0.38;
+
+  // ── Multi-cat (ปรับใหม่: ลด false positive มาก) ──────────────────────────
+  static const double regionMin    = 0.72; // confidence ต่อ region ที่จะ count
+  static const double distRatio    = 0.50; // ต้องห่างกัน 50% ของ diagonal
+  static const double mergeRatio   = 0.18; // merge ถ้าใกล้กันกว่า 18%
+  static const int    minCatRegions = 2;   // ต้องเจอ cat ใน >= 2 region ที่แตกต่างกัน
 }
 
-// ═══════════════════════════════════════════════════════════
-// MARK: - Label Sets (Set → O(1) lookup)
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+// MARK: - Label Sets
+// ═══════════════════════════════════════════════════════════════════════════════
 
-class CatLabels {
+class _Labels {
+  // ── แมว (ครบทุกสายพันธุ์หลัก) ────────────────────────────────────────────
   static const Set<String> cat = {
-    'cat', 'tabby', 'kitten', 'persian cat', 'siamese cat',
-    'british shorthair', 'maine coon', 'bengal cat', 'ragdoll',
-    'feline', 'domestic cat', 'house cat',
+    'cat', 'cats', 'tabby', 'tabby cat', 'kitten', 'kittens',
+    'persian cat', 'persian', 'siamese cat', 'siamese',
+    'british shorthair', 'maine coon', 'bengal cat', 'bengal',
+    'ragdoll', 'scottish fold', 'russian blue', 'abyssinian',
+    'burmese cat', 'burmese', 'norwegian forest cat', 'sphynx',
+    'sphynx cat', 'birman', 'tonkinese', 'munchkin', 'munchkin cat',
+    'bombay cat', 'bombay', 'devon rex', 'cornish rex',
+    'turkish angora', 'turkish van', 'exotic shorthair',
+    'american shorthair', 'oriental shorthair',
+    'feline', 'domestic cat', 'house cat', 'tomcat', 'tabbycat',
   };
 
+  // ── หมา (ครบทุกสายพันธุ์หลัก) ────────────────────────────────────────────
   static const Set<String> dog = {
-    'dog', 'puppy', 'canine', 'hound', 'labrador', 'poodle', 'bulldog',
-    'beagle', 'husky', 'golden retriever', 'german shepherd', 'dachshund',
-    'chihuahua', 'pomeranian', 'corgi', 'shih tzu', 'pug',
-    'french bulldog', 'boston terrier', 'boxer', 'rottweiler', 'doberman',
-    'dalmatian', 'schnauzer', 'maltese', 'yorkshire terrier', 'samoyed',
-    'akita', 'shar pei', 'chow chow', 'spitz', 'basenji', 'whippet',
-    'greyhound', 'mastiff', 'bichon',
+    'dog', 'dogs', 'puppy', 'puppies', 'canine', 'hound', 'doggy',
+    'labrador', 'labrador retriever', 'golden retriever',
+    'poodle', 'standard poodle', 'miniature poodle', 'toy poodle',
+    'bulldog', 'english bulldog', 'french bulldog',
+    'beagle', 'husky', 'siberian husky', 'alaskan malamute',
+    'german shepherd', 'alsatian',
+    'dachshund', 'chihuahua', 'pomeranian', 'spitz', 'japanese spitz',
+    'corgi', 'pembroke welsh corgi', 'cardigan welsh corgi',
+    'shih tzu', 'pug', 'boston terrier', 'boxer', 'rottweiler',
+    'doberman', 'dobermann', 'dalmatian', 'schnauzer',
+    'maltese', 'yorkshire terrier', 'yorkie', 'samoyed',
+    'akita', 'shar pei', 'chow chow', 'basenji', 'whippet',
+    'greyhound', 'mastiff', 'bichon', 'bichon frise',
+    'cocker spaniel', 'border collie', 'australian shepherd',
+    'great dane', 'saint bernard', 'bernese mountain dog',
+    'weimaraner', 'pointer', 'setter', 'retriever', 'spaniel', 'terrier',
+    'pitbull', 'pit bull', 'american pit bull',
+    'shiba inu', 'shiba', 'chow',
   };
 
+  // ── Art / Cartoon แรง ─────────────────────────────────────────────────────
   static const Set<String> artStrong = {
     'cartoon', 'anime', 'illustration', 'animated cartoon', 'comic',
-    'manga', 'clipart', 'vector', 'digital art', 'drawing', 'sketch',
-    '3d render', 'cgi', 'computer graphics', 'low poly', 'pixel art',
-    'animation', 'fictional character',
+    'manga', 'clipart', 'clip art', 'vector', 'digital art', 'drawing',
+    'sketch', '3d render', 'cgi', 'computer graphics', 'low poly',
+    'pixel art', 'animation', 'fictional character', 'caricature',
+    'graphic novel', 'sticker', 'emoticon', 'emoji',
   };
 
+  // ── Art / Cartoon อ่อน ────────────────────────────────────────────────────
   static const Set<String> artWeak = {
     'art', 'artwork', 'graphic', 'painting', 'poster', 'figure',
-    'figurine', 'toy', 'stuffed animal', 'plush', 'statue', 'sculpture',
-    'origami', 'papercraft', 'paper craft', 'paper model', 'paper art',
-    'model', 'miniature', 'replica', 'doll', 'puppet', 'mannequin',
-    'ceramic', 'porcelain', 'clay', 'plastic', 'wood carving',
-    '3d model', 'render', 'craft', 'handmade', 'artifact',
-    'decorative', 'low poly', 'polygon', 'geometric', 'object', 'prop',
+    'figurine', 'toy', 'stuffed animal', 'plush', 'plushie',
+    'statue', 'sculpture', 'origami', 'papercraft', 'paper craft',
+    'model', 'miniature', 'replica', 'doll', 'puppet',
+    'ceramic', 'porcelain', 'clay', 'plastic toy',
+    'wood carving', '3d model', 'render', 'craft',
+    'decorative', 'merchandise', 'cushion', 'pillow cover',
   };
 
+  // ── สัญญาณสัตว์จริง ───────────────────────────────────────────────────────
   static const Set<String> realAnimal = {
-    'fur', 'whisker', 'mammal', 'wildlife', 'fauna', 'paw', 'animal',
-    'pet', 'domestic animal', 'nose', 'claw', 'tail', 'coat', 'hair',
-    'living', 'vertebrate', 'carnivore', 'snout', 'eye',
+    'fur', 'furry', 'whisker', 'whiskers', 'mammal', 'wildlife',
+    'fauna', 'paw', 'paws', 'animal', 'pet', 'domestic animal',
+    'nose', 'claw', 'claws', 'tail', 'coat', 'hair',
+    'vertebrate', 'carnivore', 'snout', 'muzzle',
   };
 
+  // ── สัตว์อื่นที่ไม่ใช่แมวหรือหมา ─────────────────────────────────────────
   static const Set<String> nonCat = {
-    'otter', 'sea otter', 'river otter', 'mink', 'ferret', 'weasel',
-    'marten', 'beaver', 'badger', 'skunk', 'seal', 'sea lion', 'walrus',
-    'dolphin', 'whale', 'shark', 'octopus', 'crab', 'lobster', 'fish',
-    'fox', 'wolf', 'bear', 'panda', 'raccoon', 'squirrel', 'rabbit',
-    'hare', 'hamster', 'guinea pig', 'gerbil', 'rat', 'mouse',
-    'hedgehog', 'meerkat', 'mongoose', 'capybara', 'monkey', 'ape',
-    'chimpanzee', 'gorilla', 'lemur', 'koala', 'kangaroo', 'deer',
-    'elk', 'reindeer', 'moose', 'alpaca', 'llama', 'sheep', 'goat',
-    'cow', 'horse', 'pig', 'bird', 'parrot', 'owl', 'eagle', 'chicken',
-    'duck', 'tiger', 'lion', 'cheetah', 'leopard', 'jaguar', 'lynx',
-    'bobcat', 'cougar', 'panther', 'snake', 'lizard', 'turtle', 'frog',
+    'otter', 'sea otter', 'ferret', 'weasel', 'mink', 'marten',
+    'beaver', 'badger', 'skunk', 'seal', 'sea lion', 'walrus',
+    'fox', 'wolf', 'bear', 'panda', 'giant panda', 'red panda',
+    'raccoon', 'squirrel', 'rabbit', 'hare', 'hamster',
+    'guinea pig', 'gerbil', 'rat', 'mouse', 'hedgehog',
+    'meerkat', 'mongoose', 'capybara', 'monkey', 'ape',
+    'chimpanzee', 'gorilla', 'orangutan', 'lemur',
+    'koala', 'kangaroo', 'wallaby', 'deer', 'elk', 'reindeer',
+    'moose', 'alpaca', 'llama', 'sheep', 'goat', 'cow', 'horse',
+    'pig', 'boar', 'elephant', 'giraffe', 'zebra', 'hippo', 'rhino',
+    // แมวป่าขนาดใหญ่ ≠ แมวบ้าน
+    'tiger', 'lion', 'cheetah', 'leopard', 'jaguar', 'lynx',
+    'bobcat', 'cougar', 'puma', 'panther', 'snow leopard', 'ocelot',
+    'serval', 'caracal', 'wildcat',
+    // นก
+    'bird', 'parrot', 'owl', 'eagle', 'chicken', 'duck', 'pigeon', 'penguin',
+    // สัตว์เลื้อยคลาน / ครึ่งบกครึ่งน้ำ
+    'snake', 'lizard', 'turtle', 'frog', 'toad',
     'gecko', 'iguana', 'chameleon', 'crocodile', 'alligator', 'reptile',
-    'dinosaur', 'dragon', 'spider', 'insect', 'scorpion',
+    // ทะเล
+    'dolphin', 'whale', 'shark', 'octopus', 'crab', 'lobster', 'fish',
+    // แมลง
+    'spider', 'insect', 'scorpion', 'butterfly', 'bee',
   };
 }
 
-// ═══════════════════════════════════════════════════════════
-// MARK: - Detection Result Model
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+// MARK: - Detection Result
+// ═══════════════════════════════════════════════════════════════════════════════
 
 class DetectionResult {
   final bool   isCat;
@@ -121,117 +170,128 @@ class DetectionResult {
     required this.isCartoon,
     this.detail = '',
   });
+
+  @override
+  String toString() =>
+      'DetectionResult(isCat=$isCat reason=$reason cat=${catScore.toStringAsFixed(2)})';
 }
 
-class _CartoonCheckResult {
-  final bool   isCartoon;
-  final double confidence;
-  const _CartoonCheckResult({required this.isCartoon, required this.confidence});
-}
+// ═══════════════════════════════════════════════════════════════════════════════
+// MARK: - Pixel Cartoon Check (ปรับ threshold ให้ conservative กว่าเดิม)
+// ═══════════════════════════════════════════════════════════════════════════════
 
-// ═══════════════════════════════════════════════════════════
-// MARK: - Cartoon Check (ปรับปรุง: รองรับแมวขนฟู)
-// ═══════════════════════════════════════════════════════════
-
-Future<_CartoonCheckResult> _cartoonCheck(String imagePath) async {
+Future<({bool isCartoon, double conf})> _pixelCartoonCheck(String path) async {
   try {
-    final bytes = await File(imagePath).readAsBytes();
-    img.Image? image = img.decodeImage(bytes);
-    if (image == null) return const _CartoonCheckResult(isCartoon: false, confidence: 0);
+    final bytes = await File(path).readAsBytes();
+    final img.Image? raw = img.decodeImage(bytes);
+    if (raw == null) return (isCartoon: false, conf: 0.0);
 
-    final small = img.copyResize(image, width: 120, height: 120);
-    final int total = small.width * small.height;
+    // resize เป็น 100×100 พอ (เร็วกว่า และเพียงพอ)
+    final s = img.copyResize(raw, width: 100, height: 100);
+    final total = s.width * s.height;
 
-    // ── 1. Color diversity
-    final Set<int> uniqueColors = {};
-    for (int y = 0; y < small.height; y++) {
-      for (int x = 0; x < small.width; x++) {
-        final p = small.getPixel(x, y);
-        uniqueColors.add(((p.r ~/ 32) << 16) | ((p.g ~/ 32) << 8) | (p.b ~/ 32));
+    // ── 1. Color diversity (quantize 5-bit per channel)
+    final colors = <int>{};
+    for (int y = 0; y < s.height; y++) {
+      for (int x = 0; x < s.width; x++) {
+        final p = s.getPixel(x, y);
+        colors.add(((p.r ~/ 32) << 10) | ((p.g ~/ 32) << 5) | (p.b ~/ 32));
       }
     }
-    final double colorDiversity = uniqueColors.length / total;
+    final colorDiv = colors.length / total; // สูง = ภาพจริง
 
-    // ── 2. Edge sharpness + soft gradient (ขนแมว)
-    int sharpEdges = 0, softEdges = 0, checked = 0;
-    final List<double> gradients = [];
-    for (int y = 1; y < small.height - 1; y++) {
-      for (int x = 1; x < small.width - 1; x++) {
-        final c  = small.getPixel(x, y);
-        final r  = small.getPixel(x + 1, y);
-        final d  = small.getPixel(x, y + 1);
-        final dx = ((c.r - r.r).abs() + (c.g - r.g).abs() + (c.b - r.b).abs()) / 3;
-        final dy = ((c.r - d.r).abs() + (c.g - d.g).abs() + (c.b - d.b).abs()) / 3;
-        final grad = sqrt(dx * dx + dy * dy);
-        gradients.add(grad);
-        if (grad > 60) sharpEdges++;
-        if (grad > 10 && grad < 40) softEdges++; // soft = ขนแมวจริง
-        checked++;
+    // ── 2. Edge: sharp vs soft
+    int sharp = 0, soft = 0, n = 0;
+    final grads = <double>[];
+    for (int y = 1; y < s.height - 1; y++) {
+      for (int x = 1; x < s.width - 1; x++) {
+        final c = s.getPixel(x, y);
+        final r = s.getPixel(x + 1, y);
+        final d = s.getPixel(x, y + 1);
+        final dx = ((c.r-r.r).abs()+(c.g-r.g).abs()+(c.b-r.b).abs())/3.0;
+        final dy = ((c.r-d.r).abs()+(c.g-d.g).abs()+(c.b-d.b).abs())/3.0;
+        final g = sqrt(dx*dx + dy*dy);
+        grads.add(g);
+        if (g > 60) sharp++;
+        if (g > 8 && g < 40) soft++;
+        n++;
       }
     }
-    final double sharpRatio = checked > 0 ? sharpEdges / checked : 0;
-    final double softRatio  = checked > 0 ? softEdges  / checked : 0;
+    final sharpR = n > 0 ? sharp / n : 0.0;
+    final softR  = n > 0 ? soft  / n : 0.0;
 
     // ── 3. Gradient variance
-    final double avgGrad = gradients.isEmpty ? 0 : gradients.reduce((a, b) => a + b) / gradients.length;
-    final double gradVariance = gradients.isEmpty
-        ? 0
-        : gradients.fold(0.0, (s, g) => s + pow(g - avgGrad, 2)) / gradients.length;
+    final avgG    = grads.isEmpty ? 0.0 : grads.reduce((a,b)=>a+b)/grads.length;
+    final gradVar = grads.isEmpty ? 0.0
+        : grads.fold(0.0,(s,g)=>s+pow(g-avgG,2))/grads.length;
 
-    // ── 4. Saturation
-    double totalSat = 0;
-    final List<double> satList = [];
-    for (int y = 0; y < small.height; y++) {
-      for (int x = 0; x < small.width; x++) {
-        final p = small.getPixel(x, y);
-        final rv = p.r / 255.0, gv = p.g / 255.0, bv = p.b / 255.0;
-        final maxC = [rv, gv, bv].reduce(max);
-        final minC = [rv, gv, bv].reduce(min);
-        final sat = maxC > 0 ? (maxC - minC) / maxC : 0.0;
-        satList.add(sat);
-        totalSat += sat;
+    // ── 4. Saturation variance
+    final sats = <double>[];
+    for (int y = 0; y < s.height; y++) {
+      for (int x = 0; x < s.width; x++) {
+        final p = s.getPixel(x, y);
+        final rv=p.r/255.0; final gv=p.g/255.0; final bv=p.b/255.0;
+        final mx=[rv,gv,bv].reduce(max); final mn=[rv,gv,bv].reduce(min);
+        sats.add(mx>0?(mx-mn)/mx:0.0);
       }
     }
-    final double avgSat = satList.isEmpty ? 0 : totalSat / satList.length;
-    final double satVariance = satList.isEmpty
-        ? 0
-        : satList.fold(0.0, (s, v) => s + pow(v - avgSat, 2)) / satList.length;
+    final avgSat  = sats.reduce((a,b)=>a+b)/sats.length;
+    final satVar  = sats.fold(0.0,(s,v)=>s+pow(v-avgSat,2))/sats.length;
 
-    // ── 5. คะแนน cartoon signals
-    int signals = 0;
+    // ── 5. Signal score (conservative: threshold เพิ่มขึ้น)
+    int score = 0;
 
     // สัญญาณการ์ตูน
-    if (colorDiversity < 0.08)  signals += 3;
-    if (colorDiversity < 0.12)  signals += 2;
-    if (colorDiversity < 0.18)  signals += 1;
-    if (satVariance < 0.010)    signals += 3;
-    if (satVariance < 0.020)    signals += 2;
-    if (satVariance < 0.035)    signals += 1;
-    if (gradVariance < 200)     signals += 2;
-    if (gradVariance < 400)     signals += 1;
-    if (sharpRatio > 0.18 && colorDiversity < 0.15) signals += 2;
+    if (colorDiv   < 0.05) score += 4;
+    else if (colorDiv < 0.09) score += 3;
+    else if (colorDiv < 0.14) score += 2;
+    else if (colorDiv < 0.20) score += 1;
 
-    // สัญญาณภาพจริง (หักแต้ม)
-    if (softRatio > 0.25)      signals -= 2; // ขนแมว
-    if (gradVariance > 800)    signals -= 2; // texture ซับซ้อน
-    if (colorDiversity > 0.25) signals -= 2; // สีหลากหลาย
-    if (avgSat > 0.20 && satVariance > 0.04) signals -= 1;
+    if (satVar < 0.006)  score += 3;
+    else if (satVar < 0.015) score += 2;
+    else if (satVar < 0.025) score += 1;
 
-    signals = signals.clamp(0, 99);
+    if (gradVar < 100)   score += 3;
+    else if (gradVar < 250)  score += 2;
+    else if (gradVar < 450)  score += 1;
 
-    // threshold >= 5 (เดิม 3 → เข้มขึ้น ลด false reject แมวขนฟู)
-    return _CartoonCheckResult(
-      isCartoon: signals >= 5,
-      confidence: (signals / 10.0).clamp(0.0, 1.0),
+    if (sharpR > 0.22 && colorDiv < 0.12) score += 2;
+
+    // สัญญาณภาพจริง (หักแต้ม — ขนแมวทำให้ softR สูง)
+    if (softR   > 0.22) score -= 3;   // ขนแมวฟู
+    if (gradVar > 700)  score -= 3;   // texture ซับซ้อน
+    if (colorDiv > 0.22) score -= 3;  // สีหลากหลาย
+    if (satVar > 0.040) score -= 2;
+
+    score = score.clamp(0, 20);
+
+    print('🎨 PixelCheck: score=$score colorDiv=${colorDiv.toStringAsFixed(3)} '
+        'gradVar=${gradVar.toStringAsFixed(1)} softR=${softR.toStringAsFixed(3)}');
+
+    return (
+      isCartoon: score >= _Cfg.cartoonSig,
+      conf: (score / 12.0).clamp(0.0, 1.0),
     );
-  } catch (_) {
-    return const _CartoonCheckResult(isCartoon: false, confidence: 0);
+  } catch (e) {
+    print('❌ pixelCartoonCheck: $e');
+    return (isCartoon: false, conf: 0.0);
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-// MARK: - Multi-Cat Detection (ปรับปรุง: 9 region + diagonal dist)
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+// MARK: - Multi-Cat Detection  (แก้ปัญหา false positive)
+//
+// รากของปัญหา "1 แมวแต่บอกหลายตัว":
+//   → region overlap ทำให้ centroid หลาย region ชี้ที่เดิม
+//   → distRatio ต่ำเกินไป (0.30-0.45) ทำให้ 2 region ในแมวตัวเดียวกัน
+//     ดูเหมือนห่างกัน
+//
+// แก้โดย:
+//   1. เพิ่ม distRatio → 0.50 (ต้องอยู่คนละครึ่งภาพ)
+//   2. เพิ่ม regionMin → 0.72
+//   3. ใช้ NMS-style: ถ้า cluster ใด overlap > 50% กับอีก cluster → merge
+//   4. ต้องมี catScore ที่แตกต่างกัน (ไม่ใช่ region เดิม label ซ้ำ)
+// ═══════════════════════════════════════════════════════════════════════════════
 
 Future<bool> _hasMultipleCats(
   String imagePath,
@@ -241,274 +301,342 @@ Future<bool> _hasMultipleCats(
   if (isDisposed?.call() ?? false) return false;
   try {
     final bytes = await File(imagePath).readAsBytes();
-    img.Image? image = img.decodeImage(bytes);
+    final img.Image? image = img.decodeImage(bytes);
     if (image == null) return false;
 
     final tempDir = await getTemporaryDirectory();
-    final int w = image.width, h = image.height;
+    final w = image.width, h = image.height;
 
-    // 3×3 grid + overlap 35%
-    final int cols = 3, rows = 3;
-    final int rw = (w / cols).round();
-    final int rh = (h / rows).round();
-    final int ov = (rw * 0.35).round();
+    // 3×3 grid (ไม่ overlap ก็ได้ — overlap ทำให้เกิด false positive)
+    const cols = 3, rows = 3;
+    final rw = (w / cols).round();
+    final rh = (h / rows).round();
 
-    final List<Map<String, int>> regions = [];
+    final List<Map<String,double>> catRegions = [];
+
     for (int row = 0; row < rows; row++) {
       for (int col = 0; col < cols; col++) {
-        final int x    = max(0, col * rw - ov);
-        final int y    = max(0, row * rh - ov);
-        final int endX = min(w, (col + 1) * rw + ov);
-        final int endY = min(h, (row + 1) * rh + ov);
-        regions.add({'x': x, 'y': y, 'w': endX - x, 'h': endY - y});
-      }
-    }
+        if (isDisposed?.call() ?? false) return false;
 
-    final List<Map<String, double>> catCentroids = [];
+        final x    = col * rw;
+        final y    = row * rh;
+        final endX = min(w, x + rw);
+        final endY = min(h, y + rh);
+        if ((endX-x) < 1 || (endY-y) < 1) continue;
 
-    for (int i = 0; i < regions.length; i++) {
-      if (isDisposed?.call() ?? false) return false;
-      final r = regions[i];
+        final cropped = img.copyCrop(
+            image, x: x, y: y, width: endX-x, height: endY-y);
+        final tmp = File(
+            '${tempDir.path}/mc_${row}_${col}_${DateTime.now().millisecondsSinceEpoch}.jpg');
+        await tmp.writeAsBytes(img.encodeJpg(cropped, quality: 65));
 
-      final cropped = img.copyCrop(image,
-          x: r['x']!, y: r['y']!, width: r['w']!, height: r['h']!);
-      final regionFile = File(
-          '${tempDir.path}/mc_${i}_${DateTime.now().millisecondsSinceEpoch}.jpg');
-      await regionFile.writeAsBytes(img.encodeJpg(cropped, quality: 70));
-
-      try {
-        final labels = await labeler.processImage(
-            InputImage.fromFilePath(regionFile.path));
-
-        double regionCatScore = 0.0;
-        for (final label in labels) {
-          final text = label.label.toLowerCase();
-          for (final l in CatLabels.cat) {
-            if (text.contains(l) && label.confidence > regionCatScore) {
-              regionCatScore = label.confidence;
+        try {
+          final labels = await labeler.processImage(
+              InputImage.fromFilePath(tmp.path));
+          double best = 0;
+          for (final lb in labels) {
+            final t = lb.label.toLowerCase();
+            for (final l in _Labels.cat) {
+              if ((t == l || t.contains(l)) && lb.confidence > best) {
+                best = lb.confidence;
+              }
             }
           }
+          if (best >= _Cfg.regionMin) {
+            catRegions.add({
+              'score': best,
+              'cx': (x + rw / 2).toDouble(),
+              'cy': (y + rh / 2).toDouble(),
+              'col': col.toDouble(),
+              'row': row.toDouble(),
+            });
+          }
+        } catch (_) {
+        } finally {
+          try { tmp.deleteSync(); } catch (_) {}
         }
-
-        if (regionCatScore >= CatDetectorConfig.regionCatMin) {
-          catCentroids.add({
-            'score': regionCatScore,
-            'cx': (r['x']! + r['w']! / 2).toDouble(),
-            'cy': (r['y']! + r['h']! / 2).toDouble(),
-          });
-        }
-      } catch (e) {
-        print('❌ Region $i error: $e');
-      } finally {
-        try { regionFile.deleteSync(); } catch (_) {}
       }
     }
 
-    if (catCentroids.length < 2) return false;
+    print('🐱 Multi-cat: found ${catRegions.length} regions with score >= ${_Cfg.regionMin}');
+    if (catRegions.length < _Cfg.minCatRegions) return false;
 
-    // วัดระยะจาก diagonal ของภาพ (แม่นกว่า width/height เฉลี่ย)
-    final double diagonal = sqrt(w * w.toDouble() + h * h.toDouble());
-    final double distThreshold = diagonal * CatDetectorConfig.distRatio;
+    final diag    = sqrt(w * w.toDouble() + h * h.toDouble());
+    final mergeTh = diag * _Cfg.mergeRatio;
+    final distTh  = diag * _Cfg.distRatio;
 
-    for (int i = 0; i < catCentroids.length; i++) {
-      for (int j = i + 1; j < catCentroids.length; j++) {
-        final dx = catCentroids[i]['cx']! - catCentroids[j]['cx']!;
-        final dy = catCentroids[i]['cy']! - catCentroids[j]['cy']!;
-        final dist = sqrt(dx * dx + dy * dy);
-        if (dist > distThreshold) {
-          print('🐱🐱 Multi-cat: dist=${dist.toStringAsFixed(1)} > threshold=${distThreshold.toStringAsFixed(1)}');
+    // ── Merge ที่ใกล้กัน (แมวตัวเดียวกัน)
+    final used   = List.filled(catRegions.length, false);
+    final merged = <Map<String,double>>[];
+    for (int i = 0; i < catRegions.length; i++) {
+      if (used[i]) continue;
+      double sx=catRegions[i]['cx']!, sy=catRegions[i]['cy']!;
+      int cnt=1;
+      for (int j=i+1; j<catRegions.length; j++) {
+        if (used[j]) continue;
+        final dx=catRegions[i]['cx']!-catRegions[j]['cx']!;
+        final dy=catRegions[i]['cy']!-catRegions[j]['cy']!;
+        if (sqrt(dx*dx+dy*dy) < mergeTh) {
+          sx+=catRegions[j]['cx']!; sy+=catRegions[j]['cy']!;
+          cnt++; used[j]=true;
+        }
+      }
+      merged.add({'cx':sx/cnt,'cy':sy/cnt});
+      used[i]=true;
+    }
+
+    print('🐱 Multi-cat: ${merged.length} clusters after merge');
+    if (merged.length < 2) return false;
+
+    // ── ตรวจว่า cluster ที่เหลือห่างกันพอ
+    for (int i=0; i<merged.length; i++) {
+      for (int j=i+1; j<merged.length; j++) {
+        final dx=merged[i]['cx']!-merged[j]['cx']!;
+        final dy=merged[i]['cy']!-merged[j]['cy']!;
+        final dist=sqrt(dx*dx+dy*dy);
+        if (dist > distTh) {
+          print('🐱🐱 Multiple cats confirmed: dist=${dist.toStringAsFixed(0)} > ${distTh.toStringAsFixed(0)}');
           return true;
         }
       }
     }
     return false;
   } catch (e) {
-    print('❌ hasMultipleCats error: $e');
+    print('❌ hasMultipleCats: $e');
     return false;
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-// MARK: - Main Detector (9-step logic flow)
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+// MARK: - Score Aggregator
+// ═══════════════════════════════════════════════════════════════════════════════
 
-Future<DetectionResult> _detectCatPro(
+class _Scores {
+  double cat=0, dog=0, artStrong=0, artWeak=0;
+  double realAnimal=0, nonCat=0;
+  String nonCatName='';
+
+  void collect(List<ImageLabel> labels) {
+    for (final lb in labels) {
+      final t = lb.label.toLowerCase().trim();
+      final c = lb.confidence;
+      print('🏷️  ${lb.label}: ${(c*100).toStringAsFixed(1)}%');
+
+      for (final l in _Labels.cat)      { if ((t==l||t.contains(l))&&c>cat) cat=c; }
+      for (final l in _Labels.dog)      { if ((t==l||t.contains(l))&&c>dog) dog=c; }
+      for (final l in _Labels.artStrong){ if ((t==l||t.contains(l))&&c>artStrong) artStrong=c; }
+      for (final l in _Labels.artWeak)  { if ((t==l||t.contains(l))&&c>artWeak) artWeak=c; }
+      for (final l in _Labels.realAnimal){ if ((t==l||t.contains(l))&&c>realAnimal) realAnimal=c; }
+      for (final l in _Labels.nonCat)   {
+        if ((t==l||t.contains(l))&&c>nonCat) { nonCat=c; nonCatName=lb.label; }
+      }
+    }
+    print('📊 cat=${cat.toStringAsFixed(2)} dog=${dog.toStringAsFixed(2)} '
+        'artS=${artStrong.toStringAsFixed(2)} artW=${artWeak.toStringAsFixed(2)} '
+        'real=${realAnimal.toStringAsFixed(2)} nonCat=$nonCatName(${nonCat.toStringAsFixed(2)})');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MARK: - Main Detector
+//
+// ปัญหาเดิม:
+//   "บอกว่าเป็นหมาทั้งที่เป็นแมว" → dogBlock=0.40 ต่ำเกินไป
+//     บางสายพันธุ์แมว (เช่น Maine Coon, Scottish Fold) ML Kit label ว่า dog ด้วย
+//     เพราะหน้าตาคล้าย → แก้ด้วยการเพิ่ม dogHard=0.55 และเช็ค catScore ก่อน
+//
+//   "บอกว่ามีหลายตัวทั้งที่มีตัวเดียว" → ดู MARK: Multi-Cat
+// ═══════════════════════════════════════════════════════════════════════════════
+
+Future<DetectionResult> detectCat(
   String imagePath,
   ImageLabeler labeler, {
   bool Function()? isDisposed,
 }) async {
-  const disposed = DetectionResult(isCat: false, reason: 'disposed', catScore: 0, isCartoon: false);
-  if (isDisposed?.call() ?? false) return disposed;
+  const _disposed = DetectionResult(
+      isCat:false, reason:'disposed', catScore:0, isCartoon:false);
+  if (isDisposed?.call() ?? false) return _disposed;
 
   try {
-    final labels = await labeler.processImage(InputImage.fromFilePath(imagePath));
-    if (isDisposed?.call() ?? false) return disposed;
+    final labels = await labeler.processImage(
+        InputImage.fromFilePath(imagePath));
+    if (isDisposed?.call() ?? false) return _disposed;
 
-    // ── รวบรวม scores
-    double catScore = 0, dogScore = 0;
-    double artStrongScore = 0, artWeakScore = 0;
-    double realAnimalScore = 0, nonCatScore = 0;
-    String nonCatName = '';
+    final s = _Scores()..collect(labels);
 
-    for (final label in labels) {
-      final text = label.label.toLowerCase();
-      final conf = label.confidence;
-      print('🏷️ ${label.label}: ${conf.toStringAsFixed(2)}');
+    // ── GATE 1: ไม่มี cat signal เลย ────────────────────────────────────────
+    if (s.cat < _Cfg.catMin) {
+      return DetectionResult(
+        isCat:false, reason:'no_cat',
+        catScore:s.cat, isCartoon:false,
+        detail:'cat=${s.cat.toStringAsFixed(2)} < ${_Cfg.catMin}',
+      );
+    }
 
-      for (final l in CatLabels.cat)       { if (text.contains(l) && conf > catScore)        catScore        = conf; }
-      for (final l in CatLabels.dog)       { if (text.contains(l) && conf > dogScore)         dogScore        = conf; }
-      for (final l in CatLabels.artStrong) { if (text.contains(l) && conf > artStrongScore)   artStrongScore  = conf; }
-      for (final l in CatLabels.artWeak)   { if (text.contains(l) && conf > artWeakScore)     artWeakScore    = conf; }
-      for (final l in CatLabels.realAnimal){ if (text.contains(l) && conf > realAnimalScore)  realAnimalScore = conf; }
-      for (final l in CatLabels.nonCat)    {
-        if (text.contains(l) && conf > nonCatScore) {
-          nonCatScore = conf;
-          nonCatName  = label.label;
+    // ── GATE 2: หมาแน่ๆ (dogHard) ────────────────────────────────────────────
+    // เพิ่ม threshold จาก 0.40 → 0.55 เพื่อแก้ปัญหา "แมวถูกเรียกว่าหมา"
+    if (s.dog >= _Cfg.dogHard) {
+      return DetectionResult(
+        isCat:false, reason:'is_dog',
+        catScore:s.cat, isCartoon:false,
+        detail:'dog=${s.dog.toStringAsFixed(2)}',
+      );
+    }
+
+    // ── GATE 3: Cat score สูงกว่า dog มากพอ (ถ้าไม่ผ่านให้ ambiguous) ────────
+    // dogSoft = 0.35: ถ้า dog >=0.35 และ cat-dog < 0.22 → ambiguous
+    if (s.dog >= _Cfg.dogSoft && (s.cat - s.dog) < _Cfg.catDogMinDiff) {
+      // ยกเว้นถ้า cat สูงมากพอ (highConf) → เชื่อ cat
+      if (s.cat < _Cfg.catHighConf) {
+        return DetectionResult(
+          isCat:false, reason:'ambiguous_cat_dog',
+          catScore:s.cat, isCartoon:false,
+          detail:'cat=${s.cat.toStringAsFixed(2)} dog=${s.dog.toStringAsFixed(2)}',
+        );
+      }
+    }
+
+    // ── GATE 4: Art/Cartoon แรง ───────────────────────────────────────────────
+    if (s.artStrong >= _Cfg.artHard) {
+      // bypass ถ้า cat สูงมาก + real animal ชัด
+      final bypass = s.cat >= _Cfg.catHighConf && s.realAnimal >= _Cfg.realMin;
+      if (!bypass) {
+        return DetectionResult(
+          isCat:false, reason:'art_cartoon',
+          catScore:s.cat, isCartoon:true,
+          detail:'artStrong=${s.artStrong.toStringAsFixed(2)}',
+        );
+      }
+    }
+
+    // ── GATE 5: Pixel-level cartoon check ─────────────────────────────────────
+    // ทำเฉพาะเมื่อ cat ไม่สูงมาก หรือมี art signal
+    ({bool isCartoon, double conf})? pixelResult;
+    if (s.cat < _Cfg.catHighConf || s.artWeak >= _Cfg.artSoft) {
+      pixelResult = await _pixelCartoonCheck(imagePath);
+      if (isDisposed?.call() ?? false) return _disposed;
+
+      if (pixelResult.isCartoon) {
+        // bypass ถ้า cat สูงมาก + real animal ชัด
+        final bypass = s.cat >= _Cfg.catHighConf && s.realAnimal >= _Cfg.realMin;
+        if (!bypass) {
+          return DetectionResult(
+            isCat:false, reason:'cartoon_texture',
+            catScore:s.cat, isCartoon:true,
+            detail:'pixelConf=${pixelResult.conf.toStringAsFixed(2)}',
+          );
         }
       }
     }
 
-    // STEP 1: ❌ หมา
-    if (dogScore >= CatDetectorConfig.dogBlock) {
-      return DetectionResult(isCat: false, reason: 'is_dog',
-          catScore: catScore, isCartoon: false,
-          detail: 'dog=$dogScore');
+    // ── GATE 6: ต้องมี real animal signal (ยกเว้น cat สูงมาก) ───────────────
+    if (s.cat < _Cfg.catHighConf) {
+      final adjReal = s.dog >= 0.20
+          ? s.realAnimal * (1.0 - s.dog * 0.35)
+          : s.realAnimal;
+      if (adjReal < _Cfg.realMin) {
+        return DetectionResult(
+          isCat:false, reason:'no_real_animal',
+          catScore:s.cat, isCartoon: pixelResult?.isCartoon ?? false,
+          detail:'adjReal=${adjReal.toStringAsFixed(2)}',
+        );
+      }
     }
 
-    // STEP 2: ❌ Cat score ต่ำเกินไป
-    if (catScore < CatDetectorConfig.catScoreMin) {
-      return DetectionResult(isCat: false, reason: 'cat_score_too_low',
-          catScore: catScore, isCartoon: false,
-          detail: 'cat=$catScore < min=${CatDetectorConfig.catScoreMin}');
-    }
-
-    // STEP 3: ❌ Art strong signal (ยกเว้น catScore สูงมาก + real animal ชัด)
-    if (artStrongScore >= CatDetectorConfig.artScoreBlock) {
-      final bool bypass = catScore  >= CatDetectorConfig.catScoreHigh &&
-                          realAnimalScore >= CatDetectorConfig.realAnimalMin;
+    // ── GATE 7: Non-cat animal ────────────────────────────────────────────────
+    if (s.nonCat >= _Cfg.nonCatHard) {
+      // bypass ถ้า cat ชนะ nonCat อย่างชัดเจน
+      final bypass = s.cat >= _Cfg.catHighConf && (s.cat - s.nonCat) > 0.20;
       if (!bypass) {
-        return DetectionResult(isCat: false, reason: 'art_strong',
-            catScore: catScore, isCartoon: true,
-            detail: 'artStrong=$artStrongScore');
+        return DetectionResult(
+          isCat:false, reason:'non_cat:${s.nonCatName}',
+          catScore:s.cat, isCartoon:false,
+          detail:'${s.nonCatName}=${s.nonCat.toStringAsFixed(2)}',
+        );
       }
     }
 
-    // STEP 4: 🎨 Cartoon texture check (เฉพาะเมื่อ catScore ไม่สูงหรือมี art weak)
-    _CartoonCheckResult? cartoonResult;
-    if (catScore < CatDetectorConfig.catScoreHigh ||
-        artWeakScore >= CatDetectorConfig.artScoreWeak) {
-      cartoonResult = await _cartoonCheck(imagePath);
-      if (isDisposed?.call() ?? false) return disposed;
-
-      if (cartoonResult.isCartoon && catScore < CatDetectorConfig.catScoreHigh) {
-        return DetectionResult(isCat: false, reason: 'cartoon_texture',
-            catScore: catScore, isCartoon: true,
-            detail: 'conf=${cartoonResult.confidence.toStringAsFixed(2)}');
-      }
+    // ── GATE 8: Cat score ต้องผ่าน threshold ──────────────────────────────────
+    if (s.cat < _Cfg.catPass) {
+      return DetectionResult(
+        isCat:false, reason:'cat_score_low',
+        catScore:s.cat, isCartoon: pixelResult?.isCartoon ?? false,
+        detail:'cat=${s.cat.toStringAsFixed(2)} < ${_Cfg.catPass}',
+      );
     }
 
-    // STEP 5: ❌ Real animal signal ต่ำ (ยกเว้น catScore สูงมาก)
-    if (catScore < CatDetectorConfig.catScoreHigh) {
-      final double adjustedReal = dogScore >= 0.25
-          ? realAnimalScore * (1.0 - dogScore * 0.5)
-          : realAnimalScore;
-      if (adjustedReal < CatDetectorConfig.realAnimalMin) {
-        return DetectionResult(isCat: false, reason: 'no_real_animal_signal',
-            catScore: catScore, isCartoon: cartoonResult?.isCartoon ?? false,
-            detail: 'adjustedReal=$adjustedReal');
-      }
+    // ── GATE 9: Multi-cat (ทำสุดท้ายเพราะช้าสุด) ────────────────────────────
+    final multi = await _hasMultipleCats(imagePath, labeler, isDisposed: isDisposed);
+    if (isDisposed?.call() ?? false) return _disposed;
+    if (multi) {
+      return DetectionResult(
+        isCat:false, reason:'multiple_cats',
+        catScore:s.cat, isCartoon:false,
+      );
     }
 
-    // STEP 6: ❌ Non-cat animal
-    if (nonCatScore >= CatDetectorConfig.nonCatBlock) {
-      return DetectionResult(isCat: false, reason: 'non_cat_animal:$nonCatName',
-          catScore: catScore, isCartoon: false,
-          detail: '$nonCatName=$nonCatScore');
-    }
-
-    // STEP 7: ❌ Cat vs Dog ambiguous
-    if (dogScore > 0.15 && (catScore - dogScore) < 0.20) {
-      return DetectionResult(isCat: false, reason: 'ambiguous_cat_dog',
-          catScore: catScore, isCartoon: false,
-          detail: 'cat=$catScore dog=$dogScore diff=${(catScore - dogScore).toStringAsFixed(2)}');
-    }
-
-    // STEP 8: ❌ Cat score ยังไม่มั่นใจพอ
-    if (catScore < CatDetectorConfig.catScoreConfident) {
-      return DetectionResult(isCat: false, reason: 'cat_score_low',
-          catScore: catScore, isCartoon: cartoonResult?.isCartoon ?? false,
-          detail: 'cat=$catScore < confident=${CatDetectorConfig.catScoreConfident}');
-    }
-
-    // STEP 9: 🐱🐱 Multi-cat (ทำสุดท้ายเพราะช้าสุด)
-    final bool multiCat = await _hasMultipleCats(imagePath, labeler, isDisposed: isDisposed);
-    if (isDisposed?.call() ?? false) return disposed;
-    if (multiCat) {
-      return DetectionResult(isCat: false, reason: 'multiple_cats',
-          catScore: catScore, isCartoon: false);
-    }
-
-    // ✅ ผ่านทุก step
-    return DetectionResult(isCat: true, reason: 'passed',
-        catScore: catScore, isCartoon: false,
-        detail: 'real=$realAnimalScore');
-
-  } catch (e) {
-    return DetectionResult(isCat: false, reason: 'error',
-        catScore: 0, isCartoon: false, detail: e.toString());
+    // ── ✅ ผ่านทุก gate ─────────────────────────────────────────────────────
+    print('✅ Cat passed all gates! score=${s.cat.toStringAsFixed(2)}');
+    return DetectionResult(
+      isCat:true, reason:'passed',
+      catScore:s.cat, isCartoon:false,
+      detail:'real=${s.realAnimal.toStringAsFixed(2)}',
+    );
+  } catch (e,st) {
+    print('❌ detectCat error: $e\n$st');
+    return DetectionResult(
+        isCat:false, reason:'error', catScore:0, isCartoon:false, detail:'$e');
   }
 }
 
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
 // MARK: - Camera Overlay Painter
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
 
 class _RectHolePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final double rectW = size.width * 0.80;
-    final double rectH = size.height * 0.55;
-    final double left  = (size.width  - rectW) / 2;
-    final double top   = (size.height - rectH) / 2;
+    final rw   = size.width  * 0.80;
+    final rh   = size.height * 0.55;
+    final left = (size.width  - rw) / 2;
+    final top  = (size.height - rh) / 2;
 
     final rrect = RRect.fromLTRBR(
-        left, top, left + rectW, top + rectH, const Radius.circular(20));
-    final cutPath = Path.combine(
-      PathOperation.difference,
-      Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height)),
-      Path()..addRRect(rrect),
+        left, top, left+rw, top+rh, const Radius.circular(20));
+
+    canvas.drawPath(
+      Path.combine(PathOperation.difference,
+        Path()..addRect(Rect.fromLTWH(0,0,size.width,size.height)),
+        Path()..addRRect(rrect)),
+      Paint()..color = Colors.black.withOpacity(0.55),
     );
-    canvas.drawPath(cutPath, Paint()..color = Colors.black.withOpacity(0.55));
     canvas.drawRRect(rrect, Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2
       ..color = Colors.white.withOpacity(0.5));
 
-    final accentPaint = Paint()
+    final acc = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 5
       ..color = Colors.white
       ..strokeCap = StrokeCap.round;
-    const double cLen = 28.0, r = 20.0;
-
-    // มุมกรอบ 4 มุม
-    canvas.drawLine(Offset(left + r, top),          Offset(left + r + cLen, top),          accentPaint);
-    canvas.drawLine(Offset(left, top + r),           Offset(left, top + r + cLen),           accentPaint);
-    canvas.drawLine(Offset(left + rectW - r, top),   Offset(left + rectW - r - cLen, top),   accentPaint);
-    canvas.drawLine(Offset(left + rectW, top + r),   Offset(left + rectW, top + r + cLen),   accentPaint);
-    canvas.drawLine(Offset(left + r, top + rectH),   Offset(left + r + cLen, top + rectH),   accentPaint);
-    canvas.drawLine(Offset(left, top + rectH - r),   Offset(left, top + rectH - r - cLen),   accentPaint);
-    canvas.drawLine(Offset(left + rectW - r, top + rectH), Offset(left + rectW - r - cLen, top + rectH), accentPaint);
-    canvas.drawLine(Offset(left + rectW, top + rectH - r), Offset(left + rectW, top + rectH - r - cLen), accentPaint);
+    const cL = 28.0, r = 20.0;
+    canvas.drawLine(Offset(left+r, top),         Offset(left+r+cL, top),         acc);
+    canvas.drawLine(Offset(left, top+r),          Offset(left, top+r+cL),          acc);
+    canvas.drawLine(Offset(left+rw-r, top),       Offset(left+rw-r-cL, top),       acc);
+    canvas.drawLine(Offset(left+rw, top+r),       Offset(left+rw, top+r+cL),       acc);
+    canvas.drawLine(Offset(left+r, top+rh),       Offset(left+r+cL, top+rh),       acc);
+    canvas.drawLine(Offset(left, top+rh-r),       Offset(left, top+rh-r-cL),       acc);
+    canvas.drawLine(Offset(left+rw-r, top+rh),    Offset(left+rw-r-cL, top+rh),    acc);
+    canvas.drawLine(Offset(left+rw, top+rh-r),    Offset(left+rw, top+rh-r-cL),    acc);
   }
-
   @override
-  bool shouldRepaint(covariant _RectHolePainter old) => false;
+  bool shouldRepaint(covariant _RectHolePainter _) => false;
 }
 
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
 // MARK: - CatData Model
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
 
 class CatData {
   final String name;
@@ -543,35 +671,35 @@ class CatData {
     this.dbId,
   });
 
-  factory CatData.fromJson(Map<String, dynamic> json) => CatData(
-        name:         json['name'],
-        breed:        json['breed'],
-        age:          json['age'],
-        weight:       (json['weight'] as num).toDouble(),
-        sizeCategory: json['size_category'],
-        chestCm:      (json['chest_cm'] as num).toDouble(),
-        neckCm:       json['neck_cm'] != null ? (json['neck_cm'] as num).toDouble() : null,
-        bodyLengthCm: json['body_length_cm'] != null ? (json['body_length_cm'] as num).toDouble() : null,
-        confidence:   (json['confidence'] as num).toDouble(),
-        boundingBox:  List<double>.from(json['bounding_box'].map((e) => (e as num).toDouble())),
-        imageUrl:     json['image_cat'] ?? json['image_url'] ?? '',
-        thumbnailUrl: json['thumbnail_url'],
-        detectedAt:   DateTime.parse(json['detected_at']),
-        dbId:         json['db_id'],
-      );
+  factory CatData.fromJson(Map<String,dynamic> j) => CatData(
+    name:         j['name'],
+    breed:        j['breed'],
+    age:          j['age'],
+    weight:       (j['weight'] as num).toDouble(),
+    sizeCategory: j['size_category'],
+    chestCm:      (j['chest_cm'] as num).toDouble(),
+    neckCm:       j['neck_cm'] != null ? (j['neck_cm'] as num).toDouble() : null,
+    bodyLengthCm: j['body_length_cm'] != null ? (j['body_length_cm'] as num).toDouble() : null,
+    confidence:   (j['confidence'] as num).toDouble(),
+    boundingBox:  List<double>.from(j['bounding_box'].map((e)=>(e as num).toDouble())),
+    imageUrl:     j['image_cat'] ?? j['image_url'] ?? '',
+    thumbnailUrl: j['thumbnail_url'],
+    detectedAt:   DateTime.parse(j['detected_at']),
+    dbId:         j['db_id'],
+  );
 }
 
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
 // MARK: - Widget Entry Point
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
 
 class MeasureSizeCat extends StatelessWidget {
   const MeasureSizeCat({super.key});
   @override
   Widget build(BuildContext context) => BlocProvider(
-        create: (_) => CatAnalysisBloc(),
-        child: const _MeasureSizeCatView(),
-      );
+    create: (_) => CatAnalysisBloc(),
+    child: const _MeasureSizeCatView(),
+  );
 }
 
 class _MeasureSizeCatView extends StatefulWidget {
@@ -580,19 +708,19 @@ class _MeasureSizeCatView extends StatefulWidget {
   State<_MeasureSizeCatView> createState() => _MeasureSizeCatState();
 }
 
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
 // MARK: - State
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
 
 class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
-  final ImagePicker        _picker       = ImagePicker();
-  final FavouriteApiService _favouriteApi = FavouriteApiService();
-  final BasketApiService    _basketApi    = BasketApiService();
+  final _picker       = ImagePicker();
+  final _favouriteApi = FavouriteApiService();
+  final _basketApi    = BasketApiService();
 
   bool              _isCapturing = false;
   bool              _isDisposed  = false;
-  CameraController? _cameraController;
-  late ImageLabeler _imageLabeler;
+  CameraController? _cameraCtrl;
+  late ImageLabeler _labeler;
 
   @override
   void initState() {
@@ -604,99 +732,95 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
   @override
   void dispose() {
     _isDisposed = true;
-    _cameraController?.dispose();
-    _cameraController = null;
-    _imageLabeler.close();
+    _cameraCtrl?.dispose();
+    _cameraCtrl = null;
+    _labeler.close();
     super.dispose();
   }
 
   void _initMLKit() {
-    _imageLabeler = ImageLabeler(
-        options: ImageLabelerOptions(confidenceThreshold: 0.45));
+    // ใช้ threshold ต่ำ แล้วกรองด้วย logic เอง (มาตรฐาน)
+    _labeler = ImageLabeler(
+        options: ImageLabelerOptions(confidenceThreshold: _Cfg.mlkitThreshold));
   }
 
   void _initCamera() async {
     if (!mounted || _isDisposed) return;
     try {
-      final cameras = await availableCameras();
+      final cams = await availableCameras();
       if (!mounted || _isDisposed) return;
-      final back = cameras.firstWhere(
+      final back = cams.firstWhere(
         (c) => c.lensDirection == CameraLensDirection.back,
-        orElse: () => cameras.first,
+        orElse: () => cams.first,
       );
-      await _cameraController?.dispose();
-      _cameraController = null;
+      await _cameraCtrl?.dispose();
+      _cameraCtrl = null;
       if (!mounted || _isDisposed) return;
-      _cameraController =
-          CameraController(back, ResolutionPreset.high, enableAudio: false);
-      await _cameraController!.initialize();
+      _cameraCtrl = CameraController(back, ResolutionPreset.high, enableAudio: false);
+      await _cameraCtrl!.initialize();
       if (mounted && !_isDisposed) setState(() {});
     } catch (e) {
       if (mounted && !_isDisposed) _showError('เปิดกล้องไม่สำเร็จ: $e');
     }
   }
 
-  // ─── Image helpers ───────────────────────────────────────
+  // ─── Image helpers ───────────────────────────────────────────────────────
 
-  Future<File?> _cropToRectArea(String imagePath) async {
+  Future<File?> _cropToFrame(String path) async {
     try {
-      final bytes = await File(imagePath).readAsBytes();
-      img.Image? image = img.decodeImage(bytes);
+      final image = img.decodeImage(await File(path).readAsBytes());
       if (image == null) return null;
-      final int cropX = ((image.width  * 0.10)).toInt().clamp(0, image.width);
-      final int cropY = ((image.height * 0.225)).toInt().clamp(0, image.height);
-      final int cropW = (image.width  * 0.80).toInt().clamp(1, image.width  - cropX);
-      final int cropH = (image.height * 0.55).toInt().clamp(1, image.height - cropY);
-      final cropped = img.copyCrop(image, x: cropX, y: cropY, width: cropW, height: cropH);
-      final tempDir = await getTemporaryDirectory();
-      final f = File('${tempDir.path}/cat_crop_${DateTime.now().millisecondsSinceEpoch}.jpg');
+      final x = (image.width  * 0.10).toInt().clamp(0, image.width);
+      final y = (image.height * 0.225).toInt().clamp(0, image.height);
+      final w = (image.width  * 0.80).toInt().clamp(1, image.width  - x);
+      final h = (image.height * 0.55).toInt().clamp(1, image.height - y);
+      final cropped = img.copyCrop(image, x:x, y:y, width:w, height:h);
+      final tmp = await getTemporaryDirectory();
+      final f = File('${tmp.path}/cat_crop_${DateTime.now().millisecondsSinceEpoch}.jpg');
       await f.writeAsBytes(img.encodeJpg(cropped, quality: 92));
       return f;
     } catch (_) { return null; }
   }
 
-  Future<File?> _compressImage(File imageFile) async {
+  Future<File?> _compress(File src) async {
     try {
-      if (!await imageFile.exists()) return null;
-      final bytes = await imageFile.readAsBytes();
-      img.Image? image = img.decodeImage(bytes);
+      if (!await src.exists()) return null;
+      var image = img.decodeImage(await src.readAsBytes());
       if (image == null) return null;
-      const maxSize = 1920;
-      if (image.width > maxSize || image.height > maxSize) {
+      const mx = 1920;
+      if (image.width > mx || image.height > mx) {
         image = img.copyResize(image,
-            width:  image.width  > image.height ? maxSize : null,
-            height: image.height > image.width  ? maxSize : null);
+            width:  image.width  > image.height ? mx : null,
+            height: image.height > image.width  ? mx : null);
       }
-      final tempDir = await getTemporaryDirectory();
-      final f = File('${tempDir.path}/cat_gallery_${DateTime.now().millisecondsSinceEpoch}.jpg');
+      final tmp = await getTemporaryDirectory();
+      final f = File('${tmp.path}/cat_out_${DateTime.now().millisecondsSinceEpoch}.jpg');
       await f.writeAsBytes(img.encodeJpg(image, quality: 92));
       return f;
     } catch (_) { return null; }
   }
 
-  // ─── Capture / Pick ──────────────────────────────────────
+  // ─── Capture ─────────────────────────────────────────────────────────────
 
-  Future<void> _captureFromLiveCamera() async {
+  Future<void> _captureFromCamera() async {
     if (_isCapturing || _isDisposed) return;
-    final ctrl = _cameraController;
+    final ctrl = _cameraCtrl;
     if (ctrl == null || !ctrl.value.isInitialized) {
-      _showError('กล้องยังไม่พร้อม');
-      return;
+      _showError('กล้องยังไม่พร้อม'); return;
     }
     if (mounted) setState(() => _isCapturing = true);
     try {
-      final XFile photo = await ctrl.takePicture();
+      final photo = await ctrl.takePicture();
       if (!mounted || _isDisposed) return;
 
-      final croppedFile = await _cropToRectArea(photo.path);
-      if (!mounted || _isDisposed) { croppedFile?.delete(); File(photo.path).delete(); return; }
+      final cropped = await _cropToFrame(photo.path);
+      if (!mounted || _isDisposed) { cropped?.delete(); File(photo.path).delete(); return; }
 
-      final result = await _detectCatPro(
-        croppedFile?.path ?? photo.path,
-        _imageLabeler,
+      final result = await detectCat(
+        cropped?.path ?? photo.path, _labeler,
         isDisposed: () => _isDisposed,
       );
-      try { croppedFile?.delete(); } catch (_) {}
+      try { cropped?.delete(); } catch (_) {}
       if (!mounted || _isDisposed) { File(photo.path).delete(); return; }
 
       if (!result.isCat) {
@@ -706,16 +830,16 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
         return;
       }
 
-      final processed = await _compressImage(File(photo.path));
+      final processed = await _compress(File(photo.path));
       try { File(photo.path).delete(); } catch (_) {}
       if (!mounted || _isDisposed) return;
 
       await ctrl.dispose();
       if (mounted && !_isDisposed) {
-        setState(() { _cameraController = null; _isCapturing = false; });
+        setState(() { _cameraCtrl = null; _isCapturing = false; });
         if (processed != null) {
           context.read<CatAnalysisBloc>().add(CatImageSelected(processed));
-          _showSuccessMessage('กดวิเคราะห์ได้เลย');
+          _showSuccessMessage('พบแมว! ✅ กดวิเคราะห์ได้เลย');
         }
       }
     } catch (e) {
@@ -724,20 +848,21 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
     }
   }
 
-  Future<void> _pickImage() async {
+  // ─── Pick from Gallery ───────────────────────────────────────────────────
+
+  Future<void> _pickFromGallery() async {
     if (_isCapturing || _isDisposed) return;
     try {
-      final XFile? image = await _picker.pickImage(
+      final picked = await _picker.pickImage(
           source: ImageSource.gallery, imageQuality: 95,
           maxWidth: 1920, maxHeight: 1920);
-      if (image == null) return;
-      if (!mounted || _isDisposed) return;
+      if (picked == null || !mounted || _isDisposed) return;
 
       setState(() => _isCapturing = true);
 
-      final result = await _detectCatPro(
-        image.path,
-        _imageLabeler,
+      // สำหรับแกลเลอรี: ตรวจภาพเต็ม (ไม่ crop) เพราะผู้ใช้เลือกมาเองแล้ว
+      final result = await detectCat(
+        picked.path, _labeler,
         isDisposed: () => _isDisposed,
       );
       if (!mounted || _isDisposed) return;
@@ -748,12 +873,12 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
         return;
       }
 
-      final processed = await _compressImage(File(image.path));
+      final processed = await _compress(File(picked.path));
       if (!mounted || _isDisposed) return;
 
       if (processed != null) {
-        await _cameraController?.dispose();
-        _cameraController = null;
+        await _cameraCtrl?.dispose();
+        _cameraCtrl = null;
         if (mounted && !_isDisposed) {
           setState(() => _isCapturing = false);
           context.read<CatAnalysisBloc>().add(CatImageSelected(processed));
@@ -775,15 +900,15 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
     _initCamera();
   }
 
-  // ─── Dialogs ─────────────────────────────────────────────
+  // ─── Dialogs ──────────────────────────────────────────────────────────────
 
   void _showQuotaDialog() {
     if (!mounted || _isDisposed) return;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? Colors.grey[900] : Colors.white,
+        backgroundColor: dark ? Colors.grey[900] : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -820,39 +945,43 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
 
   void _showRejectDialog(DetectionResult result) {
     if (!mounted || _isDisposed) return;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dark = Theme.of(context).brightness == Brightness.dark;
 
-    String title, reason;
-    IconData icon;
-    Color iconColor;
+    String title, message;
+    IconData icon; Color iconColor;
 
-    if (result.reason == 'multiple_cats') {
-      title = '🐱🐱 ตรวจพบแมวหลายตัว';
-      reason = 'ระบบตรวจพบแมวมากกว่า 1 ตัวในภาพ\nกรุณาถ่ายรูปแมวทีละตัวเท่านั้น';
-      icon = Icons.pets; iconColor = Colors.purple;
-    } else if (result.isCartoon || result.reason == 'art_strong' || result.reason == 'cartoon_texture') {
-      title = '🎨 ตรวจพบภาพที่ไม่ใช่แมวจริง';
-      reason = 'ระบบตรวจพบว่าเป็นภาพการ์ตูน, รูปวาด, โมเดล, ของปั้น หรือ origami';
-      icon = Icons.draw_outlined; iconColor = Colors.orange;
-    } else if (result.reason.startsWith('non_cat_animal:')) {
-      final animalName = result.reason.split(':').last;
-      title = '🚫 ตรวจพบสัตว์อื่น';
-      reason = 'ระบบตรวจพบ "$animalName" ในภาพ\nฟีเจอร์นี้รองรับเฉพาะแมวเท่านั้น';
-      icon = Icons.pets; iconColor = Colors.deepOrange;
-    } else if (result.reason == 'is_dog' || result.reason == 'ambiguous_cat_dog') {
-      title = '🐶 ตรวจพบสุนัข';
-      reason = 'ภาพมีลักษณะคล้ายสุนัขมากกว่าแมว';
-      icon = Icons.pets; iconColor = Colors.brown;
+    final r = result.reason;
+    if (r == 'multiple_cats') {
+      title='🐱🐱 ตรวจพบแมวหลายตัว';
+      message='ระบบตรวจพบแมวมากกว่า 1 ตัวในภาพ\nกรุณาถ่ายรูปแมวทีละตัวเท่านั้น';
+      icon=Icons.pets; iconColor=Colors.purple;
+    } else if (result.isCartoon || r=='art_cartoon' || r=='cartoon_texture') {
+      title='🎨 ไม่ใช่ภาพแมวจริง';
+      message='ระบบตรวจพบว่าเป็นภาพการ์ตูน รูปวาด โมเดล\nหรือของเล่น กรุณาใช้รูปถ่ายแมวจริงเท่านั้น';
+      icon=Icons.draw_outlined; iconColor=Colors.orange;
+    } else if (r=='is_dog') {
+      title='🐶 ตรวจพบสุนัข';
+      message='ภาพนี้มีลักษณะของสุนัข\nฟีเจอร์นี้รองรับเฉพาะแมวเท่านั้น';
+      icon=Icons.pets; iconColor=Colors.brown;
+    } else if (r=='ambiguous_cat_dog') {
+      title='🤔 ไม่สามารถระบุได้';
+      message='ระบบไม่แน่ใจว่าเป็นแมวหรือสุนัข\nลองถ่ายรูปให้เห็นแมวชัดเจนยิ่งขึ้น';
+      icon=Icons.help_outline; iconColor=Colors.orange;
+    } else if (r.startsWith('non_cat:')) {
+      final name = r.split(':').last;
+      title='🚫 ตรวจพบสัตว์อื่น';
+      message='ระบบตรวจพบ "$name" ในภาพ\nฟีเจอร์นี้รองรับเฉพาะแมวเท่านั้น';
+      icon=Icons.pets; iconColor=Colors.deepOrange;
     } else {
-      title = '😿 ไม่พบแมวในภาพ';
-      reason = 'ไม่สามารถตรวจพบแมวในภาพได้\nลองปรับมุมกล้อง ให้เห็นแมวชัดเจนยิ่งขึ้น';
-      icon = Icons.search_off; iconColor = Colors.grey;
+      title='😿 ไม่พบแมวในภาพ';
+      message='ไม่สามารถตรวจพบแมวในภาพได้\nลองถ่ายรูปใหม่ให้เห็นแมวชัดเจนทั้งตัว';
+      icon=Icons.search_off; iconColor=Colors.grey;
     }
 
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? Colors.grey[900] : Colors.white,
+        backgroundColor: dark ? Colors.grey[900] : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -865,15 +994,18 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: dark ? Colors.grey[800] : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(12)),
-            child: Text(reason,
-                style: TextStyle(fontSize: 14, color: Colors.grey.shade700, height: 1.5),
+            child: Text(message,
+                style: TextStyle(
+                    fontSize: 14,
+                    color: dark ? Colors.white70 : Colors.grey.shade700,
+                    height: 1.5),
                 textAlign: TextAlign.center),
           ),
           if (result.catScore > 0) ...[
             const SizedBox(height: 8),
-            Text('Cat score: ${(result.catScore * 100).toStringAsFixed(0)}%',
+            Text('Cat score: ${(result.catScore*100).toStringAsFixed(0)}%',
                 style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
           ],
         ]),
@@ -888,16 +1020,16 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
     );
   }
 
-  void _showProductDialog(BuildContext context, Map<String, dynamic> product, bool isDark) {
-    final lang = Provider.of<LanguageProvider>(context, listen: false);
-    final String uuid         = product['uuid']?.toString() ?? product['id']?.toString() ?? '';
-    final String name         = product['clothing_name'] ?? product['name'] ?? 'Unknown';
-    final String imageUrl     = product['image_url'] ?? product['imageUrl'] ?? '';
-    final double price        = (product['price'] as num?)?.toDouble() ?? 0.0;
-    final double? discPrice   = (product['discount_price'] as num?)?.toDouble();
-    final String priceDisplay = discPrice != null
+  void _showProductDialog(BuildContext context, Map<String,dynamic> product, bool dark) {
+    final lang        = Provider.of<LanguageProvider>(context, listen: false);
+    final uuid        = product['uuid']?.toString() ?? product['id']?.toString() ?? '';
+    final name        = product['clothing_name'] ?? product['name'] ?? 'Unknown';
+    final imageUrl    = product['image_url'] ?? product['imageUrl'] ?? '';
+    final price       = (product['price'] as num?)?.toDouble() ?? 0.0;
+    final discPrice   = (product['discount_price'] as num?)?.toDouble();
+    final priceDisplay = discPrice != null
         ? '฿${discPrice.toStringAsFixed(0)}'
-        : price > 0 ? '฿${price.toStringAsFixed(0)}' : '${product['price'] ?? ''}';
+        : price > 0 ? '฿${price.toStringAsFixed(0)}' : '${product['price']??''}';
 
     showDialog(
       context: context,
@@ -909,17 +1041,17 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
           constraints: const BoxConstraints(maxWidth: 400, minWidth: 320),
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: isDark ? Colors.grey[900] : Colors.white,
-            borderRadius: BorderRadius.circular(20),
-          ),
+              color: dark ? Colors.grey[900] : Colors.white,
+              borderRadius: BorderRadius.circular(20)),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               const SizedBox(width: 32),
               Text(lang.translate(en: 'Added to Favorites', th: 'เพิ่มในรายการโปรด'),
                   style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black87)),
+                      color: dark ? Colors.white : Colors.black87)),
               IconButton(
-                icon: Icon(Icons.close, color: isDark ? Colors.white70 : Colors.black54, size: 24),
+                icon: Icon(Icons.close,
+                    color: dark ? Colors.white70 : Colors.black54, size: 24),
                 onPressed: () => Navigator.pop(ctx),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
@@ -929,75 +1061,89 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
             Container(
               height: 220, width: double.infinity,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                color: isDark ? Colors.grey[800] : Colors.grey[200],
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
-              ),
+                  borderRadius: BorderRadius.circular(16),
+                  color: dark ? Colors.grey[800] : Colors.grey[200],
+                  boxShadow: [BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10, offset: const Offset(0,4))]),
               child: Stack(children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(16),
                   child: imageUrl.isNotEmpty
-                      ? Image.network(imageUrl, width: double.infinity, height: double.infinity, fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Center(child: Icon(Icons.shopping_bag, size: 60, color: Colors.grey[400])))
-                      : Center(child: Icon(Icons.shopping_bag, size: 60, color: Colors.grey[400])),
+                      ? Image.network(imageUrl, width: double.infinity,
+                          height: double.infinity, fit: BoxFit.cover,
+                          errorBuilder: (_,__,___) => Center(
+                              child: Icon(Icons.shopping_bag,
+                                  size: 60, color: Colors.grey[400])))
+                      : Center(child: Icon(Icons.shopping_bag,
+                          size: 60, color: Colors.grey[400])),
                 ),
                 Positioned(top: 12, right: 12,
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(color: Colors.black.withOpacity(0.1), shape: BoxShape.circle),
-                    child: const Icon(Icons.favorite, color: Colors.red, size: 26),
-                  )),
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.1),
+                          shape: BoxShape.circle),
+                      child: const Icon(Icons.favorite, color: Colors.red, size: 26),
+                    )),
               ]),
             ),
             const SizedBox(height: 20),
-            Text(name, style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black87),
-                textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis),
+            Text(name,
+                style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold,
+                    color: dark ? Colors.white : Colors.black87),
+                textAlign: TextAlign.center,
+                maxLines: 2, overflow: TextOverflow.ellipsis),
             const SizedBox(height: 10),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-              child: Text(lang.translate(en: 'Price: $priceDisplay', th: 'ราคา: $priceDisplay'),
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orange)),
+              decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8)),
+              child: Text(
+                lang.translate(en: 'Price: $priceDisplay', th: 'ราคา: $priceDisplay'),
+                style: const TextStyle(
+                    fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orange),
+              ),
             ),
             const SizedBox(height: 24),
             Row(children: [
-              Expanded(
-                flex: 2,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    Navigator.pop(ctx);
-                    try {
-                      await _basketApi.addToBasket(clothingUuid: uuid);
-                      _showSuccessMessage(lang.translate(en: 'Added to cart!', th: 'เพิ่มลงตะกร้าแล้ว!'));
-                    } catch (_) {
-                      _showError(lang.translate(en: 'Failed to add to cart', th: 'เพิ่มลงตะกร้าไม่สำเร็จ'));
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: Colors.green, foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                  child: Text(lang.translate(en: 'Buy', th: 'ซื้อ'),
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                ),
-              ),
+              Expanded(flex: 2, child: ElevatedButton(
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  try {
+                    await _basketApi.addToBasket(clothingUuid: uuid);
+                    _showSuccessMessage(
+                        lang.translate(en: 'Added to cart!', th: 'เพิ่มลงตะกร้าแล้ว!'));
+                  } catch (_) {
+                    _showError(lang.translate(
+                        en: 'Failed to add to cart', th: 'เพิ่มลงตะกร้าไม่สำเร็จ'));
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: Colors.green, foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12))),
+                child: Text(lang.translate(en: 'Buy', th: 'ซื้อ'),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              )),
               const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    _showInfoMessage(lang.translate(en: 'Opening details...', th: 'กำลังเปิดรายละเอียด...'));
-                  },
-                  style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: isDark ? Colors.grey[700] : Colors.grey[300],
-                      foregroundColor: isDark ? Colors.white : Colors.black87,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                  child: Text(lang.translate(en: 'More', th: 'เพิ่มเติม'),
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                ),
-              ),
+              Expanded(child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _showInfoMessage(lang.translate(
+                      en: 'Opening details...', th: 'กำลังเปิดรายละเอียด...'));
+                },
+                style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: dark ? Colors.grey[700] : Colors.grey[300],
+                    foregroundColor: dark ? Colors.white : Colors.black87,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12))),
+                child: Text(lang.translate(en: 'More', th: 'เพิ่มเติม'),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              )),
             ]),
           ]),
         ),
@@ -1005,13 +1151,13 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
     );
   }
 
-  Future<void> _showEditDialog(CatData catData) async {
-    final colorCtrl = TextEditingController(text: catData.name);
-    final breedCtrl = TextEditingController(text: catData.breed ?? '');
-    final ageCtrl   = TextEditingController(text: catData.age?.toString() ?? '');
-    String selectedSize = catData.sizeCategory;
+  Future<void> _showEditDialog(CatData cat) async {
+    final colorCtrl = TextEditingController(text: cat.name);
+    final breedCtrl = TextEditingController(text: cat.breed ?? '');
+    final ageCtrl   = TextEditingController(text: cat.age?.toString() ?? '');
+    String selSize  = cat.sizeCategory;
 
-    final result = await showModalBottomSheet<bool>(
+    final ok = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
@@ -1020,7 +1166,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
         padding: EdgeInsets.only(left: 20, right: 20, top: 20,
             bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
         child: StatefulBuilder(
-          builder: (ctx2, setModal) => Column(
+          builder: (ctx2, setM) => Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1032,43 +1178,52 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               TextField(controller: colorCtrl,
-                  decoration: const InputDecoration(labelText: 'สีแมว / Cat Color', border: OutlineInputBorder())),
+                  decoration: const InputDecoration(
+                      labelText: 'สีแมว / Cat Color',
+                      border: OutlineInputBorder())),
               const SizedBox(height: 12),
               TextField(controller: breedCtrl,
-                  decoration: const InputDecoration(labelText: 'พันธุ์ / Breed', border: OutlineInputBorder())),
+                  decoration: const InputDecoration(
+                      labelText: 'พันธุ์ / Breed',
+                      border: OutlineInputBorder())),
               const SizedBox(height: 12),
-              TextField(controller: ageCtrl, keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'อายุ (ปี)', border: OutlineInputBorder())),
+              TextField(controller: ageCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                      labelText: 'อายุ (ปี)',
+                      border: OutlineInputBorder())),
               const SizedBox(height: 12),
               const Text('ขนาด', style: TextStyle(fontSize: 13, color: Colors.grey)),
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: ['XS', 'S', 'M', 'L', 'XL'].map((size) {
-                  final selected = selectedSize == size;
+                children: ['XS','S','M','L','XL'].map((sz) {
+                  final sel = selSize == sz;
                   return GestureDetector(
-                    onTap: () => setModal(() => selectedSize = size),
+                    onTap: () => setM(() => selSize = sz),
                     child: Container(
                       width: 52, height: 40, alignment: Alignment.center,
                       decoration: BoxDecoration(
-                          color: selected ? Colors.orange : Colors.grey.shade200,
+                          color: sel ? Colors.orange : Colors.grey.shade200,
                           borderRadius: BorderRadius.circular(10)),
-                      child: Text(size, style: TextStyle(fontWeight: FontWeight.bold,
-                          color: selected ? Colors.white : Colors.black87)),
+                      child: Text(sz, style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: sel ? Colors.white : Colors.black87)),
                     ),
                   );
                 }).toList(),
               ),
               const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
+              SizedBox(width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () => Navigator.pop(ctx, true),
                   style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       backgroundColor: Colors.orange, foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                  child: const Text('บันทึก', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12))),
+                  child: const Text('บันทึก',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
             ],
@@ -1077,38 +1232,43 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
       ),
     );
 
-    if (result != true) return;
-    final updateData = <String, dynamic>{
-      'cat_color': colorCtrl.text.trim().isNotEmpty ? colorCtrl.text.trim() : catData.name,
-      'size_category': selectedSize,
+    if (ok != true) return;
+    final data = <String,dynamic>{
+      'cat_color': colorCtrl.text.trim().isNotEmpty
+          ? colorCtrl.text.trim() : cat.name,
+      'size_category': selSize,
       if (breedCtrl.text.trim().isNotEmpty) 'breed': breedCtrl.text.trim(),
-      if (ageCtrl.text.trim().isNotEmpty) 'age': int.tryParse(ageCtrl.text.trim()),
+      if (ageCtrl.text.trim().isNotEmpty)
+        'age': int.tryParse(ageCtrl.text.trim()),
     };
-    if (mounted) context.read<CatAnalysisBloc>().add(CatDataUpdated(updateData));
+    if (mounted) context.read<CatAnalysisBloc>().add(CatDataUpdated(data));
   }
 
-  Future<void> _confirmDeleteCat() async {
-    final confirm = await showDialog<bool>(
+  Future<void> _confirmDelete() async {
+    final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('ยืนยันการลบ'),
         content: const Text('ต้องการลบข้อมูลแมวนี้ใช่หรือไม่?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('ยกเลิก')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('ยกเลิก')),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('ลบ', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text('ลบ',
+                style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
     );
-    if (confirm != true) return;
+    if (ok != true) return;
     if (mounted) context.read<CatAnalysisBloc>().add(CatDataDeleted());
   }
 
-  // ─── Snackbars ───────────────────────────────────────────
+  // ─── Snackbars ────────────────────────────────────────────────────────────
 
   void _showSuccessMessage(String m) {
     if (!mounted || _isDisposed) return;
@@ -1134,13 +1294,13 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
         displayDuration: const Duration(milliseconds: 1500));
   }
 
-  // ─── Build ───────────────────────────────────────────────
+  // ─── Build ────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider    = context.watch<ThemeProvider>();
-    final languageProvider = Provider.of<LanguageProvider>(context);
-    final isDark  = themeProvider.themeMode == ThemeMode.dark;
+    final theme  = context.watch<ThemeProvider>();
+    final lang   = Provider.of<LanguageProvider>(context);
+    final dark   = theme.themeMode == ThemeMode.dark;
     final screenH = MediaQuery.of(context).size.height;
 
     return Scaffold(
@@ -1148,16 +1308,17 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
         centerTitle: true,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new_rounded,
-              color: isDark ? Colors.white : Colors.black87, size: 20),
+              color: dark ? Colors.white : Colors.black87, size: 20),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
-          languageProvider.translate(en: 'MEOW SIZE', th: 'วัดขนาดตัวแมว'),
+          lang.translate(en: 'MEOW SIZE', th: 'วัดขนาดตัวแมว'),
           style: TextStyle(fontFamily: 'catFont', fontSize: 30,
-              fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black),
+              fontWeight: FontWeight.bold,
+              color: dark ? Colors.white : Colors.black),
         ),
-        backgroundColor: isDark ? Colors.black : Colors.white,
-        iconTheme: IconThemeData(color: isDark ? Colors.white : Colors.black),
+        backgroundColor: dark ? Colors.black : Colors.white,
+        iconTheme: IconThemeData(color: dark ? Colors.white : Colors.black),
         actions: [
           IconButton(
             icon: const Icon(Icons.history_rounded),
@@ -1177,14 +1338,16 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
           if (state is CatAnalysisInitial)   _initCamera();
         },
         builder: (context, state) {
-          File? currentImage;
-          if (state is CatImageReady)        currentImage = state.imageFile;
-          if (state is CatAnalysisUploading) currentImage = state.imageFile;
-          if (state is CatAnalysisAnalyzing) currentImage = state.imageFile;
+          File? img;
+          if (state is CatImageReady)        img = state.imageFile;
+          if (state is CatAnalysisUploading) img = state.imageFile;
+          if (state is CatAnalysisAnalyzing) img = state.imageFile;
 
-          final isProcessing  = state is CatAnalysisUploading || state is CatAnalysisAnalyzing;
-          final progress      = state is CatAnalysisUploading ? 0.3 : (state is CatAnalysisAnalyzing ? 0.7 : 0.0);
-          final progressLabel = state is CatAnalysisUploading ? 'Uploading image...' : 'Analyzing cat...';
+          final processing   = state is CatAnalysisUploading || state is CatAnalysisAnalyzing;
+          final progress     = state is CatAnalysisUploading ? 0.3
+              : state is CatAnalysisAnalyzing ? 0.7 : 0.0;
+          final progressLbl  = state is CatAnalysisUploading
+              ? 'Uploading image...' : 'Analyzing cat...';
 
           return Stack(children: [
             Column(children: [
@@ -1197,69 +1360,75 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                     if (state is CatAnalysisInitial)
                       SizedBox(height: screenH * 0.78, child: _buildCameraPreview()),
                     if (state is CatImageReady)
-                      _buildImageWithAnalyzeSection(isDark, state.imageFile, languageProvider, false),
+                      _buildImageSection(dark, state.imageFile, lang, false),
                     if (state is CatAnalysisUploading || state is CatAnalysisAnalyzing)
-                      _buildImageWithAnalyzeSection(isDark, currentImage!, languageProvider, true),
+                      _buildImageSection(dark, img!, lang, true),
                     if (state is CatAnalysisSuccess)
-                      _buildResultSection(isDark, state.catData, screenH, languageProvider, state.recommendations),
+                      _buildResultSection(dark, state.catData, screenH, lang, state.recommendations),
                     if (state is CatDataUpdateSuccess)
-                      _buildResultSection(isDark, state.catData, screenH, languageProvider, state.recommendations),
+                      _buildResultSection(dark, state.catData, screenH, lang, state.recommendations),
                     if (state is CatDataUpdating)
-                      _buildResultSection(isDark, state.catData, screenH, languageProvider, state.recommendations),
+                      _buildResultSection(dark, state.catData, screenH, lang, state.recommendations),
                   ]),
                 ),
               ),
-              _buildBottomButtons(isDark, state, languageProvider),
+              _buildBottomBar(dark, state, lang),
             ]),
-            if (isProcessing)
-              _buildProcessingOverlay(currentImage, progress, progressLabel),
+            if (processing)
+              _buildLoadingOverlay(img, progress, progressLbl),
           ]);
         },
       ),
     );
   }
 
-  // ─── Widgets ─────────────────────────────────────────────
+  // ─── Widgets ──────────────────────────────────────────────────────────────
 
   Widget _buildCameraPreview() {
-    if (_cameraController == null || !_cameraController!.value.isInitialized) {
+    if (_cameraCtrl == null || !_cameraCtrl!.value.isInitialized) {
       return const Center(child: CircularProgressIndicator());
     }
     return Stack(fit: StackFit.expand, children: [
-      CameraPreview(_cameraController!),
+      CameraPreview(_cameraCtrl!),
       CustomPaint(painter: _RectHolePainter(), size: Size.infinite),
-      Positioned(
-        top: 20, left: 24, right: 24,
+      Positioned(top: 20, left: 24, right: 24,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(14)),
-          child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Icon(Icons.pets, color: Colors.white, size: 18),
-            SizedBox(width: 8),
-            Expanded(
-              child: Text('วางแมวจริง 1 ตัวให้อยู่ในกรอบ เห็นทั้งตัว แล้วกดถ่ายรูป',
-                  style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
-                  textAlign: TextAlign.center),
-            ),
-          ]),
+          decoration: BoxDecoration(
+              color: Colors.black54,
+              borderRadius: BorderRadius.circular(14)),
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.pets, color: Colors.white, size: 18),
+              SizedBox(width: 8),
+              Expanded(child: Text(
+                  'วางแมวจริง 1 ตัวให้อยู่ในกรอบ เห็นทั้งตัว แล้วกดถ่ายรูป',
+                  style: TextStyle(
+                      color: Colors.white, fontSize: 12,
+                      fontWeight: FontWeight.w500),
+                  textAlign: TextAlign.center)),
+            ],
+          ),
         ),
       ),
       if (_isCapturing)
-        Container(
-          color: Colors.black54,
+        Container(color: Colors.black54,
           child: const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
             CircularProgressIndicator(color: Colors.white),
             SizedBox(height: 16),
             Text('🔍 กำลังตรวจจับแมว...',
-                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                style: TextStyle(color: Colors.white, fontSize: 16,
+                    fontWeight: FontWeight.bold)),
             SizedBox(height: 6),
-            Text('กรุณารอสักครู่', style: TextStyle(color: Colors.white70, fontSize: 13)),
+            Text('กรุณารอสักครู่',
+                style: TextStyle(color: Colors.white70, fontSize: 13)),
           ])),
         ),
     ]);
   }
 
-  Widget _buildProcessingOverlay(File? imageFile, double progress, String label) {
+  Widget _buildLoadingOverlay(File? file, double progress, String label) {
     return Container(
       color: Colors.white.withOpacity(0.85),
       child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -1269,8 +1438,8 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
             child: TweenAnimationBuilder<double>(
               tween: Tween(begin: 0, end: progress),
               duration: const Duration(milliseconds: 400),
-              builder: (context, value, _) => CircularProgressIndicator(
-                  value: value, strokeWidth: 6,
+              builder: (_, v, __) => CircularProgressIndicator(
+                  value: v, strokeWidth: 6,
                   backgroundColor: Colors.grey.shade300,
                   valueColor: const AlwaysStoppedAnimation(Colors.orange)),
             ),
@@ -1280,13 +1449,13 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
             decoration: BoxDecoration(shape: BoxShape.circle,
                 border: Border.all(color: Colors.white, width: 4),
                 boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10)]),
-            child: ClipOval(child: imageFile != null
-                ? Image.file(imageFile, fit: BoxFit.cover)
+            child: ClipOval(child: file != null
+                ? Image.file(file, fit: BoxFit.cover)
                 : const Icon(Icons.pets, size: 60)),
           ),
         ]),
         const SizedBox(height: 20),
-        Text('${(progress * 100).toInt()}%',
+        Text('${(progress*100).toInt()}%',
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
         const SizedBox(height: 6),
         Text(label, style: TextStyle(fontSize: 14, color: Colors.grey.shade700)),
@@ -1294,163 +1463,167 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
     );
   }
 
-  Widget _buildImageWithAnalyzeSection(
-      bool isDark, File imageFile, LanguageProvider lang, bool isProcessing) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(children: [
-        Container(
-          height: 300,
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(16),
-              boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4))]),
-          child: ClipRRect(borderRadius: BorderRadius.circular(16),
-              child: Image.file(imageFile, fit: BoxFit.cover, width: double.infinity)),
-        ),
-        const SizedBox(height: 20),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-              color: isDark ? Colors.grey[850] : Colors.grey[50],
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: isDark ? Colors.grey[700]! : Colors.grey[300]!, width: 2)),
-          child: Row(children: [
-            Container(
-              width: 100, height: 120,
-              decoration: BoxDecoration(borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: isDark ? Colors.grey[600]! : Colors.grey[400]!, width: 2)),
-              child: ClipRRect(borderRadius: BorderRadius.circular(10),
-                  child: Image.file(imageFile, fit: BoxFit.cover)),
-            ),
-            const SizedBox(width: 16),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              _buildInfoRow(lang.translate(en: 'Cat color:', th: 'สีแมว:'), 'N/A', isDark),
-              const SizedBox(height: 10),
-              _buildInfoRow(lang.translate(en: 'Age:', th: 'อายุ:'), 'N/A', isDark),
-              const SizedBox(height: 10),
-              _buildInfoRow(lang.translate(en: 'Breed:', th: 'พันธุ์:'), 'N/A', isDark),
-              const SizedBox(height: 10),
-              _buildInfoRow(lang.translate(en: 'Size:', th: 'ขนาด:'), 'N/A', isDark),
-            ])),
-          ]),
-        ),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-              color: isDark ? Colors.grey[800] : Colors.grey[200],
-              borderRadius: BorderRadius.circular(12)),
-          child: Row(children: [
-            Icon(Icons.info_outline,
-                color: isDark ? Colors.orange[300] : Colors.orange[700], size: 20),
-            const SizedBox(width: 8),
-            Expanded(child: Text(
-              lang.translate(
-                  en: 'Please ensure that the cat is clearly visible for accurate measurement.',
-                  th: 'โปรดมั่นใจว่ามองเห็นรูปร่างของแมวชัดเจน เพื่อความแม่นยำในการวัดขนาด'),
-              style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : Colors.black87),
-            )),
-          ]),
-        ),
-        const SizedBox(height: 16),
-        Row(children: [
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: isProcessing
-                  ? null
-                  : () => context.read<CatAnalysisBloc>().add(CatAnalysisStarted()),
-              icon: isProcessing
-                  ? const SizedBox(width: 20, height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
-                  : const Icon(Icons.analytics),
-              label: Text(
-                isProcessing
-                    ? lang.translate(en: 'Processing...', th: 'กำลังวิเคราะห์...')
-                    : lang.translate(en: 'Analyze Data', th: 'วิเคราะห์ข้อมูล'),
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  backgroundColor: Colors.orange, foregroundColor: Colors.white,
-                  disabledBackgroundColor: Colors.grey[400],
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-            ),
+  Widget _buildImageSection(
+      bool dark, File file, LanguageProvider lang, bool loading) {
+    return Padding(padding: const EdgeInsets.all(16), child: Column(children: [
+      Container(
+        height: 300,
+        decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: const [BoxShadow(
+                color: Colors.black26, blurRadius: 10, offset: Offset(0,4))]),
+        child: ClipRRect(borderRadius: BorderRadius.circular(16),
+            child: Image.file(file, fit: BoxFit.cover, width: double.infinity)),
+      ),
+      const SizedBox(height: 20),
+      Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+            color: dark ? Colors.grey[850] : Colors.grey[50],
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+                color: dark ? Colors.grey[700]! : Colors.grey[300]!, width: 2)),
+        child: Row(children: [
+          Container(
+            width: 100, height: 120,
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                    color: dark ? Colors.grey[600]! : Colors.grey[400]!, width: 2)),
+            child: ClipRRect(borderRadius: BorderRadius.circular(10),
+                child: Image.file(file, fit: BoxFit.cover)),
           ),
-          const SizedBox(width: 12),
-          ElevatedButton(
-            onPressed: isProcessing ? null : _clearData,
-            style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-                backgroundColor: Colors.red, foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-            child: const Icon(Icons.close, size: 24),
-          ),
+          const SizedBox(width: 16),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            _infoRow(lang.translate(en:'Cat color:',th:'สีแมว:'), 'N/A', dark),
+            const SizedBox(height: 10),
+            _infoRow(lang.translate(en:'Age:',th:'อายุ:'), 'N/A', dark),
+            const SizedBox(height: 10),
+            _infoRow(lang.translate(en:'Breed:',th:'พันธุ์:'), 'N/A', dark),
+            const SizedBox(height: 10),
+            _infoRow(lang.translate(en:'Size:',th:'ขนาด:'), 'N/A', dark),
+          ])),
         ]),
+      ),
+      const SizedBox(height: 16),
+      Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+            color: dark ? Colors.grey[800] : Colors.grey[200],
+            borderRadius: BorderRadius.circular(12)),
+        child: Row(children: [
+          Icon(Icons.info_outline,
+              color: dark ? Colors.orange[300] : Colors.orange[700], size: 20),
+          const SizedBox(width: 8),
+          Expanded(child: Text(
+            lang.translate(
+                en: 'Please ensure that the cat is clearly visible for accurate measurement.',
+                th: 'โปรดมั่นใจว่ามองเห็นรูปร่างของแมวชัดเจน เพื่อความแม่นยำในการวัดขนาด'),
+            style: TextStyle(
+                fontSize: 12, color: dark ? Colors.white70 : Colors.black87),
+          )),
+        ]),
+      ),
+      const SizedBox(height: 16),
+      Row(children: [
+        Expanded(child: ElevatedButton.icon(
+          onPressed: loading ? null
+              : () => context.read<CatAnalysisBloc>().add(CatAnalysisStarted()),
+          icon: loading
+              ? const SizedBox(width: 20, height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
+              : const Icon(Icons.analytics),
+          label: Text(
+            loading
+                ? lang.translate(en:'Processing...',th:'กำลังวิเคราะห์...')
+                : lang.translate(en:'Analyze Data',th:'วิเคราะห์ข้อมูล'),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              backgroundColor: Colors.orange, foregroundColor: Colors.white,
+              disabledBackgroundColor: Colors.grey[400],
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12))),
+        )),
+        const SizedBox(width: 12),
+        ElevatedButton(
+          onPressed: loading ? null : _clearData,
+          style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+              backgroundColor: Colors.red, foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12))),
+          child: const Icon(Icons.close, size: 24),
+        ),
       ]),
-    );
+    ]));
   }
 
-  Widget _buildResultSection(bool isDark, CatData catData, double screenH,
-      LanguageProvider lang, List<Map<String, dynamic>> recommendations) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
+  Widget _buildResultSection(bool dark, CatData cat, double screenH,
+      LanguageProvider lang, List<Map<String,dynamic>> recs) {
+    return Padding(padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-              color: isDark ? Colors.grey[850] : Colors.grey[50],
+              color: dark ? Colors.grey[850] : Colors.grey[50],
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: isDark ? Colors.grey[700]! : Colors.grey[300]!, width: 2)),
+              border: Border.all(
+                  color: dark ? Colors.grey[700]! : Colors.grey[300]!, width: 2)),
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Container(
               width: 100, height: 120,
               decoration: BoxDecoration(borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: isDark ? Colors.grey[600]! : Colors.grey[400]!, width: 2)),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: catData.imageUrl.isNotEmpty
-                    ? Image.network(catData.imageUrl, fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) =>
-                            Icon(Icons.broken_image, size: 40, color: Colors.grey[400]))
+                  border: Border.all(
+                      color: dark ? Colors.grey[600]! : Colors.grey[400]!, width: 2)),
+              child: ClipRRect(borderRadius: BorderRadius.circular(10),
+                child: cat.imageUrl.isNotEmpty
+                    ? Image.network(cat.imageUrl, fit: BoxFit.cover,
+                        errorBuilder: (_,__,___) => Icon(Icons.broken_image,
+                            size: 40, color: Colors.grey[400]))
                     : Icon(Icons.pets, size: 40, color: Colors.grey[400]),
               ),
             ),
             const SizedBox(width: 16),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              _buildInfoRow(lang.translate(en: 'Cat Color:', th: 'สีแมว:'), catData.name, isDark),
+              _infoRow(lang.translate(en:'Cat Color:',th:'สีแมว:'), cat.name, dark),
               const SizedBox(height: 10),
-              _buildInfoRow(lang.translate(en: 'Age:', th: 'อายุ:'),
-                  catData.age != null ? '${catData.age} years' : 'N/A', isDark),
+              _infoRow(lang.translate(en:'Age:',th:'อายุ:'),
+                  cat.age != null ? '${cat.age} years' : 'N/A', dark),
               const SizedBox(height: 10),
-              _buildInfoRow(lang.translate(en: 'Breed:', th: 'พันธุ์:'), catData.breed ?? 'N/A', isDark),
+              _infoRow(lang.translate(en:'Breed:',th:'พันธุ์:'), cat.breed ?? 'N/A', dark),
               const SizedBox(height: 10),
-              _buildInfoRow(lang.translate(en: 'Size:', th: 'ขนาด:'), catData.sizeCategory, isDark),
+              _infoRow(lang.translate(en:'Size:',th:'ขนาด:'), cat.sizeCategory, dark),
             ])),
             Column(mainAxisSize: MainAxisSize.min, children: [
               IconButton(
-                onPressed: () => _showEditDialog(catData),
-                icon: Icon(Icons.mode_edit_outline_outlined, color: Colors.blue.shade700, size: 28),
+                onPressed: () => _showEditDialog(cat),
+                icon: Icon(Icons.mode_edit_outline_outlined,
+                    color: Colors.blue.shade700, size: 28),
               ),
               IconButton(
-                onPressed: _confirmDeleteCat,
-                icon: Icon(Icons.delete_outline, color: Colors.red.shade600, size: 28),
+                onPressed: _confirmDelete,
+                icon: Icon(Icons.delete_outline,
+                    color: Colors.red.shade600, size: 28),
               ),
             ]),
           ]),
         ),
         const SizedBox(height: 20),
-        Text(lang.translate(en: 'Recommended Products', th: 'สินค้าแนะนำ'),
+        Text(lang.translate(en:'Recommended Products',th:'สินค้าแนะนำ'),
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : Colors.black87)),
+                color: dark ? Colors.white : Colors.black87)),
         const SizedBox(height: 12),
-        if (recommendations.isEmpty)
+        if (recs.isEmpty)
           Container(
             padding: const EdgeInsets.symmetric(vertical: 32),
             alignment: Alignment.center,
             child: Column(children: [
               Icon(Icons.search_off, size: 48, color: Colors.grey[400]),
               const SizedBox(height: 8),
-              Text(lang.translate(en: 'No matching products found', th: 'ไม่พบสินค้าที่เหมาะสม'),
+              Text(lang.translate(
+                  en:'No matching products found', th:'ไม่พบสินค้าที่เหมาะสม'),
                   style: TextStyle(color: Colors.grey[500], fontSize: 14)),
             ]),
           )
@@ -1459,115 +1632,131 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
             height: screenH * 0.50,
             child: GridView.builder(
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2, crossAxisSpacing: 5, mainAxisSpacing: 12, childAspectRatio: 0.86),
-              itemCount: recommendations.length,
-              itemBuilder: (context, index) =>
-                  _buildProductCard(recommendations[index], index, isDark),
+                  crossAxisCount: 2, crossAxisSpacing: 5,
+                  mainAxisSpacing: 12, childAspectRatio: 0.86),
+              itemCount: recs.length,
+              itemBuilder: (ctx, i) => _buildProductCard(recs[i], dark),
             ),
           ),
       ]),
     );
   }
 
-  Widget _buildInfoRow(String label, String value, bool isDark) {
+  Widget _infoRow(String label, String value, bool dark) {
     return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(label, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold,
-          color: isDark ? Colors.white70 : Colors.black87)),
+          color: dark ? Colors.white70 : Colors.black87)),
       const SizedBox(width: 8),
       Expanded(child: Text(value,
-          style: TextStyle(fontSize: 16, color: isDark ? Colors.white60 : Colors.black54))),
+          style: TextStyle(fontSize: 16,
+              color: dark ? Colors.white60 : Colors.black54))),
     ]);
   }
 
-  Widget _buildProductCard(Map<String, dynamic> product, int index, bool isDark) {
-    final lang = Provider.of<LanguageProvider>(context);
-    final String uuid          = product['uuid']?.toString() ?? product['id']?.toString() ?? '';
-    final String name          = product['clothing_name'] ?? product['name'] ?? 'Unknown';
-    final String imageUrl      = product['image_url'] ?? product['imageUrl'] ?? '';
-    final double price         = (product['price'] as num?)?.toDouble() ?? 0.0;
-    final double? discPrice    = (product['discount_price'] as num?)?.toDouble();
-    final String? discPercent  = product['discount_percent'];
-    final int stock            = (product['stock'] as num?)?.toInt() ?? 99;
-    final double matchScore    = (product['match_score'] as num?)?.toDouble() ?? 0.0;
-    final String priceDisplay  = discPrice != null
+  Widget _buildProductCard(Map<String,dynamic> product, bool dark) {
+    final lang        = Provider.of<LanguageProvider>(context);
+    final uuid        = product['uuid']?.toString() ?? product['id']?.toString() ?? '';
+    final name        = product['clothing_name'] ?? product['name'] ?? 'Unknown';
+    final imageUrl    = product['image_url'] ?? product['imageUrl'] ?? '';
+    final price       = (product['price'] as num?)?.toDouble() ?? 0.0;
+    final discPrice   = (product['discount_price'] as num?)?.toDouble();
+    final discPct     = product['discount_percent'];
+    final stock       = (product['stock'] as num?)?.toInt() ?? 99;
+    final match       = (product['match_score'] as num?)?.toDouble() ?? 0.0;
+    final priceDisplay = discPrice != null
         ? '฿${discPrice.toStringAsFixed(0)}'
-        : price > 0 ? '฿${price.toStringAsFixed(0)}' : '${product['price'] ?? ''}';
+        : price > 0 ? '฿${price.toStringAsFixed(0)}' : '${product['price']??''}';
 
     return FutureBuilder<bool>(
       future: _favouriteApi.checkFavourite(clothingUuid: uuid),
-      builder: (context, snapshot) {
-        final isFav = snapshot.data ?? false;
+      builder: (ctx, snap) {
+        final isFav = snap.data ?? false;
         return Container(
           width: 160,
           margin: const EdgeInsets.only(right: 12),
           decoration: BoxDecoration(
-              color: isDark ? Colors.grey[850] : Colors.white,
+              color: dark ? Colors.grey[850] : Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: isDark ? Colors.grey[700]! : Colors.grey[300]!, width: 1.5)),
+              border: Border.all(
+                  color: dark ? Colors.grey[700]! : Colors.grey[300]!,
+                  width: 1.5)),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Stack(children: [
               Container(
                 height: 100,
                 decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
-                    color: isDark ? Colors.grey[800] : Colors.grey[200]),
+                    borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(14)),
+                    color: dark ? Colors.grey[800] : Colors.grey[200]),
                 child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+                    borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(14)),
                     child: imageUrl.isNotEmpty
-                        ? Image.network(imageUrl, width: double.infinity, fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Center(
-                                child: Icon(Icons.shopping_bag, size: 40, color: Colors.grey[400])))
-                        : Center(child: Icon(Icons.shopping_bag, size: 40, color: Colors.grey[400]))),
+                        ? Image.network(imageUrl, width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_,__,___) => Center(
+                                child: Icon(Icons.shopping_bag,
+                                    size: 40, color: Colors.grey[400])))
+                        : Center(child: Icon(Icons.shopping_bag,
+                            size: 40, color: Colors.grey[400]))),
               ),
-              if (matchScore >= 0.8)
+              if (match >= 0.8)
                 Positioned(top: 6, left: 6,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(8)),
-                    child: Text('${(matchScore * 100).toInt()}%',
-                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                  )),
-              if (discPercent != null)
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                          color: Colors.green,
+                          borderRadius: BorderRadius.circular(8)),
+                      child: Text('${(match*100).toInt()}%',
+                          style: const TextStyle(color: Colors.white,
+                              fontSize: 10, fontWeight: FontWeight.bold)),
+                    )),
+              if (discPct != null)
                 Positioned(top: 6, right: 34,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(8)),
-                    child: Text('-$discPercent',
-                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                  )),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(8)),
+                      child: Text('-$discPct',
+                          style: const TextStyle(color: Colors.white,
+                              fontSize: 10, fontWeight: FontWeight.bold)),
+                    )),
               Positioned(top: 6, right: 6,
                 child: GestureDetector(
                   onTap: () async {
                     if (isFav) {
                       await _favouriteApi.removeFromFavourite(clothingUuid: uuid);
                       _showSuccessMessage(lang.translate(
-                          en: 'Removed from favourites', th: 'ลบออกจากรายการโปรดแล้ว'));
+                          en:'Removed from favourites',
+                          th:'ลบออกจากรายการโปรดแล้ว'));
                     } else {
                       await _favouriteApi.addToFavourite(clothingUuid: uuid);
-                      _showProductDialog(context, product, isDark);
+                      _showProductDialog(context, product, dark);
                     }
                     if (mounted) setState(() {});
                   },
                   child: Container(
                     padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(color: Colors.black.withOpacity(0.1), shape: BoxShape.circle),
+                    decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.1),
+                        shape: BoxShape.circle),
                     child: Icon(isFav ? Icons.favorite : Icons.favorite_border,
                         color: isFav ? Colors.red : Colors.white, size: 18),
                   ),
                 )),
             ]),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
+            Padding(padding: const EdgeInsets.all(8),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(name,
                     style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white : Colors.black87),
+                        color: dark ? Colors.white : Colors.black87),
                     maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 4),
                 Row(children: [
                   Text(priceDisplay,
                       style: TextStyle(fontSize: 12,
-                          color: isDark ? Colors.orange[300] : Colors.orange[700],
+                          color: dark ? Colors.orange[300] : Colors.orange[700],
                           fontWeight: FontWeight.bold)),
                   if (discPrice != null && price > 0) ...[
                     const SizedBox(width: 4),
@@ -1578,39 +1767,43 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                 ]),
                 const SizedBox(height: 8),
                 Row(children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: stock > 0 ? () async {
-                        try {
-                          await _basketApi.addToBasket(clothingUuid: uuid);
-                          _showSuccessMessage(lang.translate(en: 'Added to cart!', th: 'เพิ่มลงตะกร้าแล้ว!'));
-                        } catch (_) {
-                          _showError(lang.translate(en: 'Failed to add to cart', th: 'เพิ่มลงตะกร้าไม่สำเร็จ'));
-                        }
-                      } : null,
-                      style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          backgroundColor: stock > 0 ? Colors.green : Colors.grey,
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size(0, 28),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                      child: Text(stock > 0
-                          ? lang.translate(en: 'Buy', th: 'ซื้อ')
-                          : lang.translate(en: 'Out', th: 'หมด'),
-                          style: const TextStyle(fontSize: 11)),
-                    ),
-                  ),
+                  Expanded(child: ElevatedButton(
+                    onPressed: stock > 0 ? () async {
+                      try {
+                        await _basketApi.addToBasket(clothingUuid: uuid);
+                        _showSuccessMessage(lang.translate(
+                            en:'Added to cart!', th:'เพิ่มลงตะกร้าแล้ว!'));
+                      } catch (_) {
+                        _showError(lang.translate(
+                            en:'Failed to add to cart',
+                            th:'เพิ่มลงตะกร้าไม่สำเร็จ'));
+                      }
+                    } : null,
+                    style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        backgroundColor: stock > 0 ? Colors.green : Colors.grey,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(0, 28),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8))),
+                    child: Text(stock > 0
+                        ? lang.translate(en:'Buy',th:'ซื้อ')
+                        : lang.translate(en:'Out',th:'หมด'),
+                        style: const TextStyle(fontSize: 11)),
+                  )),
                   const SizedBox(width: 4),
                   ElevatedButton(
-                    onPressed: () => _showInfoMessage(
-                        lang.translate(en: 'Opening details...', th: 'กำลังเปิดรายละเอียด...')),
+                    onPressed: () => _showInfoMessage(lang.translate(
+                        en:'Opening details...', th:'กำลังเปิดรายละเอียด...')),
                     style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                        backgroundColor: isDark ? Colors.grey[700] : Colors.grey[300],
-                        foregroundColor: isDark ? Colors.white : Colors.black87,
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 6, horizontal: 8),
+                        backgroundColor: dark ? Colors.grey[700] : Colors.grey[300],
+                        foregroundColor: dark ? Colors.white : Colors.black87,
                         minimumSize: const Size(0, 28),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                    child: Text(lang.translate(en: 'More', th: 'เพิ่มเติม'),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8))),
+                    child: Text(lang.translate(en:'More',th:'เพิ่มเติม'),
                         style: const TextStyle(fontSize: 11)),
                   ),
                 ]),
@@ -1622,64 +1815,62 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
     );
   }
 
-  Widget _buildBottomButtons(bool isDark, CatAnalysisState state, LanguageProvider lang) {
+  Widget _buildBottomBar(bool dark, CatAnalysisState state, LanguageProvider lang) {
     if (state is! CatAnalysisInitial) return const SizedBox.shrink();
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-          color: isDark ? Colors.grey[900] : Colors.white,
-          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, -2))]),
-      child: SafeArea(
-        top: false,
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text(
-            lang.translate(
-                en: 'Take a photo: Place the cat in the center of the frame and see the whole body\nChoose a photo: Use JPEG files no larger than 500KB',
-                th: 'ถ่ายรูป: วางตัวแมวให้อยู่กลางกรอบ และเห็นทั้งตัว\nเลือกรูป: ใช้ไฟล์ JPEG ขนาดไม่เกิน 500KB'),
-            textAlign: TextAlign.center,
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12,
-                color: isDark ? Colors.white70 : Colors.black87),
-          ),
-          const SizedBox(height: 12),
-          Row(children: [
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: _isCapturing ? null : _captureFromLiveCamera,
-                icon: _isCapturing
-                    ? const SizedBox(width: 18, height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation(Colors.white)))
-                    : const Icon(Icons.camera_alt),
-                label: Text(
-                  _isCapturing
-                      ? lang.translate(en: 'Detecting...', th: 'กำลังตรวจสอบ...')
-                      : lang.translate(en: 'Take Photo', th: 'ถ่ายรูป'),
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    backgroundColor: Colors.blue, foregroundColor: Colors.white,
-                    disabledBackgroundColor: Colors.grey[400],
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-              ),
+          color: dark ? Colors.grey[900] : Colors.white,
+          boxShadow: const [BoxShadow(
+              color: Colors.black12, blurRadius: 8, offset: Offset(0,-2))]),
+      child: SafeArea(top: false, child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Text(
+          lang.translate(
+              en: 'Take a photo: Place the cat in the center of the frame and see the whole body\n'
+                  'Choose a photo: Use JPEG files no larger than 500KB',
+              th: 'ถ่ายรูป: วางตัวแมวให้อยู่กลางกรอบ และเห็นทั้งตัว\n'
+                  'เลือกรูป: ใช้ไฟล์ JPEG ขนาดไม่เกิน 500KB'),
+          textAlign: TextAlign.center,
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12,
+              color: dark ? Colors.white70 : Colors.black87),
+        ),
+        const SizedBox(height: 12),
+        Row(children: [
+          Expanded(child: ElevatedButton.icon(
+            onPressed: _isCapturing ? null : _captureFromCamera,
+            icon: _isCapturing
+                ? const SizedBox(width: 18, height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation(Colors.white)))
+                : const Icon(Icons.camera_alt),
+            label: Text(
+              _isCapturing
+                  ? lang.translate(en:'Detecting...',th:'กำลังตรวจสอบ...')
+                  : lang.translate(en:'Take Photo',th:'ถ่ายรูป'),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: _isCapturing ? null : _pickImage,
-                icon: const Icon(Icons.photo_library),
-                label: Text(lang.translate(en: 'Choose Photo', th: 'เลือกรูป'),
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    backgroundColor: Colors.green, foregroundColor: Colors.white,
-                    disabledBackgroundColor: Colors.grey[400],
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-              ),
-            ),
-          ]),
+            style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                backgroundColor: Colors.blue, foregroundColor: Colors.white,
+                disabledBackgroundColor: Colors.grey[400],
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12))),
+          )),
+          const SizedBox(width: 12),
+          Expanded(child: ElevatedButton.icon(
+            onPressed: _isCapturing ? null : _pickFromGallery,
+            icon: const Icon(Icons.photo_library),
+            label: Text(lang.translate(en:'Choose Photo',th:'เลือกรูป'),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                backgroundColor: Colors.green, foregroundColor: Colors.white,
+                disabledBackgroundColor: Colors.grey[400],
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12))),
+          )),
         ]),
-      ),
+      ])),
     );
   }
 }
