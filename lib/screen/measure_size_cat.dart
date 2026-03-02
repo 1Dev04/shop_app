@@ -158,12 +158,12 @@ class _MeasureSizeCatView extends StatefulWidget {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
-  final _picker = ImagePicker();
+  final _picker       = ImagePicker();
   final _favouriteApi = FavouriteApiService();
-  final _basketApi = BasketApiService();
+  final _basketApi    = BasketApiService();
 
-  bool _isCapturing = false;
-  bool _isDisposed = false;
+  bool              _isCapturing = false;
+  bool              _isDisposed  = false;
   CameraController? _cameraCtrl;
 
   // ไฟล์ที่รอส่ง analyze หลัง detect ผ่าน
@@ -236,7 +236,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
       const mx = 1920;
       if (image.width > mx || image.height > mx) {
         image = img.copyResize(image,
-            width: image.width > image.height ? mx : null,
+            width:  image.width > image.height ? mx : null,
             height: image.height > image.width ? mx : null);
       }
       final tmp = await getTemporaryDirectory();
@@ -270,12 +270,8 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
       final processed = await _compress(File(photo.path));
 
       if (!mounted || _isDisposed) {
-        try {
-          cropped?.delete();
-        } catch (_) {}
-        try {
-          File(photo.path).delete();
-        } catch (_) {}
+        try { cropped?.delete(); } catch (_) {}
+        try { File(photo.path).delete(); } catch (_) {}
         return;
       }
 
@@ -288,12 +284,8 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
 
       // เก็บ path ไว้ลบทีหลัง (หลัง detect เสร็จแล้ว)
       _detectCleanup = () {
-        try {
-          cropped?.delete();
-        } catch (_) {}
-        try {
-          File(photo.path).delete();
-        } catch (_) {}
+        try { cropped?.delete(); } catch (_) {}
+        try { File(photo.path).delete(); } catch (_) {}
       };
 
       context.read<DetectCatBloc>().add(DetectCatStarted(fileToDetect));
@@ -410,57 +402,37 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
 
     switch (result.reason) {
       case 'multiple_cats':
-        title = '🐱🐱 ตรวจพบแมวหลายตัว';
-        message =
-            'ระบบตรวจพบแมวมากกว่า 1 ตัวในภาพ\nกรุณาถ่ายรูปแมวทีละตัวเท่านั้น';
-        icon = Icons.pets;
+        title    = '🐱🐱 ตรวจพบแมวหลายตัว';
+        message  = 'ระบบตรวจพบแมวมากกว่า 1 ตัวในภาพ\nกรุณาถ่ายรูปแมวทีละตัวเท่านั้น';
+        icon     = Icons.pets;
         iconColor = Colors.purple;
-        break;
-
-      case 'partial_multiple_cats':
-        title = '🚫 มีแมวมากกว่า 1 ตัวในภาพ';
-        message =
-            'ตรวจพบแมวอีกตัวโผล่เข้ามาในภาพ\nกรุณาถ่ายเฉพาะแมวตัวเดียว โดยไม่มีแมวตัวอื่นติดมา';
-        icon = Icons.block;
-        iconColor = Colors.redAccent;
-        break;
-
       case 'cartoon':
-        title = '🎨 ไม่ใช่ภาพแมวจริง';
-        message =
-            'ระบบตรวจพบว่าเป็นภาพการ์ตูน รูปวาด โมเดล\nหรือของเล่น กรุณาใช้รูปถ่ายแมวจริงเท่านั้น';
-        icon = Icons.draw_outlined;
+        title    = '🎨 ไม่ใช่ภาพแมวจริง';
+        message  = 'ระบบตรวจพบว่าเป็นภาพการ์ตูน รูปวาด โมเดล\nหรือของเล่น กรุณาใช้รูปถ่ายแมวจริงเท่านั้น';
+        icon     = Icons.draw_outlined;
         iconColor = Colors.orange;
-        break;
-
       case 'is_dog':
-        title = '🐶 ตรวจพบสุนัข';
-        message = 'ภาพนี้มีลักษณะของสุนัข\nฟีเจอร์นี้รองรับเฉพาะแมวเท่านั้น';
-        icon = Icons.pets;
+        title    = '🐶 ตรวจพบสุนัข';
+        message  = 'ภาพนี้มีลักษณะของสุนัข\nฟีเจอร์นี้รองรับเฉพาะแมวเท่านั้น';
+        icon     = Icons.pets;
         iconColor = Colors.brown;
-        break;
-
       case 'non_cat_animal':
-        title = '🚫 ตรวจพบสัตว์อื่น';
-        message = 'ฟีเจอร์นี้รองรับเฉพาะแมวเท่านั้น';
-        icon = Icons.pets;
+        title    = '🚫 ตรวจพบสัตว์อื่น';
+        message  = 'ฟีเจอร์นี้รองรับเฉพาะแมวเท่านั้น';
+        icon     = Icons.pets;
         iconColor = Colors.deepOrange;
-        break;
-
       case 'other':
-        title = '🤔 ไม่สามารถระบุได้';
-        message = 'ลองถ่ายรูปใหม่ให้เห็นแมวชัดเจนยิ่งขึ้น';
-        icon = Icons.help_outline;
+        title    = '🤔 ไม่สามารถระบุได้';
+        message  = 'ลองถ่ายรูปใหม่ให้เห็นแมวชัดเจนยิ่งขึ้น';
+        icon     = Icons.help_outline;
         iconColor = Colors.orange;
-        break;
-
       default: // no_cat
-        title = '😿 ไม่พบแมวในภาพ';
-        message =
-            'ไม่สามารถตรวจพบแมวในภาพได้\nลองถ่ายรูปใหม่ให้เห็นแมวชัดเจนทั้งตัว';
-        icon = Icons.search_off;
+        title    = '😿 ไม่พบแมวในภาพ';
+        message  = 'ไม่สามารถตรวจพบแมวในภาพได้\nลองถ่ายรูปใหม่ให้เห็นแมวชัดเจนทั้งตัว';
+        icon     = Icons.search_off;
         iconColor = Colors.grey;
     }
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -643,7 +615,8 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                 onPressed: () {
                   Navigator.pop(ctx);
                   _showInfoMessage(lang.translate(
-                      en: 'Opening details...', th: 'กำลังเปิดรายละเอียด...'));
+                      en: 'Opening details...',
+                      th: 'กำลังเปิดรายละเอียด...'));
                 },
                 style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -665,8 +638,8 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
   Future<void> _showEditDialog(CatData cat) async {
     final colorCtrl = TextEditingController(text: cat.name);
     final breedCtrl = TextEditingController(text: cat.breed ?? '');
-    final ageCtrl = TextEditingController(text: cat.age?.toString() ?? '');
-    String selSize = cat.sizeCategory;
+    final ageCtrl   = TextEditingController(text: cat.age?.toString() ?? '');
+    String selSize  = cat.sizeCategory;
 
     final ok = await showModalBottomSheet<bool>(
       context: context,
@@ -761,8 +734,9 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
 
     if (ok != true) return;
     final data = <String, dynamic>{
-      'cat_color':
-          colorCtrl.text.trim().isNotEmpty ? colorCtrl.text.trim() : cat.name,
+      'cat_color': colorCtrl.text.trim().isNotEmpty
+          ? colorCtrl.text.trim()
+          : cat.name,
       'size_category': selSize,
       if (breedCtrl.text.trim().isNotEmpty) 'breed': breedCtrl.text.trim(),
       if (ageCtrl.text.trim().isNotEmpty)
@@ -785,8 +759,8 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child:
-                const Text('ลบ', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text('ลบ',
+                style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -825,9 +799,9 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.watch<ThemeProvider>();
-    final lang = Provider.of<LanguageProvider>(context);
-    final dark = theme.themeMode == ThemeMode.dark;
+    final theme   = context.watch<ThemeProvider>();
+    final lang    = Provider.of<LanguageProvider>(context);
+    final dark    = theme.themeMode == ThemeMode.dark;
     final screenH = MediaQuery.of(context).size.height;
 
     return Scaffold(
@@ -891,12 +865,9 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
           BlocListener<CatAnalysisBloc, CatAnalysisState>(
             listener: (context, state) {
               if (state is CatAnalysisQuotaExceeded) _showQuotaDialog();
-              if (state is CatAnalysisNotFound)
-                _showError('😿 ${state.message}');
-              if (state is CatAnalysisSuccess)
-                _showSuccessMessage('วิเคราะห์สำเร็จ 🐱');
-              if (state is CatDataUpdateSuccess)
-                _showSuccessMessage(state.message);
+              if (state is CatAnalysisNotFound) _showError('😿 ${state.message}');
+              if (state is CatAnalysisSuccess) _showSuccessMessage('วิเคราะห์สำเร็จ 🐱');
+              if (state is CatDataUpdateSuccess) _showSuccessMessage(state.message);
               if (state is CatAnalysisFailure) _showError(state.error);
               if (state is CatAnalysisInitial) _initCamera();
             },
@@ -905,7 +876,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
         child: BlocBuilder<CatAnalysisBloc, CatAnalysisState>(
           builder: (context, state) {
             File? imgFile;
-            if (state is CatImageReady) imgFile = state.imageFile;
+            if (state is CatImageReady)       imgFile = state.imageFile;
             if (state is CatAnalysisUploading) imgFile = state.imageFile;
             if (state is CatAnalysisAnalyzing) imgFile = state.imageFile;
 
@@ -969,7 +940,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
 
     // ✅ ดู DetectCatBloc state ด้วย เพื่อแสดง loading overlay ระหว่าง detect
     final detectState = context.watch<DetectCatBloc>().state;
-    final detecting = detectState is DetectCatLoading;
+    final detecting   = detectState is DetectCatLoading;
 
     return Stack(fit: StackFit.expand, children: [
       CameraPreview(_cameraCtrl!),
@@ -1110,14 +1081,15 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                    _infoRow(lang.translate(en: 'Cat color:', th: 'สีแมว:'),
+                    _infoRow(
+                        lang.translate(en: 'Cat color:', th: 'สีแมว:'),
                         'N/A', dark),
                     const SizedBox(height: 10),
                     _infoRow(
                         lang.translate(en: 'Age:', th: 'อายุ:'), 'N/A', dark),
                     const SizedBox(height: 10),
-                    _infoRow(lang.translate(en: 'Breed:', th: 'พันธุ์:'), 'N/A',
-                        dark),
+                    _infoRow(lang.translate(en: 'Breed:', th: 'พันธุ์:'),
+                        'N/A', dark),
                     const SizedBox(height: 10),
                     _infoRow(
                         lang.translate(en: 'Size:', th: 'ขนาด:'), 'N/A', dark),
@@ -1152,8 +1124,9 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                 child: ElevatedButton.icon(
               onPressed: loading
                   ? null
-                  : () =>
-                      context.read<CatAnalysisBloc>().add(CatAnalysisStarted()),
+                  : () => context
+                      .read<CatAnalysisBloc>()
+                      .add(CatAnalysisStarted()),
               icon: loading
                   ? const SizedBox(
                       width: 20,
@@ -1167,9 +1140,10 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                 loading
                     ? lang.translate(
                         en: 'Processing...', th: 'กำลังวิเคราะห์...')
-                    : lang.translate(en: 'Analyze Data', th: 'วิเคราะห์ข้อมูล'),
-                style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    : lang.translate(
+                        en: 'Analyze Data', th: 'วิเคราะห์ข้อมูล'),
+                style: const TextStyle(
+                    fontSize: 16, fontWeight: FontWeight.bold),
               ),
               style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
@@ -1183,8 +1157,8 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
             ElevatedButton(
               onPressed: loading ? null : _clearData,
               style: ElevatedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 14, horizontal: 20),
                   backgroundColor: Colors.red,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
@@ -1199,7 +1173,8 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
       LanguageProvider lang, List<Map<String, dynamic>> recs) {
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      child:
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -1208,7 +1183,8 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
               border: Border.all(
                   color: dark ? Colors.grey[700]! : Colors.grey[300]!,
                   width: 2)),
-          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          child:
+              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Container(
               width: 100,
               height: 120,
@@ -1222,8 +1198,10 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                 child: cat.imageUrl.isNotEmpty
                     ? Image.network(cat.imageUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Icon(Icons.broken_image,
-                            size: 40, color: Colors.grey[400]))
+                        errorBuilder: (_, __, ___) => Icon(
+                            Icons.broken_image,
+                            size: 40,
+                            color: Colors.grey[400]))
                     : Icon(Icons.pets, size: 40, color: Colors.grey[400]),
               ),
             ),
@@ -1232,11 +1210,14 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                 child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                  _infoRow(lang.translate(en: 'Cat Color:', th: 'สีแมว:'),
+                  _infoRow(
+                      lang.translate(en: 'Cat Color:', th: 'สีแมว:'),
                       cat.name, dark),
                   const SizedBox(height: 10),
-                  _infoRow(lang.translate(en: 'Age:', th: 'อายุ:'),
-                      cat.age != null ? '${cat.age} years' : 'N/A', dark),
+                  _infoRow(
+                      lang.translate(en: 'Age:', th: 'อายุ:'),
+                      cat.age != null ? '${cat.age} years' : 'N/A',
+                      dark),
                   const SizedBox(height: 10),
                   _infoRow(lang.translate(en: 'Breed:', th: 'พันธุ์:'),
                       cat.breed ?? 'N/A', dark),
@@ -1259,7 +1240,9 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
           ]),
         ),
         const SizedBox(height: 20),
-        Text(lang.translate(en: 'Recommended Products', th: 'สินค้าแนะนำ'),
+        Text(
+            lang.translate(
+                en: 'Recommended Products', th: 'สินค้าแนะนำ'),
             style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -1276,18 +1259,20 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                   lang.translate(
                       en: 'No matching products found',
                       th: 'ไม่พบสินค้าที่เหมาะสม'),
-                  style: TextStyle(color: Colors.grey[500], fontSize: 14)),
+                  style:
+                      TextStyle(color: Colors.grey[500], fontSize: 14)),
             ]),
           )
         else
           SizedBox(
             height: screenH * 0.50,
             child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 5,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 0.86),
+              gridDelegate:
+                  const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 5,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 0.86),
               itemCount: recs.length,
               itemBuilder: (ctx, i) => _buildProductCard(recs[i], dark),
             ),
@@ -1313,15 +1298,15 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
   }
 
   Widget _buildProductCard(Map<String, dynamic> product, bool dark) {
-    final lang = Provider.of<LanguageProvider>(context);
-    final uuid = product['uuid']?.toString() ?? product['id']?.toString() ?? '';
-    final name = product['clothing_name'] ?? product['name'] ?? 'Unknown';
-    final imageUrl = product['image_url'] ?? product['imageUrl'] ?? '';
-    final price = (product['price'] as num?)?.toDouble() ?? 0.0;
+    final lang      = Provider.of<LanguageProvider>(context);
+    final uuid      = product['uuid']?.toString() ?? product['id']?.toString() ?? '';
+    final name      = product['clothing_name'] ?? product['name'] ?? 'Unknown';
+    final imageUrl  = product['image_url'] ?? product['imageUrl'] ?? '';
+    final price     = (product['price'] as num?)?.toDouble() ?? 0.0;
     final discPrice = (product['discount_price'] as num?)?.toDouble();
-    final discPct = product['discount_percent'];
-    final stock = (product['stock'] as num?)?.toInt() ?? 99;
-    final match = (product['match_score'] as num?)?.toDouble() ?? 0.0;
+    final discPct   = product['discount_percent'];
+    final stock     = (product['stock'] as num?)?.toInt() ?? 99;
+    final match     = (product['match_score'] as num?)?.toDouble() ?? 0.0;
     final priceDisplay = discPrice != null
         ? '฿${discPrice.toStringAsFixed(0)}'
         : price > 0
@@ -1341,18 +1326,19 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
               border: Border.all(
                   color: dark ? Colors.grey[700]! : Colors.grey[300]!,
                   width: 1.5)),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
             Stack(children: [
               Container(
                 height: 100,
                 decoration: BoxDecoration(
-                    borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(14)),
+                    borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(14)),
                     color: dark ? Colors.grey[800] : Colors.grey[200]),
                 child: ClipRRect(
-                    borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(14)),
+                    borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(14)),
                     child: imageUrl.isNotEmpty
                         ? Image.network(imageUrl,
                             width: double.infinity,
@@ -1408,7 +1394,8 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                             en: 'Removed from favourites',
                             th: 'ลบออกจากรายการโปรดแล้ว'));
                       } else {
-                        await _favouriteApi.addToFavourite(clothingUuid: uuid);
+                        await _favouriteApi.addToFavourite(
+                            clothingUuid: uuid);
                         _showProductDialog(context, product, dark);
                       }
                       if (mounted) setState(() {});
@@ -1419,7 +1406,9 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                           color: Colors.black.withOpacity(0.1),
                           shape: BoxShape.circle),
                       child: Icon(
-                          isFav ? Icons.favorite : Icons.favorite_border,
+                          isFav
+                              ? Icons.favorite
+                              : Icons.favorite_border,
                           color: isFav ? Colors.red : Colors.white,
                           size: 18),
                     ),
@@ -1475,13 +1464,15 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                               }
                             : null,
                         style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 6),
                             backgroundColor:
                                 stock > 0 ? Colors.green : Colors.grey,
                             foregroundColor: Colors.white,
                             minimumSize: const Size(0, 28),
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8))),
+                                borderRadius:
+                                    BorderRadius.circular(8))),
                         child: Text(
                             stock > 0
                                 ? lang.translate(en: 'Buy', th: 'ซื้อ')
@@ -1496,14 +1487,18 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                         style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(
                                 vertical: 6, horizontal: 8),
-                            backgroundColor:
-                                dark ? Colors.grey[700] : Colors.grey[300],
+                            backgroundColor: dark
+                                ? Colors.grey[700]
+                                : Colors.grey[300],
                             foregroundColor:
                                 dark ? Colors.white : Colors.black87,
                             minimumSize: const Size(0, 28),
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8))),
-                        child: Text(lang.translate(en: 'More', th: 'เพิ่มเติม'),
+                                borderRadius:
+                                    BorderRadius.circular(8))),
+                        child: Text(
+                            lang.translate(
+                                en: 'More', th: 'เพิ่มเติม'),
                             style: const TextStyle(fontSize: 11)),
                       ),
                     ]),
@@ -1524,7 +1519,9 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
           color: dark ? Colors.grey[900] : Colors.white,
           boxShadow: const [
             BoxShadow(
-                color: Colors.black12, blurRadius: 8, offset: Offset(0, -2))
+                color: Colors.black12,
+                blurRadius: 8,
+                offset: Offset(0, -2))
           ]),
       child: SafeArea(
           top: false,
@@ -1552,7 +1549,8 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                         height: 18,
                         child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation(Colors.white)))
+                            valueColor:
+                                AlwaysStoppedAnimation(Colors.white)))
                     : const Icon(Icons.camera_alt),
                 label: Text(
                   _isCapturing
@@ -1575,7 +1573,9 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                   child: ElevatedButton.icon(
                 onPressed: _isCapturing ? null : _pickFromGallery,
                 icon: const Icon(Icons.photo_library),
-                label: Text(lang.translate(en: 'Choose Photo', th: 'เลือกรูป'),
+                label: Text(
+                    lang.translate(
+                        en: 'Choose Photo', th: 'เลือกรูป'),
                     style: const TextStyle(
                         fontSize: 16, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
