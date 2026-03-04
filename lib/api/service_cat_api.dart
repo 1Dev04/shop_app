@@ -8,7 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:io';
 
-// ── Base URL (เหมือนกับ measure_size_cat.dart) ────────────────────────────────
+// ── Base URL ──────────────────────────────────────────────────────────────────
 String getBaseUrl() {
   const String env = String.fromEnvironment('ENV', defaultValue: 'local');
   if (env == 'prod') return 'https://catshop-backend-9pzq.onrender.com';
@@ -86,33 +86,51 @@ class CatRecord {
     this.detectedAt,
   });
 
+  // ── Safe parse helpers ────────────────────────────────────────────────────
+  static double? _toDouble(dynamic v) {
+    if (v == null) return null;
+    if (v is num) return v.toDouble();
+    if (v is String) return double.tryParse(v);
+    return null;
+  }
+
+  static int? _toInt(dynamic v) {
+    if (v == null) return null;
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    if (v is String) return int.tryParse(v);
+    return null;
+  }
+
   factory CatRecord.fromJson(Map<String, dynamic> json) {
     return CatRecord(
-      id: json['id'],
-      catColor: json['cat_color'] ?? 'Unknown',
-      breed: json['breed'],
-      age: json['age'],
-      gender: json['gender'] ?? 0,
-      weight: json['weight'] != null ? (json['weight'] as num).toDouble() : null,
-      sizeCategory: json['size_category'] ?? 'M',
-      chestCm: json['chest_cm'] != null ? (json['chest_cm'] as num).toDouble() : null,
-      neckCm: json['neck_cm'] != null ? (json['neck_cm'] as num).toDouble() : null,
-      waistCm: json['waist_cm'] != null ? (json['waist_cm'] as num).toDouble() : null,
-      bodyLengthCm: json['body_length_cm'] != null ? (json['body_length_cm'] as num).toDouble() : null,
-      backLengthCm: json['back_length_cm'] != null ? (json['back_length_cm'] as num).toDouble() : null,
-      legLengthCm: json['leg_length_cm'] != null ? (json['leg_length_cm'] as num).toDouble() : null,
-      confidence: json['confidence'] != null ? (json['confidence'] as num).toDouble() : null,
-      imageCat: json['image_cat'],
-      thumbnailUrl: json['thumbnail_url'],
-      ageCategory: json['age_category'],
-      bodyConditionScore: json['body_condition_score'],
-      bodyCondition: json['body_condition'],
-      bodyConditionDescription: json['body_condition_description'],
-      bmi: json['bmi'] != null ? (json['bmi'] as num).toDouble() : null,
-      posture: json['posture'],
-      sizeRecommendation: json['size_recommendation'],
-      qualityFlag: json['quality_flag'],
-      detectedAt: json['detected_at'] != null ? DateTime.tryParse(json['detected_at']) : null,
+      id: _toInt(json['id']) ?? 0,
+      catColor: json['cat_color']?.toString() ?? 'Unknown',
+      breed: json['breed']?.toString(),
+      age: _toInt(json['age']),
+      gender: _toInt(json['gender']) ?? 0,
+      weight: _toDouble(json['weight']),
+      sizeCategory: json['size_category']?.toString() ?? 'M',
+      chestCm: _toDouble(json['chest_cm']),
+      neckCm: _toDouble(json['neck_cm']),
+      waistCm: _toDouble(json['waist_cm']),
+      bodyLengthCm: _toDouble(json['body_length_cm']),
+      backLengthCm: _toDouble(json['back_length_cm']),
+      legLengthCm: _toDouble(json['leg_length_cm']),
+      confidence: _toDouble(json['confidence']),
+      imageCat: json['image_cat']?.toString(),
+      thumbnailUrl: json['thumbnail_url']?.toString(),
+      ageCategory: json['age_category']?.toString(),
+      bodyConditionScore: _toInt(json['body_condition_score']),
+      bodyCondition: json['body_condition']?.toString(),
+      bodyConditionDescription: json['body_condition_description']?.toString(),
+      bmi: _toDouble(json['bmi']),
+      posture: json['posture']?.toString(),
+      sizeRecommendation: json['size_recommendation']?.toString(),
+      qualityFlag: json['quality_flag']?.toString(),
+      detectedAt: json['detected_at'] != null
+          ? DateTime.tryParse(json['detected_at'].toString())
+          : null,
     );
   }
 
@@ -138,13 +156,14 @@ class CatApiService {
         'Authorization': 'Bearer $token',
       };
 
-  // ── GET /system/cats — ดูแมวทั้งหมดของ user ────────────────────────────────
+  // ── GET /system/cats ────────────────────────────────────────────────────────
   Future<List<CatRecord>> getUserCats({int skip = 0, int limit = 100}) async {
     final token = await _getFirebaseToken();
     if (token == null) throw Exception('กรุณาเข้าสู่ระบบก่อน');
 
     final uri = Uri.parse('$_base?skip=$skip&limit=$limit');
-    final response = await http.get(uri, headers: _headers(token))
+    final response = await http
+        .get(uri, headers: _headers(token))
         .timeout(const Duration(seconds: 30));
 
     if (response.statusCode == 200) {
@@ -158,15 +177,14 @@ class CatApiService {
     }
   }
 
-  // ── GET /system/cats/{id} — ดูแมวตัวเดียว ──────────────────────────────────
+  // ── GET /system/cats/{id} ───────────────────────────────────────────────────
   Future<CatRecord> getCatById(int catId) async {
     final token = await _getFirebaseToken();
     if (token == null) throw Exception('กรุณาเข้าสู่ระบบก่อน');
 
-    final response = await http.get(
-      Uri.parse('$_base/$catId'),
-      headers: _headers(token),
-    ).timeout(const Duration(seconds: 30));
+    final response = await http
+        .get(Uri.parse('$_base/$catId'), headers: _headers(token))
+        .timeout(const Duration(seconds: 30));
 
     if (response.statusCode == 200) {
       final json = jsonDecode(utf8.decode(response.bodyBytes));
@@ -178,16 +196,18 @@ class CatApiService {
     }
   }
 
-  // ── PUT /system/cats/{id} — แก้ไขข้อมูลแมว ────────────────────────────────
+  // ── PUT /system/cats/{id} ───────────────────────────────────────────────────
   Future<CatRecord> updateCat(int catId, Map<String, dynamic> updateData) async {
     final token = await _getFirebaseToken();
     if (token == null) throw Exception('กรุณาเข้าสู่ระบบก่อน');
 
-    final response = await http.put(
-      Uri.parse('$_base/$catId'),
-      headers: _headers(token),
-      body: jsonEncode(updateData),
-    ).timeout(const Duration(seconds: 30));
+    final response = await http
+        .put(
+          Uri.parse('$_base/$catId'),
+          headers: _headers(token),
+          body: jsonEncode(updateData),
+        )
+        .timeout(const Duration(seconds: 30));
 
     if (response.statusCode == 200) {
       final json = jsonDecode(utf8.decode(response.bodyBytes));
@@ -202,18 +222,17 @@ class CatApiService {
     }
   }
 
-  // ── DELETE /system/cats/{id} — ลบข้อมูลแมว ────────────────────────────────
+  // ── DELETE /system/cats/{id} ────────────────────────────────────────────────
   Future<void> deleteCat(int catId) async {
     final token = await _getFirebaseToken();
     if (token == null) throw Exception('กรุณาเข้าสู่ระบบก่อน');
 
-    final response = await http.delete(
-      Uri.parse('$_base/$catId'),
-      headers: _headers(token),
-    ).timeout(const Duration(seconds: 30));
+    final response = await http
+        .delete(Uri.parse('$_base/$catId'), headers: _headers(token))
+        .timeout(const Duration(seconds: 30));
 
     if (response.statusCode == 200) {
-      return; // สำเร็จ
+      return;
     } else if (response.statusCode == 404) {
       throw Exception('ไม่พบข้อมูลแมว');
     } else if (response.statusCode == 401) {
