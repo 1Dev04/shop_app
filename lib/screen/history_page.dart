@@ -78,7 +78,7 @@ class _HistoryPageState extends State<HistoryPage>
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-          backgroundColor: isDark ? Colors.grey[900] : Colors.white,
+      backgroundColor: isDark ? Colors.grey[900] : Colors.white,
       builder: (ctx) => Padding(
         padding: EdgeInsets.only(
           left: 20,
@@ -86,7 +86,6 @@ class _HistoryPageState extends State<HistoryPage>
           top: 20,
           bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
         ),
-        
         child: StatefulBuilder(
           builder: (ctx2, setModal) => Column(
             mainAxisSize: MainAxisSize.min,
@@ -104,8 +103,7 @@ class _HistoryPageState extends State<HistoryPage>
                 ),
               ),
               const Text('✏️ แก้ไขข้อมูลแมว',
-                  style:
-                      TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               TextField(
                 controller: colorCtrl,
@@ -141,8 +139,8 @@ class _HistoryPageState extends State<HistoryPage>
                 Expanded(
                   child: TextField(
                     controller: weightCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
                     decoration: const InputDecoration(
                       labelText: 'น้ำหนัก (kg)',
                       prefixIcon: Icon(Icons.monitor_weight_outlined),
@@ -166,23 +164,18 @@ class _HistoryPageState extends State<HistoryPage>
                       height: 40,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: selected
-                            ? Colors.orange
-                            : Colors.grey.shade200,
+                        color: selected ? Colors.orange : Colors.grey.shade200,
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: selected
-                              ? Colors.orange
-                              : Colors.grey.shade300,
+                          color:
+                              selected ? Colors.orange : Colors.grey.shade300,
                           width: 1.5,
                         ),
                       ),
                       child: Text(size,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: selected
-                                ? Colors.white
-                                : Colors.black87,
+                            color: selected ? Colors.white : Colors.black87,
                           )),
                     ),
                   );
@@ -195,8 +188,8 @@ class _HistoryPageState extends State<HistoryPage>
                   onPressed: () => Navigator.pop(ctx, true),
                   icon: const Icon(Icons.save_outlined),
                   label: const Text('บันทึก',
-                      style: TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.bold)),
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     backgroundColor: Colors.orange,
@@ -215,9 +208,8 @@ class _HistoryPageState extends State<HistoryPage>
     if (result != true) return;
 
     final updateData = <String, dynamic>{
-      'cat_color': colorCtrl.text.trim().isEmpty
-          ? cat.catColor
-          : colorCtrl.text.trim(),
+      'cat_color':
+          colorCtrl.text.trim().isEmpty ? cat.catColor : colorCtrl.text.trim(),
       'size_category': selectedSize,
       if (breedCtrl.text.trim().isNotEmpty) 'breed': breedCtrl.text.trim(),
       if (ageCtrl.text.trim().isNotEmpty)
@@ -249,8 +241,8 @@ class _HistoryPageState extends State<HistoryPage>
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('ลบ',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            child:
+                const Text('ลบ', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -258,9 +250,7 @@ class _HistoryPageState extends State<HistoryPage>
     if (confirm != true) return;
 
     if (!context.mounted) return;
-    context
-        .read<CatHistoryBloc>()
-        .add(CatHistoryDeleteRequested(cat));
+    context.read<CatHistoryBloc>().add(CatHistoryDeleteRequested(cat));
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────
@@ -299,12 +289,10 @@ class _HistoryPageState extends State<HistoryPage>
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return BlocProvider(
-      create: (_) =>
-          CatHistoryBloc()..add(const CatHistoryLoadRequested()),
+      create: (_) => CatHistoryBloc()..add(const CatHistoryLoadRequested()),
       child: Builder(builder: (blocCtx) {
         return Scaffold(
-          backgroundColor:
-              isDark ? Colors.black : const Color(0xFFF5F5F5),
+          backgroundColor: isDark ? Colors.black : const Color(0xFFF5F5F5),
           appBar: AppBar(
             centerTitle: true,
             backgroundColor: isDark ? Colors.black : Colors.white,
@@ -325,12 +313,10 @@ class _HistoryPageState extends State<HistoryPage>
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(50),
               child: Container(
-                margin:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 height: 42,
                 decoration: BoxDecoration(
-                  color:
-                      isDark ? Colors.grey.shade900 : Colors.grey.shade200,
+                  color: isDark ? Colors.grey.shade900 : Colors.grey.shade200,
                   borderRadius: BorderRadius.circular(30),
                 ),
                 child: TabBar(
@@ -342,9 +328,8 @@ class _HistoryPageState extends State<HistoryPage>
                   indicatorSize: TabBarIndicatorSize.tab,
                   dividerColor: Colors.transparent,
                   labelColor: Colors.white,
-                  unselectedLabelColor: isDark
-                      ? Colors.grey.shade400
-                      : Colors.grey.shade600,
+                  unselectedLabelColor:
+                      isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                   labelStyle: const TextStyle(
                       fontWeight: FontWeight.bold, fontSize: 13),
                   unselectedLabelStyle: const TextStyle(fontSize: 13),
@@ -395,8 +380,7 @@ class _HistoryPageState extends State<HistoryPage>
     return ListView.builder(
       padding: const EdgeInsets.all(15),
       itemCount: _orders.length,
-      itemBuilder: (context, index) =>
-          _buildOrderCard(_orders[index], isDark),
+      itemBuilder: (context, index) => _buildOrderCard(_orders[index], isDark),
     );
   }
 
@@ -435,26 +419,22 @@ class _HistoryPageState extends State<HistoryPage>
       child: Padding(
         padding: const EdgeInsets.all(15),
         child: Column(children: [
-          Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(order['date'],
-                    style:
-                        const TextStyle(color: Colors.grey, fontSize: 13)),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(order['status'],
-                      style: TextStyle(
-                          color: statusColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12)),
-                ),
-              ]),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Text(order['date'],
+                style: const TextStyle(color: Colors.grey, fontSize: 13)),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: statusColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(order['status'],
+                  style: TextStyle(
+                      color: statusColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12)),
+            ),
+          ]),
           const Divider(height: 25),
           Row(children: [
             Container(
@@ -463,8 +443,7 @@ class _HistoryPageState extends State<HistoryPage>
               decoration: BoxDecoration(
                   color: Colors.grey[200],
                   borderRadius: BorderRadius.circular(10)),
-              child: Icon(order['image'],
-                  color: Colors.grey[400], size: 30),
+              child: Icon(order['image'], color: Colors.grey[400], size: 30),
             ),
             const SizedBox(width: 15),
             Expanded(
@@ -476,40 +455,33 @@ class _HistoryPageState extends State<HistoryPage>
                             fontWeight: FontWeight.bold, fontSize: 16)),
                     const SizedBox(height: 5),
                     Text('Order ID: ${order['id']}',
-                        style: TextStyle(
-                            color: Colors.grey[600], fontSize: 13)),
+                        style:
+                            TextStyle(color: Colors.grey[600], fontSize: 13)),
                   ]),
             ),
           ]),
           const SizedBox(height: 15),
-          Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Total Payment',
-                          style:
-                              TextStyle(fontSize: 12, color: Colors.grey)),
-                      Text(order['total'],
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 16)),
-                    ]),
-                ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: btnColor,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20)),
-                    elevation: 0,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 20),
-                  ),
-                  child: Text(btnText,
-                      style: const TextStyle(
-                          color: Colors.white, fontSize: 13)),
-                ),
-              ]),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('Total Payment',
+                  style: TextStyle(fontSize: 12, color: Colors.grey)),
+              Text(order['total'],
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 16)),
+            ]),
+            ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: btnColor,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20)),
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+              ),
+              child: Text(btnText,
+                  style: const TextStyle(color: Colors.white, fontSize: 13)),
+            ),
+          ]),
         ]),
       ),
     );
@@ -550,8 +522,7 @@ class _HistoryPageState extends State<HistoryPage>
             child: Column(mainAxisSize: MainAxisSize.min, children: [
               CircularProgressIndicator(color: Colors.black),
               SizedBox(height: 16),
-              Text('กำลังโหลดข้อมูล...',
-                  style: TextStyle(color: Colors.grey)),
+              Text('กำลังโหลดข้อมูล...', style: TextStyle(color: Colors.grey)),
             ]),
           );
         }
@@ -562,13 +533,11 @@ class _HistoryPageState extends State<HistoryPage>
             child: Padding(
               padding: const EdgeInsets.all(32),
               child: Column(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.error_outline,
-                    size: 64, color: Colors.red),
+                const Icon(Icons.error_outline, size: 64, color: Colors.red),
                 const SizedBox(height: 16),
                 Text(state.message,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                        color: Colors.red, fontSize: 15)),
+                    style: const TextStyle(color: Colors.red, fontSize: 15)),
                 const SizedBox(height: 20),
                 ElevatedButton.icon(
                   onPressed: () => ctx
@@ -576,8 +545,8 @@ class _HistoryPageState extends State<HistoryPage>
                       .add(const CatHistoryLoadRequested()),
                   icon: const Icon(Icons.refresh),
                   label: const Text('ลองใหม่'),
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange),
+                  style:
+                      ElevatedButton.styleFrom(backgroundColor: Colors.orange),
                 ),
               ]),
             ),
@@ -594,12 +563,10 @@ class _HistoryPageState extends State<HistoryPage>
               Icon(Icons.pets, size: 80, color: Colors.grey.shade400),
               const SizedBox(height: 16),
               Text('ยังไม่มีประวัติการวัดขนาดแมว',
-                  style: TextStyle(
-                      fontSize: 16, color: Colors.grey.shade600)),
+                  style: TextStyle(fontSize: 16, color: Colors.grey.shade600)),
               const SizedBox(height: 8),
               Text('ถ่ายรูปแมวแล้ววิเคราะห์ได้เลย!',
-                  style: TextStyle(
-                      fontSize: 13, color: Colors.grey.shade400)),
+                  style: TextStyle(fontSize: 13, color: Colors.grey.shade400)),
             ]),
           );
         }
@@ -654,101 +621,90 @@ class _HistoryPageState extends State<HistoryPage>
           ),
         ],
       ),
-      child:
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         // ── Header ──────────────────────────────────────────────────────
         Padding(
           padding: const EdgeInsets.all(16),
-          child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 90,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(14),
-                    color: isDark
-                        ? Colors.grey.shade800
-                        : Colors.grey.shade200,
-                    border: Border.all(
-                      color: isDark
-                          ? Colors.grey.shade700
-                          : Colors.grey.shade300,
-                      width: 1.5,
-                    ),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: cat.imageCat != null
-                        ? Image.network(cat.imageCat!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Icon(Icons.pets,
-                                size: 36,
-                                color: Colors.grey.shade400))
-                        : Icon(Icons.pets,
-                            size: 36, color: Colors.grey.shade400),
-                  ),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Container(
+              width: 90,
+              height: 100,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                border: Border.all(
+                  color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+                  width: 1.5,
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(children: [
-                          Expanded(
-                            child: Text(cat.catColor,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: isDark
-                                      ? Colors.white
-                                      : Colors.black87,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.orange,
-                              borderRadius: BorderRadius.circular(20),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: cat.imageCat != null
+                    ? Image.network(cat.imageCat!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Icon(Icons.pets,
+                            size: 36, color: Colors.grey.shade400))
+                    : Icon(Icons.pets, size: 36, color: Colors.grey.shade400),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [
+                      Expanded(
+                        child: Text(
+                            cat.breed?.isNotEmpty == true
+                                ? cat.breed!
+                                : cat.catColor,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : Colors.black87,
                             ),
-                            child: Text(cat.sizeCategory,
-                                style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 13)),
-                          ),
-                        ]),
-                        const SizedBox(height: 6),
-                        if (cat.breed != null)
-                          _infoChip(Icons.pets, cat.breed!, isDark),
-                        const SizedBox(height: 4),
-                        Row(children: [
-                          if (cat.age != null) ...[
-                            _infoChip(Icons.cake_outlined,
-                                '${cat.age} ปี', isDark),
-                            const SizedBox(width: 8),
-                          ],
-                          _infoChip(
-                            cat.gender == 1
-                                ? Icons.male
-                                : cat.gender == 2
-                                    ? Icons.female
-                                    : Icons.help_outline,
-                            _genderText(cat.gender),
-                            isDark,
-                          ),
-                        ]),
-                        const SizedBox(height: 4),
-                        if (cat.weight != null)
-                          _infoChip(Icons.monitor_weight_outlined,
-                              '${cat.weight!.toStringAsFixed(1)} kg',
-                              isDark),
-                      ]),
-                ),
-              ]),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.orange,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(cat.sizeCategory,
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13)),
+                      ),
+                    ]),
+                    const SizedBox(height: 6),
+                    _infoChip(Icons.color_lens_outlined, cat.catColor, isDark),
+                    const SizedBox(height: 4),
+                    Row(children: [
+                      if (cat.age != null) ...[
+                        _infoChip(Icons.cake_outlined, '${cat.age} ปี', isDark),
+                        const SizedBox(width: 8),
+                      ],
+                      _infoChip(
+                        cat.gender == 1
+                            ? Icons.male
+                            : cat.gender == 2
+                                ? Icons.female
+                                : Icons.poll_outlined,
+                        _genderText(cat.gender),
+                        isDark,
+                      ),
+                    ]),
+                    const SizedBox(height: 4),
+                    if (cat.weight != null)
+                      _infoChip(Icons.monitor_weight_outlined,
+                          '${cat.weight!.toStringAsFixed(1)} kg', isDark),
+                  ]),
+            ),
+          ]),
         ),
 
         // ── Body Condition ───────────────────────────────────────────────
@@ -756,21 +712,17 @@ class _HistoryPageState extends State<HistoryPage>
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: _conditionColor(cat.bodyCondition)
-                    .withOpacity(0.1),
+                color: _conditionColor(cat.bodyCondition).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: _conditionColor(cat.bodyCondition)
-                      .withOpacity(0.3),
+                  color: _conditionColor(cat.bodyCondition).withOpacity(0.3),
                 ),
               ),
               child: Row(children: [
                 Icon(Icons.favorite_border,
-                    size: 16,
-                    color: _conditionColor(cat.bodyCondition)),
+                    size: 16, color: _conditionColor(cat.bodyCondition)),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -800,17 +752,16 @@ class _HistoryPageState extends State<HistoryPage>
             runSpacing: 6,
             children: [
               if (cat.chestCm != null)
-                _measureChip('รอบอก',
-                    '${cat.chestCm!.toStringAsFixed(1)} cm', isDark),
+                _measureChip(
+                    'รอบอก', '${cat.chestCm!.toStringAsFixed(1)} cm', isDark),
               if (cat.neckCm != null)
-                _measureChip('รอบคอ',
-                    '${cat.neckCm!.toStringAsFixed(1)} cm', isDark),
+                _measureChip(
+                    'รอบคอ', '${cat.neckCm!.toStringAsFixed(1)} cm', isDark),
               if (cat.bodyLengthCm != null)
                 _measureChip('ยาวตัว',
                     '${cat.bodyLengthCm!.toStringAsFixed(1)} cm', isDark),
               if (cat.bmi != null)
-                _measureChip(
-                    'BMI', cat.bmi!.toStringAsFixed(1), isDark),
+                _measureChip('BMI', cat.bmi!.toStringAsFixed(1), isDark),
             ],
           ),
         ),
@@ -819,16 +770,14 @@ class _HistoryPageState extends State<HistoryPage>
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
           child: Row(children: [
-            Icon(Icons.access_time,
-                size: 14, color: Colors.grey.shade400),
+            Icon(Icons.access_time, size: 14, color: Colors.grey.shade400),
             const SizedBox(width: 4),
             Expanded(
               child: Text(
                 cat.detectedAt != null
                     ? _formatDate(cat.detectedAt!)
                     : 'ไม่ทราบวันที่',
-                style: TextStyle(
-                    fontSize: 11, color: Colors.grey.shade400),
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade400),
               ),
             ),
             IconButton(
@@ -863,9 +812,7 @@ class _HistoryPageState extends State<HistoryPage>
       Text(text,
           style: TextStyle(
               fontSize: 12,
-              color: isDark
-                  ? Colors.grey.shade300
-                  : Colors.grey.shade600)),
+              color: isDark ? Colors.grey.shade300 : Colors.grey.shade600)),
     ]);
   }
 
@@ -873,21 +820,16 @@ class _HistoryPageState extends State<HistoryPage>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color:
-            isDark ? Colors.grey.shade800 : Colors.grey.shade100,
+        color: isDark ? Colors.grey.shade800 : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDark
-              ? Colors.grey.shade700
-              : Colors.grey.shade300,
+          color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
         ),
       ),
       child: Text('$label: $value',
           style: TextStyle(
               fontSize: 11,
-              color: isDark
-                  ? Colors.grey.shade300
-                  : Colors.grey.shade700)),
+              color: isDark ? Colors.grey.shade300 : Colors.grey.shade700)),
     );
   }
 }
