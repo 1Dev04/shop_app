@@ -4,9 +4,11 @@
 //   - Tab 2: Cat Analysis History (ใช้ CatHistoryBloc)
 
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/provider/theme_provider.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_application_1/api/service_cat_api.dart';
 import 'package:flutter_application_1/blocs/cat_history/history_bloc.dart';
+import 'package:provider/provider.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -68,11 +70,15 @@ class _HistoryPageState extends State<HistoryPage>
         TextEditingController(text: cat.weight?.toString() ?? '');
     String selectedSize = cat.sizeCategory;
 
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.themeMode == ThemeMode.dark;
+
     final result = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+          backgroundColor: isDark ? Colors.grey[900] : Colors.white,
       builder: (ctx) => Padding(
         padding: EdgeInsets.only(
           left: 20,
@@ -80,6 +86,7 @@ class _HistoryPageState extends State<HistoryPage>
           top: 20,
           bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
         ),
+        
         child: StatefulBuilder(
           builder: (ctx2, setModal) => Column(
             mainAxisSize: MainAxisSize.min,
