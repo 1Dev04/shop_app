@@ -168,7 +168,7 @@ class _HistoryPageState extends State<HistoryPage>
               ]),
               const SizedBox(height: 12),
               const Text('ขนาด / Size',
-                  style: TextStyle(fontSize: 13, color: Colors.black)),
+                   style: TextStyle(fontSize: 13, color: Colors.grey)),
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,

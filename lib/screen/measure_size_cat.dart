@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/api/service_fav_backet.dart';
 import 'package:flutter_application_1/blocs/cat_analysis/analysis_bloc.dart';
 import 'package:flutter_application_1/blocs/cat_detect/detect_bloc.dart';
+import 'package:flutter_application_1/blocs/cat_item_detail/item_detail_bloc.dart';
+import 'package:flutter_application_1/components/home_page.dart';
 import 'package:flutter_application_1/provider/language_provider.dart';
 import 'package:flutter_application_1/screen/history_page.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -400,6 +402,39 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
     );
   }
 
+  void _showItemDetailPopup(Map<String, dynamic> product) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: '',
+      barrierColor: Colors.black54,
+      transitionDuration: const Duration(milliseconds: 400),
+      pageBuilder: (_, __, ___) {
+        return BlocProvider(
+          create: (_) => ItemDetailBloc()
+            ..add(
+                ItemDetailFavCheckRequested(product['uuid']?.toString() ?? '')),
+          child: ItemDetailsCard(itemDetails: product),
+        );
+      },
+      transitionBuilder: (_, animation, __, child) {
+        return SlideTransition(
+          position: animation.drive(
+            Tween(begin: const Offset(0.0, -1.0), end: Offset.zero)
+                .chain(CurveTween(curve: Curves.easeInOut)),
+          ),
+          child: FadeTransition(
+            opacity: animation.drive(
+              Tween(begin: 0.0, end: 1.0)
+                  .chain(CurveTween(curve: Curves.easeInOut)),
+            ),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+
   void _showRejectDialog(DetectCatResult result) {
     if (!mounted || _isDisposed) return;
     final dark = Theme.of(context).brightness == Brightness.dark;
@@ -484,166 +519,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
     );
   }
 
-  void _showProductDialog(
-      BuildContext context, Map<String, dynamic> product, bool dark) {
-    final lang = Provider.of<LanguageProvider>(context, listen: false);
-    final uuid = product['uuid']?.toString() ?? product['id']?.toString() ?? '';
-    final name = product['clothing_name'] ?? product['name'] ?? 'Unknown';
-    final imageUrl = product['image_url'] ?? product['imageUrl'] ?? '';
-    final price = (product['price'] as num?)?.toDouble() ?? 0.0;
-    final discPrice = (product['discount_price'] as num?)?.toDouble();
-    final priceDisplay = discPrice != null
-        ? '฿${discPrice.toStringAsFixed(0)}'
-        : price > 0
-            ? '฿${price.toStringAsFixed(0)}'
-            : '${product['price'] ?? ''}';
 
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Container(
-          width: MediaQuery.of(ctx).size.width * 0.9,
-          constraints: const BoxConstraints(maxWidth: 400, minWidth: 320),
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-              color: dark ? Colors.grey[900] : Colors.white,
-              borderRadius: BorderRadius.circular(20)),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              const SizedBox(width: 32),
-              Text(
-                  lang.translate(
-                      en: 'Added to Favorites', th: 'เพิ่มในรายการโปรด'),
-                  style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                      color: dark ? Colors.white : Colors.black87)),
-              IconButton(
-                icon: Icon(Icons.close,
-                    color: dark ? Colors.white70 : Colors.black54, size: 24),
-                onPressed: () => Navigator.pop(ctx),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-            ]),
-            const SizedBox(height: 20),
-            Container(
-              height: 220,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  color: dark ? Colors.grey[800] : Colors.grey[200],
-                  boxShadow: [
-                    BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4))
-                  ]),
-              child: Stack(children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: imageUrl.isNotEmpty
-                      ? Image.network(imageUrl,
-                          width: double.infinity,
-                          height: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Center(
-                              child: Icon(Icons.shopping_bag,
-                                  size: 60, color: Colors.grey[400])))
-                      : Center(
-                          child: Icon(Icons.shopping_bag,
-                              size: 60, color: Colors.grey[400])),
-                ),
-                Positioned(
-                    top: 12,
-                    right: 12,
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.1),
-                          shape: BoxShape.circle),
-                      child: const Icon(Icons.favorite,
-                          color: Colors.red, size: 26),
-                    )),
-              ]),
-            ),
-            const SizedBox(height: 20),
-            Text(name,
-                style: TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.bold,
-                    color: dark ? Colors.white : Colors.black87),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis),
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8)),
-              child: Text(
-                lang.translate(
-                    en: 'Price: $priceDisplay', th: 'ราคา: $priceDisplay'),
-                style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.orange),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(children: [
-              Expanded(
-                  flex: 2,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      Navigator.pop(ctx);
-                      try {
-                        await _basketApi.addToBasket(clothingUuid: uuid);
-                        _showSuccessMessage(lang.translate(
-                            en: 'Added to cart!', th: 'เพิ่มลงตะกร้าแล้ว!'));
-                      } catch (_) {
-                        _showError(lang.translate(
-                            en: 'Failed to add to cart',
-                            th: 'เพิ่มลงตะกร้าไม่สำเร็จ'));
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12))),
-                    child: Text(lang.translate(en: 'Buy', th: 'ซื้อ'),
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold)),
-                  )),
-              const SizedBox(width: 12),
-              Expanded(
-                  child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  _showInfoMessage(lang.translate(
-                      en: 'Opening details...', th: 'กำลังเปิดรายละเอียด...'));
-                },
-                style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: dark ? Colors.grey[700] : Colors.grey[300],
-                    foregroundColor: dark ? Colors.white : Colors.black87,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12))),
-                child: Text(lang.translate(en: 'More', th: 'เพิ่มเติม'),
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold)),
-              )),
-            ]),
-          ]),
-        ),
-      ),
-    );
-  }
 
   Future<void> _showEditDialog(CatData cat) async {
     final colorCtrl = TextEditingController(text: cat.name);
@@ -683,23 +559,35 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
               const SizedBox(height: 16),
               TextField(
                   controller: colorCtrl,
+                  style: const TextStyle(
+                    color: Colors.black45,
+                    fontWeight: FontWeight.bold,
+                  ),
                   decoration: const InputDecoration(
                       labelText: 'สีแมว / Cat Color',
                       border: OutlineInputBorder())),
               const SizedBox(height: 12),
               TextField(
                   controller: breedCtrl,
+                  style: const TextStyle(
+                    color: Colors.black45,
+                    fontWeight: FontWeight.bold,
+                  ),
                   decoration: const InputDecoration(
                       labelText: 'พันธุ์ / Breed',
                       border: OutlineInputBorder())),
               const SizedBox(height: 12),
               TextField(
                   controller: ageCtrl,
+                  style: const TextStyle(
+                    color: Colors.black45,
+                    fontWeight: FontWeight.bold,
+                  ),
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
                       labelText: 'อายุ (ปี)', border: OutlineInputBorder())),
               const SizedBox(height: 12),
-              const Text('ขนาด',
+              const Text('ขนาด / Size',
                   style: TextStyle(fontSize: 13, color: Colors.grey)),
               const SizedBox(height: 8),
               Row(
@@ -791,13 +679,6 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
         displayDuration: const Duration(milliseconds: 1000));
   }
 
-  void _showInfoMessage(String m) {
-    if (!mounted || _isDisposed) return;
-    showTopSnackBar(Overlay.of(context), CustomSnackBar.info(message: m),
-        animationDuration: const Duration(milliseconds: 200),
-        reverseAnimationDuration: const Duration(milliseconds: 200),
-        displayDuration: const Duration(milliseconds: 1000));
-  }
 
   void _showError(String m) {
     if (!mounted || _isDisposed) return;
@@ -1298,7 +1179,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
     ]);
   }
 
-Widget _buildProductCard(Map<String, dynamic> product, bool dark) {
+  Widget _buildProductCard(Map<String, dynamic> product, bool dark) {
     final lang = Provider.of<LanguageProvider>(context);
     final uuid = product['uuid']?.toString() ?? product['id']?.toString() ?? '';
     final name = product['clothing_name'] ?? product['name'] ?? 'Unknown';
@@ -1320,7 +1201,7 @@ Widget _buildProductCard(Map<String, dynamic> product, bool dark) {
         final isFav = snap.data ?? false;
         return Container(
           width: 160,
-          height: 230, 
+          height: 230,
           margin: const EdgeInsets.only(right: 12),
           decoration: BoxDecoration(
               color: dark ? Colors.grey[850] : Colors.white,
@@ -1384,6 +1265,8 @@ Widget _buildProductCard(Map<String, dynamic> product, bool dark) {
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold)),
                       )),
+
+                // ── ❤️ Favourite button ──────────────────────────────
                 Positioned(
                   top: 6,
                   right: 6,
@@ -1397,7 +1280,9 @@ Widget _buildProductCard(Map<String, dynamic> product, bool dark) {
                             th: 'ลบออกจากรายการโปรดแล้ว'));
                       } else {
                         await _favouriteApi.addToFavourite(clothingUuid: uuid);
-                        _showProductDialog(context, product, dark);
+                        _showSuccessMessage(lang.translate(
+                            en: 'Added to favourites!',
+                            th: 'เพิ่มในรายการโปรดแล้ว!'));
                       }
                       if (mounted) setState(() {});
                     },
@@ -1414,20 +1299,19 @@ Widget _buildProductCard(Map<String, dynamic> product, bool dark) {
                   ),
                 ),
               ]),
-              
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(8),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween, 
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(name,
                               style: TextStyle(
-                                  fontSize: 12, // ปรับขนาดลงนิดนึงกันล้น
+                                  fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                   color: dark ? Colors.white : Colors.black87),
                               maxLines: 1,
@@ -1456,11 +1340,10 @@ Widget _buildProductCard(Map<String, dynamic> product, bool dark) {
                           ),
                         ],
                       ),
-                      
-                      // ส่วนของปุ่มกด
                       Row(children: [
+                        // ── 🛒 ไปหน้า Basket ──────────────────────────
                         Expanded(
-                            child: ElevatedButton(
+                            child: ElevatedButton.icon(
                           onPressed: stock > 0
                               ? () async {
                                   try {
@@ -1476,27 +1359,31 @@ Widget _buildProductCard(Map<String, dynamic> product, bool dark) {
                                   }
                                 }
                               : null,
+                          icon: const Icon(Icons.shopping_cart_outlined,
+                              size: 12),
+                          label: Text(
+                              stock > 0
+                                  ? lang.translate(en: 'Buy', th: 'ซื้อ')
+                                  : lang.translate(en: 'Out', th: 'หมด'),
+                              style: const TextStyle(fontSize: 10)),
                           style: ElevatedButton.styleFrom(
-                              padding: EdgeInsets.zero, // 
+                              padding: EdgeInsets.zero,
                               backgroundColor:
                                   stock > 0 ? Colors.green : Colors.grey,
                               foregroundColor: Colors.white,
                               minimumSize: const Size(0, 28),
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8))),
-                          child: Text(
-                              stock > 0
-                                  ? lang.translate(en: 'Buy', th: 'ซื้อ')
-                                  : lang.translate(en: 'Out', th: 'หมด'),
-                              style: const TextStyle(fontSize: 11)),
                         )),
                         const SizedBox(width: 4),
+
+                        // ── 📋 Learn More → ItemDetailsCard popup ─────
                         ElevatedButton(
-                          onPressed: () => _showInfoMessage(lang.translate(
-                              en: 'Opening details...',
-                              th: 'กำลังเปิดรายละเอียด...')),
+                          onPressed: () =>
+                              _showItemDetailPopup(product),
                           style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 8), 
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 8),
                               backgroundColor:
                                   dark ? Colors.grey[700] : Colors.grey[300],
                               foregroundColor:
@@ -1504,8 +1391,9 @@ Widget _buildProductCard(Map<String, dynamic> product, bool dark) {
                               minimumSize: const Size(0, 28),
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8))),
-                          child: Text(lang.translate(en: 'More', th: 'เพิ่มเติม'),
-                              style: const TextStyle(fontSize: 11)),
+                          child: Text(
+                              lang.translate(en: 'More', th: 'เพิ่มเติม'),
+                              style: const TextStyle(fontSize: 10)),
                         ),
                       ]),
                     ],
