@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'package:flutter_application_1/api/service_fav_backet.dart';
 import 'package:flutter_application_1/blocs/cat_analysis/analysis_bloc.dart';
 import 'package:flutter_application_1/blocs/cat_detect/detect_bloc.dart';
@@ -168,10 +169,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
   bool _isDisposed = false;
   CameraController? _cameraCtrl;
 
-  // ไฟล์ที่รอส่ง analyze หลัง detect ผ่าน
   File? _pendingFile;
-
-  // callback ลบ temp files หลัง detect เสร็จ
   VoidCallback? _detectCleanup;
 
   @override
@@ -265,37 +263,21 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
       final photo = await ctrl.takePicture();
       if (!mounted || _isDisposed) return;
 
-      // crop เฉพาะกรอบก่อน detect
       final cropped = await _cropToFrame(photo.path);
-
-      // compress ภาพเต็มไว้รอก่อน (ใช้ถ้า detect ผ่าน)
       final processed = await _compress(File(photo.path));
 
       if (!mounted || _isDisposed) {
-        try {
-          cropped?.delete();
-        } catch (_) {}
-        try {
-          File(photo.path).delete();
-        } catch (_) {}
+        try { cropped?.delete(); } catch (_) {}
+        try { File(photo.path).delete(); } catch (_) {}
         return;
       }
 
       _pendingFile = processed;
-
-      // ✅ ส่ง detect:
-      // - ถ้า crop สำเร็จ → ส่ง cropped (ลบ photo หลัง detect เสร็จใน listener)
-      // - ถ้า crop ล้มเหลว → ส่ง photo.path ตรงๆ
       final fileToDetect = cropped ?? File(photo.path);
 
-      // เก็บ path ไว้ลบทีหลัง (หลัง detect เสร็จแล้ว)
       _detectCleanup = () {
-        try {
-          cropped?.delete();
-        } catch (_) {}
-        try {
-          File(photo.path).delete();
-        } catch (_) {}
+        try { cropped?.delete(); } catch (_) {}
+        try { File(photo.path).delete(); } catch (_) {}
       };
 
       context.read<DetectCatBloc>().add(DetectCatStarted(fileToDetect));
@@ -319,13 +301,10 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
 
       setState(() => _isCapturing = true);
 
-      // compress ไว้รอก่อน
       final processed = await _compress(File(picked.path));
       if (!mounted || _isDisposed) return;
 
       _pendingFile = processed;
-
-      // ✅ gallery ส่งภาพเต็ม (ผู้ใช้เลือกมาเองแล้ว)
       context.read<DetectCatBloc>().add(DetectCatStarted(File(picked.path)));
     } catch (e) {
       if (mounted && !_isDisposed) setState(() => _isCapturing = false);
@@ -333,7 +312,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
     }
   }
 
-  // ─── หลัง detect ผ่าน → ส่งต่อ analyze ────────────────────────────────────
+  // ─── หลัง detect ผ่าน → ส่งต่อ analyze ──────────────────────────────────
 
   void _proceedToAnalysis() {
     final file = _pendingFile;
@@ -357,6 +336,157 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
     _initCamera();
   }
 
+  // ─── _editCat — ใช้ CatRecord เปิด bottom sheet แล้ว dispatch CatAnalysisBloc ──
+
+  Future<void> _editCat(CatData cat) async {
+    final colorCtrl = TextEditingController(text: cat.name);
+    final breedCtrl = TextEditingController(text: cat.breed ?? '');
+    final ageCtrl = TextEditingController(text: cat.age?.toString() ?? '');
+    final weightCtrl = TextEditingController(text: cat.weight.toString());
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    String selectedSize = cat.sizeCategory;
+
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      backgroundColor: isDark ? Colors.grey[900] : Colors.white,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          left: 20, right: 20, top: 20,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+        ),
+        child: StatefulBuilder(
+          builder: (ctx2, setModal) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40, height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade400,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+              const Text('✏️ แก้ไขข้อมูลแมว',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              TextField(
+                controller: colorCtrl,
+                style: const TextStyle(color: Colors.black45, fontWeight: FontWeight.bold),
+                decoration: const InputDecoration(
+                  labelText: 'สีแมว / Cat Color',
+                  prefixIcon: Icon(Icons.color_lens_outlined),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: breedCtrl,
+                style: const TextStyle(color: Colors.black45, fontWeight: FontWeight.bold),
+                decoration: const InputDecoration(
+                  labelText: 'พันธุ์ / Breed',
+                  prefixIcon: Icon(Icons.pets),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(children: [
+                Expanded(
+                  child: TextField(
+                    controller: ageCtrl,
+                    keyboardType: TextInputType.number,
+                    style: const TextStyle(color: Colors.black45, fontWeight: FontWeight.bold),
+                    decoration: const InputDecoration(
+                      labelText: 'อายุ (ปี)',
+                      prefixIcon: Icon(Icons.cake_outlined),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: weightCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    style: const TextStyle(color: Colors.black45, fontWeight: FontWeight.bold),
+                    decoration: const InputDecoration(
+                      labelText: 'น้ำหนัก (kg)',
+                      prefixIcon: Icon(Icons.monitor_weight_outlined),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+              ]),
+              const SizedBox(height: 12),
+              const Text('ขนาด / Size', style: TextStyle(fontSize: 13, color: Colors.grey)),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: ['XS', 'S', 'M', 'L', 'XL'].map((size) {
+                  final selected = selectedSize == size;
+                  return GestureDetector(
+                    onTap: () => setModal(() => selectedSize = size),
+                    child: Container(
+                      width: 52, height: 40,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: selected ? Colors.orange : Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: selected ? Colors.orange : Colors.grey.shade300,
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Text(size,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: selected ? Colors.white : Colors.black87,
+                          )),
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  icon: const Icon(Icons.save_outlined),
+                  label: const Text('บันทึก',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (result != true || !mounted) return;
+
+    final updateData = <String, dynamic>{
+      'cat_color': colorCtrl.text.trim().isEmpty ? cat.name : colorCtrl.text.trim(),
+      'size_category': selectedSize,
+      if (breedCtrl.text.trim().isNotEmpty) 'breed': breedCtrl.text.trim(),
+      if (ageCtrl.text.trim().isNotEmpty) 'age': int.tryParse(ageCtrl.text.trim()),
+      if (weightCtrl.text.trim().isNotEmpty) 'weight': double.tryParse(weightCtrl.text.trim()),
+    };
+
+    context.read<CatAnalysisBloc>().add(CatDataUpdated(updateData));
+  }
+
   // ─── Dialogs ──────────────────────────────────────────────────────────────
 
   void _showQuotaDialog() {
@@ -369,8 +499,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.hourglass_bottom_rounded,
-              size: 64, color: Colors.orange),
+          const Icon(Icons.hourglass_bottom_rounded, size: 64, color: Colors.orange),
           const SizedBox(height: 16),
           const Text('⏳ ระบบวิเคราะห์เต็มชั่วคราว',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -385,8 +514,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
             ),
             child: Text(
               'ขณะนี้ระบบ AI วิเคราะห์แมวถูกใช้งานเต็มแล้ว\nกรุณาลองใหม่อีกครั้งในภายหลัง',
-              style: TextStyle(
-                  fontSize: 14, color: Colors.orange.shade800, height: 1.5),
+              style: TextStyle(fontSize: 14, color: Colors.orange.shade800, height: 1.5),
               textAlign: TextAlign.center,
             ),
           ),
@@ -412,8 +540,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
       pageBuilder: (_, __, ___) {
         return BlocProvider(
           create: (_) => ItemDetailBloc()
-            ..add(
-                ItemDetailFavCheckRequested(product['uuid']?.toString() ?? '')),
+            ..add(ItemDetailFavCheckRequested(product['uuid']?.toString() ?? '')),
           child: ItemDetailsCard(itemDetails: product),
         );
       },
@@ -425,8 +552,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
           ),
           child: FadeTransition(
             opacity: animation.drive(
-              Tween(begin: 0.0, end: 1.0)
-                  .chain(CurveTween(curve: Curves.easeInOut)),
+              Tween(begin: 0.0, end: 1.0).chain(CurveTween(curve: Curves.easeInOut)),
             ),
             child: child,
           ),
@@ -446,37 +572,28 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
     switch (result.reason) {
       case 'multiple_cats':
         title = '🐱🐱 ตรวจพบแมวหลายตัว';
-        message =
-            'ระบบตรวจพบแมวมากกว่า 1 ตัวในภาพ\nกรุณาถ่ายรูปแมวทีละตัวเท่านั้น';
-        icon = Icons.pets;
-        iconColor = Colors.purple;
+        message = 'ระบบตรวจพบแมวมากกว่า 1 ตัวในภาพ\nกรุณาถ่ายรูปแมวทีละตัวเท่านั้น';
+        icon = Icons.pets; iconColor = Colors.purple;
       case 'cartoon':
         title = '🎨 ไม่ใช่ภาพแมวจริง';
-        message =
-            'ระบบตรวจพบว่าเป็นภาพการ์ตูน รูปวาด โมเดล\nหรือของเล่น กรุณาใช้รูปถ่ายแมวจริงเท่านั้น';
-        icon = Icons.draw_outlined;
-        iconColor = Colors.orange;
+        message = 'ระบบตรวจพบว่าเป็นภาพการ์ตูน รูปวาด โมเดล\nหรือของเล่น กรุณาใช้รูปถ่ายแมวจริงเท่านั้น';
+        icon = Icons.draw_outlined; iconColor = Colors.orange;
       case 'is_dog':
         title = '🐶 ตรวจพบสุนัข';
         message = 'ภาพนี้มีลักษณะของสุนัข\nฟีเจอร์นี้รองรับเฉพาะแมวเท่านั้น';
-        icon = Icons.pets;
-        iconColor = Colors.brown;
+        icon = Icons.pets; iconColor = Colors.brown;
       case 'non_cat_animal':
         title = '🚫 ตรวจพบสัตว์อื่น';
         message = 'ฟีเจอร์นี้รองรับเฉพาะแมวเท่านั้น';
-        icon = Icons.pets;
-        iconColor = Colors.deepOrange;
+        icon = Icons.pets; iconColor = Colors.deepOrange;
       case 'other':
         title = '🤔 ไม่สามารถระบุได้';
         message = 'ลองถ่ายรูปใหม่ให้เห็นแมวชัดเจนยิ่งขึ้น';
-        icon = Icons.help_outline;
-        iconColor = Colors.orange;
-      default: // no_cat
+        icon = Icons.help_outline; iconColor = Colors.orange;
+      default:
         title = '😿 ไม่พบแมวในภาพ';
-        message =
-            'ไม่สามารถตรวจพบแมวในภาพได้\nลองถ่ายรูปใหม่ให้เห็นแมวชัดเจนทั้งตัว';
-        icon = Icons.search_off;
-        iconColor = Colors.grey;
+        message = 'ไม่สามารถตรวจพบแมวในภาพได้\nลองถ่ายรูปใหม่ให้เห็นแมวชัดเจนทั้งตัว';
+        icon = Icons.search_off; iconColor = Colors.grey;
     }
 
     showDialog(
@@ -519,136 +636,12 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
     );
   }
 
-
-
-  Future<void> _showEditDialog(CatData cat) async {
-    final colorCtrl = TextEditingController(text: cat.name);
-    final breedCtrl = TextEditingController(text: cat.breed ?? '');
-    final ageCtrl = TextEditingController(text: cat.age?.toString() ?? '');
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final isDark = themeProvider.themeMode == ThemeMode.dark;
-
-    String selSize = cat.sizeCategory;
-    final ok = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      backgroundColor: isDark ? Colors.grey[900] : Colors.white,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 20,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
-        child: StatefulBuilder(
-          builder: (ctx2, setM) => Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                  child: Container(
-                      width: 40,
-                      height: 4,
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                          color: Colors.grey.shade400,
-                          borderRadius: BorderRadius.circular(10)))),
-              const Text('✏️ แก้ไขข้อมูลแมว',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 16),
-              TextField(
-                  controller: colorCtrl,
-                  style: const TextStyle(
-                    color: Colors.black45,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  decoration: const InputDecoration(
-                      labelText: 'สีแมว / Cat Color',
-                      border: OutlineInputBorder())),
-              const SizedBox(height: 12),
-              TextField(
-                  controller: breedCtrl,
-                  style: const TextStyle(
-                    color: Colors.black45,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  decoration: const InputDecoration(
-                      labelText: 'พันธุ์ / Breed',
-                      border: OutlineInputBorder())),
-              const SizedBox(height: 12),
-              TextField(
-                  controller: ageCtrl,
-                  style: const TextStyle(
-                    color: Colors.black45,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                      labelText: 'อายุ (ปี)', border: OutlineInputBorder())),
-              const SizedBox(height: 12),
-              const Text('ขนาด / Size',
-                  style: TextStyle(fontSize: 13, color: Colors.grey)),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: ['XS', 'S', 'M', 'L', 'XL'].map((sz) {
-                  final sel = selSize == sz;
-                  return GestureDetector(
-                    onTap: () => setM(() => selSize = sz),
-                    child: Container(
-                      width: 52,
-                      height: 40,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                          color: sel ? Colors.orange : Colors.grey.shade200,
-                          borderRadius: BorderRadius.circular(10)),
-                      child: Text(sz,
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: sel ? Colors.white : Colors.black87)),
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(ctx, true),
-                  style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      backgroundColor: Colors.orange,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12))),
-                  child: const Text('บันทึก',
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-
-    if (ok != true) return;
-    final data = <String, dynamic>{
-      'cat_color':
-          colorCtrl.text.trim().isNotEmpty ? colorCtrl.text.trim() : cat.name,
-      'size_category': selSize,
-      if (breedCtrl.text.trim().isNotEmpty) 'breed': breedCtrl.text.trim(),
-      if (ageCtrl.text.trim().isNotEmpty)
-        'age': int.tryParse(ageCtrl.text.trim()),
-    };
-    if (mounted) context.read<CatAnalysisBloc>().add(CatDataUpdated(data));
-  }
-
   Future<void> _confirmDelete() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? Colors.grey[900] : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('ยืนยันการลบ'),
         content: const Text('ต้องการลบข้อมูลแมวนี้ใช่หรือไม่?'),
@@ -659,8 +652,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child:
-                const Text('ลบ', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text('ลบ', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -678,7 +670,6 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
         reverseAnimationDuration: const Duration(milliseconds: 200),
         displayDuration: const Duration(milliseconds: 1000));
   }
-
 
   void _showError(String m) {
     if (!mounted || _isDisposed) return;
@@ -726,17 +717,10 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
       ),
       body: MultiBlocListener(
         listeners: [
-          // ─── DetectCatBloc listener ────────────────────────────────────────
           BlocListener<DetectCatBloc, DetectCatState>(
             listener: (context, state) {
               if (state is DetectCatLoading) return;
-
-              // ทุก state ที่ไม่ใช่ loading → reset _isCapturing
-              if (mounted && !_isDisposed) {
-                setState(() => _isCapturing = false);
-              }
-
-              // ✅ ลบ temp files หลัง detect เสร็จเสมอ ไม่ว่าจะผ่านหรือไม่
+              if (mounted && !_isDisposed) setState(() => _isCapturing = false);
               _detectCleanup?.call();
               _detectCleanup = null;
 
@@ -754,16 +738,12 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
               }
             },
           ),
-          // ─── CatAnalysisBloc listener ──────────────────────────────────────
           BlocListener<CatAnalysisBloc, CatAnalysisState>(
             listener: (context, state) {
               if (state is CatAnalysisQuotaExceeded) _showQuotaDialog();
-              if (state is CatAnalysisNotFound)
-                _showError('😿 ${state.message}');
-              if (state is CatAnalysisSuccess)
-                _showSuccessMessage('วิเคราะห์สำเร็จ 🐱');
-              if (state is CatDataUpdateSuccess)
-                _showSuccessMessage(state.message);
+              if (state is CatAnalysisNotFound) _showError('😿 ${state.message}');
+              if (state is CatAnalysisSuccess) _showSuccessMessage('วิเคราะห์สำเร็จ 🐱');
+              if (state is CatDataUpdateSuccess) _showSuccessMessage(state.message);
               if (state is CatAnalysisFailure) _showError(state.error);
               if (state is CatAnalysisInitial) _initCamera();
             },
@@ -779,13 +759,9 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
             final processing =
                 state is CatAnalysisUploading || state is CatAnalysisAnalyzing;
             final progress = state is CatAnalysisUploading
-                ? 0.3
-                : state is CatAnalysisAnalyzing
-                    ? 0.7
-                    : 0.0;
+                ? 0.3 : state is CatAnalysisAnalyzing ? 0.7 : 0.0;
             final progressLbl = state is CatAnalysisUploading
-                ? 'Uploading image...'
-                : 'Analyzing cat...';
+                ? 'Uploading image...' : 'Analyzing cat...';
 
             return Stack(children: [
               Column(children: [
@@ -796,30 +772,23 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                         : const BouncingScrollPhysics(),
                     child: Column(children: [
                       if (state is CatAnalysisInitial)
-                        SizedBox(
-                            height: screenH * 0.78,
-                            child: _buildCameraPreview()),
+                        SizedBox(height: screenH * 0.78, child: _buildCameraPreview()),
                       if (state is CatImageReady)
                         _buildImageSection(dark, state.imageFile, lang, false),
-                      if (state is CatAnalysisUploading ||
-                          state is CatAnalysisAnalyzing)
+                      if (state is CatAnalysisUploading || state is CatAnalysisAnalyzing)
                         _buildImageSection(dark, imgFile!, lang, true),
                       if (state is CatAnalysisSuccess)
-                        _buildResultSection(dark, state.catData, screenH, lang,
-                            state.recommendations),
+                        _buildResultSection(dark, state.catData, screenH, lang, state.recommendations),
                       if (state is CatDataUpdateSuccess)
-                        _buildResultSection(dark, state.catData, screenH, lang,
-                            state.recommendations),
+                        _buildResultSection(dark, state.catData, screenH, lang, state.recommendations),
                       if (state is CatDataUpdating)
-                        _buildResultSection(dark, state.catData, screenH, lang,
-                            state.recommendations),
+                        _buildResultSection(dark, state.catData, screenH, lang, state.recommendations),
                     ]),
                   ),
                 ),
                 _buildBottomBar(dark, state, lang),
               ]),
-              if (processing)
-                _buildLoadingOverlay(imgFile, progress, progressLbl),
+              if (processing) _buildLoadingOverlay(imgFile, progress, progressLbl),
             ]);
           },
         ),
@@ -833,8 +802,6 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
     if (_cameraCtrl == null || !_cameraCtrl!.value.isInitialized) {
       return const Center(child: CircularProgressIndicator());
     }
-
-    // ✅ ดู DetectCatBloc state ด้วย เพื่อแสดง loading overlay ระหว่าง detect
     final detectState = context.watch<DetectCatBloc>().state;
     final detecting = detectState is DetectCatLoading;
 
@@ -842,9 +809,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
       CameraPreview(_cameraCtrl!),
       CustomPaint(painter: _RectHolePainter(), size: Size.infinite),
       Positioned(
-        top: 20,
-        left: 24,
-        right: 24,
+        top: 20, left: 24, right: 24,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
@@ -858,9 +823,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                   child: Text(
                       'วางแมวจริง 1 ตัวให้อยู่ในกรอบ เห็นทั้งตัว แล้วกดถ่ายรูป',
                       style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500),
+                          color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
                       textAlign: TextAlign.center)),
             ],
           ),
@@ -874,13 +837,9 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
             CircularProgressIndicator(color: Colors.white),
             SizedBox(height: 16),
             Text('🔍 กำลังตรวจจับแมว...',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold)),
+                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
             SizedBox(height: 6),
-            Text('กรุณารอสักครู่',
-                style: TextStyle(color: Colors.white70, fontSize: 13)),
+            Text('กรุณารอสักครู่', style: TextStyle(color: Colors.white70, fontSize: 13)),
           ])),
         ),
     ]);
@@ -893,8 +852,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
           child: Column(mainAxisSize: MainAxisSize.min, children: [
         Stack(alignment: Alignment.center, children: [
           SizedBox(
-            width: 190,
-            height: 190,
+            width: 190, height: 190,
             child: TweenAnimationBuilder<double>(
               tween: Tween(begin: 0, end: progress),
               duration: const Duration(milliseconds: 400),
@@ -906,14 +864,11 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
             ),
           ),
           Container(
-            width: 145,
-            height: 145,
+            width: 145, height: 145,
             decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.white, width: 4),
-                boxShadow: const [
-                  BoxShadow(color: Colors.black12, blurRadius: 10)
-                ]),
+                boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10)]),
             child: ClipOval(
                 child: file != null
                     ? Image.file(file, fit: BoxFit.cover)
@@ -924,14 +879,12 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
         Text('${(progress * 100).toInt()}%',
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
         const SizedBox(height: 6),
-        Text(label,
-            style: TextStyle(fontSize: 14, color: Colors.grey.shade700)),
+        Text(label, style: TextStyle(fontSize: 14, color: Colors.grey.shade700)),
       ])),
     );
   }
 
-  Widget _buildImageSection(
-      bool dark, File file, LanguageProvider lang, bool loading) {
+  Widget _buildImageSection(bool dark, File file, LanguageProvider lang, bool loading) {
     return Padding(
         padding: const EdgeInsets.all(16),
         child: Column(children: [
@@ -940,15 +893,11 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
             decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: const [
-                  BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 10,
-                      offset: Offset(0, 4))
+                  BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4))
                 ]),
             child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
-                child: Image.file(file,
-                    fit: BoxFit.cover, width: double.infinity)),
+                child: Image.file(file, fit: BoxFit.cover, width: double.infinity)),
           ),
           const SizedBox(height: 20),
           Container(
@@ -957,38 +906,29 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                 color: dark ? Colors.grey[850] : Colors.grey[50],
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                    color: dark ? Colors.grey[700]! : Colors.grey[300]!,
-                    width: 2)),
+                    color: dark ? Colors.grey[700]! : Colors.grey[300]!, width: 2)),
             child: Row(children: [
               Container(
-                width: 100,
-                height: 120,
+                width: 100, height: 120,
                 decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                        color: dark ? Colors.grey[600]! : Colors.grey[400]!,
-                        width: 2)),
+                        color: dark ? Colors.grey[600]! : Colors.grey[400]!, width: 2)),
                 child: ClipRRect(
                     borderRadius: BorderRadius.circular(10),
                     child: Image.file(file, fit: BoxFit.cover)),
               ),
               const SizedBox(width: 16),
               Expanded(
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                    _infoRow(lang.translate(en: 'Cat color:', th: 'สีแมว:'),
-                        'N/A', dark),
-                    const SizedBox(height: 10),
-                    _infoRow(
-                        lang.translate(en: 'Age:', th: 'อายุ:'), 'N/A', dark),
-                    const SizedBox(height: 10),
-                    _infoRow(lang.translate(en: 'Breed:', th: 'พันธุ์:'), 'N/A',
-                        dark),
-                    const SizedBox(height: 10),
-                    _infoRow(
-                        lang.translate(en: 'Size:', th: 'ขนาด:'), 'N/A', dark),
-                  ])),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                _infoRow(lang.translate(en: 'Cat color:', th: 'สีแมว:'), 'N/A', dark),
+                const SizedBox(height: 10),
+                _infoRow(lang.translate(en: 'Age:', th: 'อายุ:'), 'N/A', dark),
+                const SizedBox(height: 10),
+                _infoRow(lang.translate(en: 'Breed:', th: 'พันธุ์:'), 'N/A', dark),
+                const SizedBox(height: 10),
+                _infoRow(lang.translate(en: 'Size:', th: 'ขนาด:'), 'N/A', dark),
+              ])),
             ]),
           ),
           const SizedBox(height: 16),
@@ -999,8 +939,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                 borderRadius: BorderRadius.circular(12)),
             child: Row(children: [
               Icon(Icons.info_outline,
-                  color: dark ? Colors.orange[300] : Colors.orange[700],
-                  size: 20),
+                  color: dark ? Colors.orange[300] : Colors.orange[700], size: 20),
               const SizedBox(width: 8),
               Expanded(
                   child: Text(
@@ -1008,8 +947,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                     en: 'Please ensure that the cat is clearly visible for accurate measurement.',
                     th: 'โปรดมั่นใจว่ามองเห็นรูปร่างของแมวชัดเจน เพื่อความแม่นยำในการวัดขนาด'),
                 style: TextStyle(
-                    fontSize: 12,
-                    color: dark ? Colors.white70 : Colors.black87),
+                    fontSize: 12, color: dark ? Colors.white70 : Colors.black87),
               )),
             ]),
           ),
@@ -1019,101 +957,89 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                 child: ElevatedButton.icon(
               onPressed: loading
                   ? null
-                  : () =>
-                      context.read<CatAnalysisBloc>().add(CatAnalysisStarted()),
+                  : () => context.read<CatAnalysisBloc>().add(CatAnalysisStarted()),
               icon: loading
                   ? const SizedBox(
-                      width: 20,
-                      height: 20,
+                      width: 20, height: 20,
                       child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white)))
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
                   : const Icon(Icons.analytics),
               label: Text(
                 loading
-                    ? lang.translate(
-                        en: 'Processing...', th: 'กำลังวิเคราะห์...')
+                    ? lang.translate(en: 'Processing...', th: 'กำลังวิเคราะห์...')
                     : lang.translate(en: 'Analyze Data', th: 'วิเคราะห์ข้อมูล'),
-                style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   backgroundColor: Colors.orange,
                   foregroundColor: Colors.white,
                   disabledBackgroundColor: Colors.grey[400],
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12))),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
             )),
             const SizedBox(width: 12),
             ElevatedButton(
               onPressed: loading ? null : _clearData,
               style: ElevatedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
                   backgroundColor: Colors.red,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12))),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
               child: const Icon(Icons.close, size: 24),
             ),
           ]),
         ]));
   }
 
+  // ─── Result Section ───────────────────────────────────────────────────────
+
   Widget _buildResultSection(bool dark, CatData cat, double screenH,
       LanguageProvider lang, List<Map<String, dynamic>> recs) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        // ── Cat Info Card ──────────────────────────────────────────────────
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
               color: dark ? Colors.grey[850] : Colors.grey[50],
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                  color: dark ? Colors.grey[700]! : Colors.grey[300]!,
-                  width: 2)),
+                  color: dark ? Colors.grey[700]! : Colors.grey[300]!, width: 2)),
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Container(
-              width: 100,
-              height: 120,
+              width: 100, height: 120,
               decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                      color: dark ? Colors.grey[600]! : Colors.grey[400]!,
-                      width: 2)),
+                      color: dark ? Colors.grey[600]! : Colors.grey[400]!, width: 2)),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(10),
                 child: cat.imageUrl.isNotEmpty
                     ? Image.network(cat.imageUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Icon(Icons.broken_image,
-                            size: 40, color: Colors.grey[400]))
+                        errorBuilder: (_, __, ___) =>
+                            Icon(Icons.broken_image, size: 40, color: Colors.grey[400]))
                     : Icon(Icons.pets, size: 40, color: Colors.grey[400]),
               ),
             ),
             const SizedBox(width: 16),
             Expanded(
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                  _infoRow(lang.translate(en: 'Cat Color:', th: 'สีแมว:'),
-                      cat.name, dark),
-                  const SizedBox(height: 10),
-                  _infoRow(lang.translate(en: 'Age:', th: 'อายุ:'),
-                      cat.age != null ? '${cat.age} years' : 'N/A', dark),
-                  const SizedBox(height: 10),
-                  _infoRow(lang.translate(en: 'Breed:', th: 'พันธุ์:'),
-                      cat.breed ?? 'N/A', dark),
-                  const SizedBox(height: 10),
-                  _infoRow(lang.translate(en: 'Size:', th: 'ขนาด:'),
-                      cat.sizeCategory, dark),
-                ])),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              _infoRow(lang.translate(en: 'Cat Color:', th: 'สีแมว:'), cat.name, dark),
+              const SizedBox(height: 10),
+              _infoRow(lang.translate(en: 'Age:', th: 'อายุ:'),
+                  cat.age != null ? '${cat.age} years' : 'N/A', dark),
+              const SizedBox(height: 10),
+              _infoRow(lang.translate(en: 'Breed:', th: 'พันธุ์:'), cat.breed ?? 'N/A', dark),
+              const SizedBox(height: 10),
+              _infoRow(lang.translate(en: 'Size:', th: 'ขนาด:'), cat.sizeCategory, dark),
+            ])),
+            // ── ✏️ Edit → _editCat  /  🗑️ Delete ────────────────────
             Column(mainAxisSize: MainAxisSize.min, children: [
               IconButton(
-                onPressed: () => _showEditDialog(cat),
+                onPressed: () => _editCat(cat), // ← ใช้ _editCat แทน _showEditDialog
                 icon: Icon(Icons.mode_edit_outline_outlined,
                     color: Colors.blue.shade700, size: 28),
               ),
@@ -1126,6 +1052,8 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
           ]),
         ),
         const SizedBox(height: 20),
+
+        // ── Recommended Products ───────────────────────────────────────────
         Text(lang.translate(en: 'Recommended Products', th: 'สินค้าแนะนำ'),
             style: TextStyle(
                 fontSize: 18,
@@ -1141,23 +1069,21 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
               const SizedBox(height: 8),
               Text(
                   lang.translate(
-                      en: 'No matching products found',
-                      th: 'ไม่พบสินค้าที่เหมาะสม'),
+                      en: 'No matching products found', th: 'ไม่พบสินค้าที่เหมาะสม'),
                   style: TextStyle(color: Colors.grey[500], fontSize: 14)),
             ]),
           )
         else
-          SizedBox(
-            height: screenH * 0.50,
-            child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 5,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 0.65),
-              itemCount: recs.length,
-              itemBuilder: (ctx, i) => _buildProductCard(recs[i], dark),
-            ),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                childAspectRatio: 0.72),
+            itemCount: recs.length,
+            itemBuilder: (ctx, i) => _buildProductCard(recs[i], dark),
           ),
       ]),
     );
@@ -1174,10 +1100,11 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
       Expanded(
           child: Text(value,
               style: TextStyle(
-                  fontSize: 16,
-                  color: dark ? Colors.white60 : Colors.black54))),
+                  fontSize: 16, color: dark ? Colors.white60 : Colors.black54))),
     ]);
   }
+
+  // ─── Product Card (redesigned) ────────────────────────────────────────────
 
   Widget _buildProductCard(Map<String, dynamic> product, bool dark) {
     final lang = Provider.of<LanguageProvider>(context);
@@ -1189,234 +1116,292 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
     final discPct = product['discount_percent'];
     final stock = (product['stock'] as num?)?.toInt() ?? 99;
     final match = (product['match_score'] as num?)?.toDouble() ?? 0.0;
-    final priceDisplay = discPrice != null
-        ? '฿${discPrice.toStringAsFixed(0)}'
-        : price > 0
-            ? '฿${price.toStringAsFixed(0)}'
-            : '${product['price'] ?? ''}';
+
+    final hasDiscount = discPrice != null && price > 0;
+    final displayPrice = hasDiscount ? discPrice : price;
 
     return FutureBuilder<bool>(
       future: _favouriteApi.checkFavourite(clothingUuid: uuid),
       builder: (ctx, snap) {
         final isFav = snap.data ?? false;
-        return Container(
-          width: 160,
-          height: 230,
-          margin: const EdgeInsets.only(right: 12),
-          decoration: BoxDecoration(
-              color: dark ? Colors.grey[850] : Colors.white,
+        return GestureDetector(
+          onTap: () => _showItemDetailPopup(product),
+          child: Container(
+            decoration: BoxDecoration(
+              color: dark ? Colors.grey[900] : Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                  color: dark ? Colors.grey[700]! : Colors.grey[300]!,
-                  width: 1.5)),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Stack(children: [
-                Container(
-                  height: 100,
-                  decoration: BoxDecoration(
-                      borderRadius:
-                          const BorderRadius.vertical(top: Radius.circular(14)),
-                      color: dark ? Colors.grey[800] : Colors.grey[200]),
-                  child: ClipRRect(
-                      borderRadius:
-                          const BorderRadius.vertical(top: Radius.circular(14)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(dark ? 0.3 : 0.08),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── รูปสินค้า ──────────────────────────────────────
+                Stack(children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                    child: AspectRatio(
+                      aspectRatio: 1.0,
                       child: imageUrl.isNotEmpty
                           ? Image.network(imageUrl,
-                              width: double.infinity,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Center(
-                                  child: Icon(Icons.shopping_bag,
-                                      size: 40, color: Colors.grey[400])))
-                          : Center(
+                              errorBuilder: (_, __, ___) => Container(
+                                color: dark ? Colors.grey[800] : Colors.grey[200],
+                                child: Icon(Icons.shopping_bag,
+                                    size: 40, color: Colors.grey[400]),
+                              ))
+                          : Container(
+                              color: dark ? Colors.grey[800] : Colors.grey[200],
                               child: Icon(Icons.shopping_bag,
-                                  size: 40, color: Colors.grey[400]))),
-                ),
-                if (match >= 0.8)
-                  Positioned(
-                      top: 6,
-                      left: 6,
+                                  size: 40, color: Colors.grey[400]),
+                            ),
+                    ),
+                  ),
+
+                  // Match % badge
+                  if (match >= 0.8)
+                    Positioned(
+                      top: 8, left: 8,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                         decoration: BoxDecoration(
-                            color: Colors.green,
-                            borderRadius: BorderRadius.circular(8)),
+                          color: Colors.green.shade600,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
                         child: Text('${(match * 100).toInt()}%',
                             style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold)),
-                      )),
-                if (discPct != null)
-                  Positioned(
-                      top: 6,
-                      right: 34,
+                      ),
+                    ),
+
+                  // Discount badge
+                  if (discPct != null)
+                    Positioned(
+                      top: 8, right: 36,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                         decoration: BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.circular(8)),
+                          color: Colors.red.shade500,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
                         child: Text('-$discPct',
                             style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold)),
-                      )),
+                      ),
+                    ),
 
-                // ── ❤️ Favourite button ──────────────────────────────
-                Positioned(
-                  top: 6,
-                  right: 6,
-                  child: GestureDetector(
-                    onTap: () async {
-                      if (isFav) {
-                        await _favouriteApi.removeFromFavourite(
-                            clothingUuid: uuid);
-                        _showSuccessMessage(lang.translate(
-                            en: 'Removed from favourites',
-                            th: 'ลบออกจากรายการโปรดแล้ว'));
-                      } else {
-                        await _favouriteApi.addToFavourite(clothingUuid: uuid);
-                        _showSuccessMessage(lang.translate(
-                            en: 'Added to favourites!',
-                            th: 'เพิ่มในรายการโปรดแล้ว!'));
-                      }
-                      if (mounted) setState(() {});
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.1),
-                          shape: BoxShape.circle),
-                      child: Icon(
-                          isFav ? Icons.favorite : Icons.favorite_border,
-                          color: isFav ? Colors.red : Colors.white,
-                          size: 18),
+                  // ❤️ Favourite
+                  Positioned(
+                    top: 6, right: 6,
+                    child: GestureDetector(
+                      onTap: () async {
+                        if (isFav) {
+                          await _favouriteApi.removeFromFavourite(clothingUuid: uuid);
+                          _showSuccessMessage(lang.translate(
+                              en: 'Removed from favourites',
+                              th: 'ลบออกจากรายการโปรดแล้ว'));
+                        } else {
+                          await _favouriteApi.addToFavourite(clothingUuid: uuid);
+                          _showSuccessMessage(lang.translate(
+                              en: 'Added to favourites!',
+                              th: 'เพิ่มในรายการโปรดแล้ว!'));
+                        }
+                        if (mounted) setState(() {});
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: isFav
+                              ? Colors.red.withOpacity(0.9)
+                              : Colors.black.withOpacity(0.35),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                            isFav ? Icons.favorite : Icons.favorite_border,
+                            color: Colors.white,
+                            size: 16),
+                      ),
                     ),
                   ),
-                ),
-              ]),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
+
+                  // Out of stock overlay
+                  if (stock == 0)
+                    Positioned.fill(
+                      child: ClipRRect(
+                        borderRadius:
+                            const BorderRadius.vertical(top: Radius.circular(16)),
+                        child: Container(
+                          color: Colors.black.withOpacity(0.45),
+                          alignment: Alignment.center,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.black87,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                                lang.translate(en: 'Out of Stock', th: 'หมด'),
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                      ),
+                    ),
+                ]),
+
+                // ── ข้อมูล + badges ราคา + ปุ่ม ───────────────────
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      // ชื่อสินค้า
+                      Text(name,
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: dark ? Colors.white : Colors.black87),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 6),
+
+                      // ── ราคา row ──────────────────────────────────
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Text(name,
-                              style: TextStyle(
+                          // badge ราคา discount (สีเขียว)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: hasDiscount
+                                  ? Colors.green.shade600
+                                  : (dark
+                                      ? Colors.orange.shade700
+                                      : Colors.orange.shade600),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              '฿${displayPrice.toStringAsFixed(0)}',
+                              style: const TextStyle(
                                   fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: dark ? Colors.white : Colors.black87),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis),
-                          const SizedBox(height: 4),
-                          Wrap(
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              Text(priceDisplay,
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      color: dark
-                                          ? Colors.orange[300]
-                                          : Colors.orange[700],
-                                      fontWeight: FontWeight.bold)),
-                              if (discPrice != null && price > 0) ...[
-                                const SizedBox(width: 4),
-                                Text('฿${price.toStringAsFixed(0)}',
-                                    style: TextStyle(
-                                        fontSize: 10,
-                                        color: Colors.grey[500],
-                                        decoration:
-                                            TextDecoration.lineThrough)),
-                              ],
-                            ],
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white),
+                            ),
                           ),
+                          if (hasDiscount) ...[
+                            const SizedBox(width: 6),
+                            // badge ราคาเดิม (สีแดง strikethrough)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade100,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                '฿${price.toStringAsFixed(0)}',
+                                style: TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.red.shade700,
+                                    fontWeight: FontWeight.w600,
+                                    decoration: TextDecoration.lineThrough,
+                                    decorationColor: Colors.red.shade700),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
-                      Row(children: [
-                        // ── 🛒 ไปหน้า Basket ──────────────────────────
-                        Expanded(
-                            child: ElevatedButton.icon(
-                          onPressed: stock > 0
-                              ? () async {
-                                  try {
-                                    await _basketApi.addToBasket(
-                                        clothingUuid: uuid);
-                                    _showSuccessMessage(lang.translate(
-                                        en: 'Added to cart!',
-                                        th: 'เพิ่มลงตะกร้าแล้ว!'));
-                                  } catch (_) {
-                                    _showError(lang.translate(
-                                        en: 'Failed to add to cart',
-                                        th: 'เพิ่มลงตะกร้าไม่สำเร็จ'));
-                                  }
-                                }
-                              : null,
-                          icon: const Icon(Icons.shopping_cart_outlined,
-                              size: 12),
-                          label: Text(
-                              stock > 0
-                                  ? lang.translate(en: 'Buy', th: 'ซื้อ')
-                                  : lang.translate(en: 'Out', th: 'หมด'),
-                              style: const TextStyle(fontSize: 10)),
-                          style: ElevatedButton.styleFrom(
-                              padding: EdgeInsets.zero,
-                              backgroundColor:
-                                  stock > 0 ? Colors.green : Colors.grey,
-                              foregroundColor: Colors.white,
-                              minimumSize: const Size(0, 28),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8))),
-                        )),
-                        const SizedBox(width: 4),
+                      const SizedBox(height: 8),
 
-                        // ── 📋 Learn More → ItemDetailsCard popup ─────
-                        ElevatedButton(
-                          onPressed: () =>
-                              _showItemDetailPopup(product),
-                          style: ElevatedButton.styleFrom(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 8),
+                      // ── ปุ่ม Buy + More ────────────────────────────
+                      Row(children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: stock > 0
+                                ? () async {
+                                    try {
+                                      await _basketApi.addToBasket(
+                                          clothingUuid: uuid);
+                                      _showSuccessMessage(lang.translate(
+                                          en: 'Added to cart!',
+                                          th: 'เพิ่มลงตะกร้าแล้ว!'));
+                                    } catch (_) {
+                                      _showError(lang.translate(
+                                          en: 'Failed to add to cart',
+                                          th: 'เพิ่มลงตะกร้าไม่สำเร็จ'));
+                                    }
+                                  }
+                                : null,
+                            icon: const Icon(Icons.shopping_cart_outlined, size: 11),
+                            label: Text(
+                                stock > 0
+                                    ? lang.translate(en: 'Buy', th: 'ซื้อ')
+                                    : lang.translate(en: 'Out', th: 'หมด'),
+                                style: const TextStyle(
+                                    fontSize: 11, fontWeight: FontWeight.bold)),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 7),
                               backgroundColor:
-                                  dark ? Colors.grey[700] : Colors.grey[300],
-                              foregroundColor:
-                                  dark ? Colors.white : Colors.black87,
-                              minimumSize: const Size(0, 28),
+                                  stock > 0 ? Colors.green.shade600 : Colors.grey,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
                               shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8))),
+                                  borderRadius: BorderRadius.circular(10)),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        ElevatedButton(
+                          onPressed: () => _showItemDetailPopup(product),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 7),
+                            backgroundColor:
+                                dark ? Colors.grey[700] : Colors.grey[200],
+                            foregroundColor:
+                                dark ? Colors.white : Colors.black87,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10)),
+                          ),
                           child: Text(
                               lang.translate(en: 'More', th: 'เพิ่มเติม'),
-                              style: const TextStyle(fontSize: 10)),
+                              style: const TextStyle(
+                                  fontSize: 11, fontWeight: FontWeight.bold)),
                         ),
                       ]),
                     ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
     );
   }
 
-  Widget _buildBottomBar(
-      bool dark, CatAnalysisState state, LanguageProvider lang) {
+  Widget _buildBottomBar(bool dark, CatAnalysisState state, LanguageProvider lang) {
     if (state is! CatAnalysisInitial) return const SizedBox.shrink();
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
           color: dark ? Colors.grey[900] : Colors.white,
           boxShadow: const [
-            BoxShadow(
-                color: Colors.black12, blurRadius: 8, offset: Offset(0, -2))
+            BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, -2))
           ]),
       child: SafeArea(
           top: false,
@@ -1440,19 +1425,16 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                 onPressed: _isCapturing ? null : _captureFromCamera,
                 icon: _isCapturing
                     ? const SizedBox(
-                        width: 18,
-                        height: 18,
+                        width: 18, height: 18,
                         child: CircularProgressIndicator(
                             strokeWidth: 2,
                             valueColor: AlwaysStoppedAnimation(Colors.white)))
                     : const Icon(Icons.camera_alt),
                 label: Text(
                   _isCapturing
-                      ? lang.translate(
-                          en: 'Detecting...', th: 'กำลังตรวจสอบ...')
+                      ? lang.translate(en: 'Detecting...', th: 'กำลังตรวจสอบ...')
                       : lang.translate(en: 'Take Photo', th: 'ถ่ายรูป'),
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
@@ -1468,8 +1450,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                 onPressed: _isCapturing ? null : _pickFromGallery,
                 icon: const Icon(Icons.photo_library),
                 label: Text(lang.translate(en: 'Choose Photo', th: 'เลือกรูป'),
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold)),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     backgroundColor: Colors.green,
