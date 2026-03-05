@@ -30,7 +30,7 @@ class CatHistoryBloc extends Bloc<CatHistoryEvent, CatHistoryState> {
     }
   }
 
-  // ── Delete ─────────────────────────────────────────────────────────────────
+// ── Delete ─────────────────────────────────────────────────────────────────
   Future<void> _onDeleteRequested(
     CatHistoryDeleteRequested event,
     Emitter<CatHistoryState> emit,
@@ -53,7 +53,7 @@ class CatHistoryBloc extends Bloc<CatHistoryEvent, CatHistoryState> {
     }
   }
 
-  // ── Update ─────────────────────────────────────────────────────────────────
+// ── Update ─────────────────────────────────────────────────────────────────
   Future<void> _onUpdateRequested(
     CatHistoryUpdateRequested event,
     Emitter<CatHistoryState> emit,
@@ -63,9 +63,8 @@ class CatHistoryBloc extends Bloc<CatHistoryEvent, CatHistoryState> {
 
     try {
       final updated = await _catApi.updateCat(event.catId, event.updateData);
-      final newList = currentCats
-          .map((c) => c.id == event.catId ? updated : c)
-          .toList();
+      final newList =
+          currentCats.map((c) => c.id == event.catId ? updated : c).toList();
       emit(CatHistoryActionSuccess(
         cats: newList,
         message: 'บันทึกข้อมูลแมวแล้ว ✅',
@@ -90,6 +89,5 @@ class CatHistoryBloc extends Bloc<CatHistoryEvent, CatHistoryState> {
     return [];
   }
 
-  String _cleanError(Object e) =>
-      e.toString().replaceAll('Exception: ', '');
+  String _cleanError(Object e) => e.toString().replaceAll('Exception: ', '');
 }

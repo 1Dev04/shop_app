@@ -4,11 +4,14 @@
 //   - Tab 2: Cat Analysis History (ใช้ CatHistoryBloc)
 
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/provider/theme_provider.dart';
+import 'package:flutter_application_1/provider/language_provider.dart';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_application_1/api/service_cat_api.dart';
 import 'package:flutter_application_1/blocs/cat_history/history_bloc.dart';
 import 'package:provider/provider.dart';
+import 'package:top_snackbar_flutter/custom_snack_bar.dart';
+import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -69,9 +72,7 @@ class _HistoryPageState extends State<HistoryPage>
     final weightCtrl =
         TextEditingController(text: cat.weight?.toString() ?? '');
     String selectedSize = cat.sizeCategory;
-
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final isDark = themeProvider.themeMode == ThemeMode.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final result = await showModalBottomSheet<bool>(
       context: context,
@@ -107,6 +108,10 @@ class _HistoryPageState extends State<HistoryPage>
               const SizedBox(height: 16),
               TextField(
                 controller: colorCtrl,
+                style: const TextStyle(
+                  color: Colors.black45,
+                  fontWeight: FontWeight.bold,
+                ),
                 decoration: const InputDecoration(
                   labelText: 'สีแมว / Cat Color',
                   prefixIcon: Icon(Icons.color_lens_outlined),
@@ -116,6 +121,10 @@ class _HistoryPageState extends State<HistoryPage>
               const SizedBox(height: 12),
               TextField(
                 controller: breedCtrl,
+                style: const TextStyle(
+                  color: Colors.black45,
+                  fontWeight: FontWeight.bold,
+                ),
                 decoration: const InputDecoration(
                   labelText: 'พันธุ์ / Breed',
                   prefixIcon: Icon(Icons.pets),
@@ -128,6 +137,10 @@ class _HistoryPageState extends State<HistoryPage>
                   child: TextField(
                     controller: ageCtrl,
                     keyboardType: TextInputType.number,
+                    style: const TextStyle(
+                      color: Colors.black45,
+                      fontWeight: FontWeight.bold,
+                    ),
                     decoration: const InputDecoration(
                       labelText: 'อายุ (ปี)',
                       prefixIcon: Icon(Icons.cake_outlined),
@@ -141,6 +154,10 @@ class _HistoryPageState extends State<HistoryPage>
                     controller: weightCtrl,
                     keyboardType:
                         const TextInputType.numberWithOptions(decimal: true),
+                    style: const TextStyle(
+                      color: Colors.black45,
+                      fontWeight: FontWeight.bold,
+                    ),
                     decoration: const InputDecoration(
                       labelText: 'น้ำหนัก (kg)',
                       prefixIcon: Icon(Icons.monitor_weight_outlined),
@@ -151,7 +168,7 @@ class _HistoryPageState extends State<HistoryPage>
               ]),
               const SizedBox(height: 12),
               const Text('ขนาด / Size',
-                  style: TextStyle(fontSize: 13, color: Colors.grey)),
+                  style: TextStyle(fontSize: 13, color: Colors.black)),
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -227,12 +244,15 @@ class _HistoryPageState extends State<HistoryPage>
 
   // ── Delete Confirm ─────────────────────────────────────────────────────────
   Future<void> _deleteCat(BuildContext context, CatRecord cat) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? Colors.grey[900] : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('ยืนยันการลบ'),
-        content: Text('ต้องการลบข้อมูลแมว "${cat.catColor}" ใช่หรือไม่?'),
+        content: Text('ต้องการลบข้อมูลแมว "${cat.breed}" ใช่หรือไม่?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -251,6 +271,330 @@ class _HistoryPageState extends State<HistoryPage>
 
     if (!context.mounted) return;
     context.read<CatHistoryBloc>().add(CatHistoryDeleteRequested(cat));
+  }
+
+  Future<void> _detailCat(BuildContext context, CatRecord cat) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: BoxDecoration(
+          color: isDark ? Colors.grey.shade900 : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Handle bar ──────────────────────────────────────────
+               const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    icon: Icon(Icons.arrow_back_ios_new_rounded,
+                        color: isDark ? Colors.white : Colors.black87,
+                        size: 20),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade400,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  const SizedBox(width: 32), // balance spacing
+                ],
+              ),
+              const SizedBox(height: 16),
+              // ── Image + Title ────────────────────────────────────────
+              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: cat.imageCat != null
+                      ? Image.network(cat.imageCat!,
+                          width: 90,
+                          height: 100,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) =>
+                              _placeholderIcon(isDark))
+                      : _placeholderIcon(isDark),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        cat.breed?.isNotEmpty == true
+                            ? cat.breed!
+                            : cat.catColor,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(cat.catColor,
+                          style: TextStyle(
+                              fontSize: 13, color: Colors.grey.shade500)),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.orange,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text('Size ${cat.sizeCategory}',
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13)),
+                      ),
+                    ],
+                  ),
+                ),
+              ]),
+
+              const SizedBox(height: 24),
+              _sectionTitle('ข้อมูลพื้นฐาน', isDark),
+              const SizedBox(height: 10),
+
+              // ── Basic Info Grid ──────────────────────────────────────
+              GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                childAspectRatio: 2.8,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                children: [
+                  _detailTile(Icons.cake_outlined, 'อายุ',
+                      cat.age != null ? '${cat.age} ปี' : '-', isDark),
+                  _detailTile(cat.gender == 1 ? Icons.male : Icons.female,
+                      'เพศ', _genderText(cat.gender), isDark),
+                  _detailTile(
+                      Icons.monitor_weight_outlined,
+                      'น้ำหนัก',
+                      cat.weight != null
+                          ? '${cat.weight!.toStringAsFixed(1)} kg'
+                          : '-',
+                      isDark),
+                  _detailTile(
+                      Icons.straighten,
+                      'BMI',
+                      cat.bmi != null ? cat.bmi!.toStringAsFixed(1) : '-',
+                      isDark),
+                ],
+              ),
+
+              const SizedBox(height: 20),
+              _sectionTitle('การวัดขนาด', isDark),
+              const SizedBox(height: 10),
+
+              // ── Measurements ─────────────────────────────────────────
+              GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                childAspectRatio: 2.8,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                children: [
+                  _detailTile(
+                      Icons.radio_button_unchecked,
+                      'รอบอก',
+                      cat.chestCm != null
+                          ? '${cat.chestCm!.toStringAsFixed(1)} cm'
+                          : '-',
+                      isDark),
+                  _detailTile(
+                      Icons.radio_button_unchecked,
+                      'รอบคอ',
+                      cat.neckCm != null
+                          ? '${cat.neckCm!.toStringAsFixed(1)} cm'
+                          : '-',
+                      isDark),
+                  _detailTile(
+                      Icons.straighten,
+                      'ยาวตัว',
+                      cat.bodyLengthCm != null
+                          ? '${cat.bodyLengthCm!.toStringAsFixed(1)} cm'
+                          : '-',
+                      isDark),
+                  _detailTile(
+                      Icons.straighten,
+                      'ยาวหลัง',
+                      cat.backLengthCm != null
+                          ? '${cat.backLengthCm!.toStringAsFixed(1)} cm'
+                          : '-',
+                      isDark),
+                  _detailTile(
+                      Icons.radio_button_unchecked,
+                      'รอบเอว',
+                      cat.waistCm != null
+                          ? '${cat.waistCm!.toStringAsFixed(1)} cm'
+                          : '-',
+                      isDark),
+                  _detailTile(
+                      Icons.straighten,
+                      'ยาวขา',
+                      cat.legLengthCm != null
+                          ? '${cat.legLengthCm!.toStringAsFixed(1)} cm'
+                          : '-',
+                      isDark),
+                ],
+              ),
+
+              const SizedBox(height: 20),
+              _sectionTitle('สุขภาพ', isDark),
+              const SizedBox(height: 10),
+
+              // ── Body Condition ────────────────────────────────────────
+              if (cat.bodyCondition != null)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: _conditionColor(cat.bodyCondition).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color:
+                          _conditionColor(cat.bodyCondition).withOpacity(0.3),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(children: [
+                        Icon(Icons.favorite,
+                            size: 16,
+                            color: _conditionColor(cat.bodyCondition)),
+                        const SizedBox(width: 6),
+                        Text('BCS ${cat.bodyConditionScore ?? "-"}/9',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: _conditionColor(cat.bodyCondition),
+                            )),
+                      ]),
+                      const SizedBox(height: 6),
+                      Text(
+                        cat.bodyConditionDescription ?? cat.bodyCondition!,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: _conditionColor(cat.bodyCondition),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+              const SizedBox(height: 20),
+              _sectionTitle('ข้อมูลเพิ่มเติม', isDark),
+              const SizedBox(height: 10),
+
+              // ── Meta Info ─────────────────────────────────────────────
+              GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                childAspectRatio: 2.8,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                children: [
+                  _detailTile(Icons.accessibility_new, 'ท่าทาง',
+                      cat.posture ?? '-', isDark),
+                  _detailTile(Icons.verified, 'คุณภาพภาพ',
+                      cat.qualityFlag ?? '-', isDark),
+                  _detailTile(
+                      Icons.bar_chart,
+                      'ความแม่นยำ',
+                      cat.confidence != null
+                          ? '${(cat.confidence! * 100).toStringAsFixed(0)}%'
+                          : '-',
+                      isDark),
+                  _detailTile(Icons.category, 'ช่วงวัย', cat.ageCategory ?? '-',
+                      isDark),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              // ── Date ─────────────────────────────────────────────────
+              Row(children: [
+                Icon(Icons.access_time, size: 14, color: Colors.grey.shade400),
+                const SizedBox(width: 6),
+                Text(
+                  cat.detectedAt != null
+                      ? _formatDate(cat.detectedAt!)
+                      : 'ไม่ทราบวันที่',
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
+                ),
+              ]),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+// ── Detail helper widgets ──────────────────────────────────────────────────
+  Widget _placeholderIcon(bool isDark) {
+    return Container(
+      width: 90,
+      height: 100,
+      color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+      child: Icon(Icons.pets, size: 36, color: Colors.grey.shade400),
+    );
+  }
+
+  Widget _sectionTitle(String title, bool isDark) {
+    return Text(title,
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+          color: isDark ? Colors.white70 : Colors.black54,
+        ));
+  }
+
+  Widget _detailTile(IconData icon, String label, String value, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.grey.shade800 : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(children: [
+        Icon(icon, size: 14, color: Colors.orange),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(label,
+                  style: TextStyle(fontSize: 10, color: Colors.grey.shade500)),
+              Text(value,
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black87),
+                  overflow: TextOverflow.ellipsis),
+            ],
+          ),
+        ),
+      ]),
+    );
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────
@@ -495,23 +839,30 @@ class _HistoryPageState extends State<HistoryPage>
       // ── Listener: แสดง SnackBar ──────────────────────────────────────────
       listener: (ctx, state) {
         if (state is CatHistoryActionSuccess) {
-          ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
-            content: Text(state.message),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            duration: const Duration(seconds: 2),
-          ));
+          final languageProvider =
+              Provider.of<LanguageProvider>(ctx, listen: false);
+          showTopSnackBar(
+            Overlay.of(ctx),
+            CustomSnackBar.success(
+              message: languageProvider.translate(
+                en: 'Saved successfully!',
+                th: 'บันทึกสำเร็จแล้ว!',
+              ),
+            ),
+            animationDuration: const Duration(milliseconds: 1000),
+            reverseAnimationDuration: const Duration(milliseconds: 200),
+            displayDuration: const Duration(milliseconds: 1000),
+          );
         } else if (state is CatHistoryActionFailure) {
-          ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
-            content: Text(state.message),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            duration: const Duration(seconds: 3),
-          ));
+          showTopSnackBar(
+            Overlay.of(ctx),
+            CustomSnackBar.error(
+              message: state.message,
+            ),
+            animationDuration: const Duration(milliseconds: 1000),
+            reverseAnimationDuration: const Duration(milliseconds: 200),
+            displayDuration: const Duration(milliseconds: 1000),
+          );
         }
       },
       // ── Builder: UI ────────────────────────────────────────────────────────
@@ -577,7 +928,7 @@ class _HistoryPageState extends State<HistoryPage>
               onRefresh: () async => ctx
                   .read<CatHistoryBloc>()
                   .add(const CatHistoryLoadRequested()),
-              color: Colors.orange,
+              color: isDark ? Colors.black : Colors.white,
               child: ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: cats.length,
@@ -795,6 +1146,15 @@ class _HistoryPageState extends State<HistoryPage>
               icon: Icon(Icons.delete_outline,
                   color: Colors.red.shade500, size: 22),
               tooltip: 'ลบ',
+              padding: const EdgeInsets.all(8),
+              constraints: const BoxConstraints(),
+            ),
+            const SizedBox(width: 4),
+            IconButton(
+              onPressed: () => _detailCat(blocCtx, cat),
+              icon: Icon(Icons.density_medium_sharp,
+                  color: const Color.fromARGB(255, 9, 9, 9), size: 22),
+              tooltip: 'รายระเอียด',
               padding: const EdgeInsets.all(8),
               constraints: const BoxConstraints(),
             ),

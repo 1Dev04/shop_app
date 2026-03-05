@@ -269,6 +269,7 @@ class _SearchViewState extends State<_SearchView> {
 
         // basket success/failure
         if (state is SearchBasketSuccess) {
+          
           showTopSnackBar(
             Overlay.of(ctx),
             CustomSnackBar.success(
