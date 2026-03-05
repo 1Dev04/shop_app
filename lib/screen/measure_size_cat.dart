@@ -1273,7 +1273,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 5,
                   mainAxisSpacing: 12,
-                  childAspectRatio: 0.86),
+                  childAspectRatio: 0.65),
               itemCount: recs.length,
               itemBuilder: (ctx, i) => _buildProductCard(recs[i], dark),
             ),
@@ -1298,7 +1298,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
     ]);
   }
 
-  Widget _buildProductCard(Map<String, dynamic> product, bool dark) {
+Widget _buildProductCard(Map<String, dynamic> product, bool dark) {
     final lang = Provider.of<LanguageProvider>(context);
     final uuid = product['uuid']?.toString() ?? product['id']?.toString() ?? '';
     final name = product['clothing_name'] ?? product['name'] ?? 'Unknown';
@@ -1320,6 +1320,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
         final isFav = snap.data ?? false;
         return Container(
           width: 160,
+          height: 230, 
           margin: const EdgeInsets.only(right: 12),
           decoration: BoxDecoration(
               color: dark ? Colors.grey[850] : Colors.white,
@@ -1327,62 +1328,63 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
               border: Border.all(
                   color: dark ? Colors.grey[700]! : Colors.grey[300]!,
                   width: 1.5)),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Stack(children: [
-              Container(
-                height: 100,
-                decoration: BoxDecoration(
-                    borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(14)),
-                    color: dark ? Colors.grey[800] : Colors.grey[200]),
-                child: ClipRRect(
-                    borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(14)),
-                    child: imageUrl.isNotEmpty
-                        ? Image.network(imageUrl,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Center(
-                                child: Icon(Icons.shopping_bag,
-                                    size: 40, color: Colors.grey[400])))
-                        : Center(
-                            child: Icon(Icons.shopping_bag,
-                                size: 40, color: Colors.grey[400]))),
-              ),
-              if (match >= 0.8)
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Stack(children: [
+                Container(
+                  height: 100,
+                  decoration: BoxDecoration(
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(14)),
+                      color: dark ? Colors.grey[800] : Colors.grey[200]),
+                  child: ClipRRect(
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(14)),
+                      child: imageUrl.isNotEmpty
+                          ? Image.network(imageUrl,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Center(
+                                  child: Icon(Icons.shopping_bag,
+                                      size: 40, color: Colors.grey[400])))
+                          : Center(
+                              child: Icon(Icons.shopping_bag,
+                                  size: 40, color: Colors.grey[400]))),
+                ),
+                if (match >= 0.8)
+                  Positioned(
+                      top: 6,
+                      left: 6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                            color: Colors.green,
+                            borderRadius: BorderRadius.circular(8)),
+                        child: Text('${(match * 100).toInt()}%',
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold)),
+                      )),
+                if (discPct != null)
+                  Positioned(
+                      top: 6,
+                      right: 34,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(8)),
+                        child: Text('-$discPct',
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold)),
+                      )),
                 Positioned(
-                    top: 6,
-                    left: 6,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                          color: Colors.green,
-                          borderRadius: BorderRadius.circular(8)),
-                      child: Text('${(match * 100).toInt()}%',
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold)),
-                    )),
-              if (discPct != null)
-                Positioned(
-                    top: 6,
-                    right: 34,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(8)),
-                      child: Text('-$discPct',
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold)),
-                    )),
-              Positioned(
                   top: 6,
                   right: 6,
                   child: GestureDetector(
@@ -1409,93 +1411,109 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                           color: isFav ? Colors.red : Colors.white,
                           size: 18),
                     ),
-                  )),
-            ]),
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(name,
-                        style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: dark ? Colors.white : Colors.black87),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis),
-                    const SizedBox(height: 4),
-                    Row(children: [
-                      Text(priceDisplay,
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: dark
-                                  ? Colors.orange[300]
-                                  : Colors.orange[700],
-                              fontWeight: FontWeight.bold)),
-                      if (discPrice != null && price > 0) ...[
-                        const SizedBox(width: 4),
-                        Text('฿${price.toStringAsFixed(0)}',
-                            style: TextStyle(
-                                fontSize: 10,
-                                color: Colors.grey[500],
-                                decoration: TextDecoration.lineThrough)),
-                      ],
-                    ]),
-                    const SizedBox(height: 8),
-                    Row(children: [
-                      Expanded(
-                          child: ElevatedButton(
-                        onPressed: stock > 0
-                            ? () async {
-                                try {
-                                  await _basketApi.addToBasket(
-                                      clothingUuid: uuid);
-                                  _showSuccessMessage(lang.translate(
-                                      en: 'Added to cart!',
-                                      th: 'เพิ่มลงตะกร้าแล้ว!'));
-                                } catch (_) {
-                                  _showError(lang.translate(
-                                      en: 'Failed to add to cart',
-                                      th: 'เพิ่มลงตะกร้าไม่สำเร็จ'));
-                                }
-                              }
-                            : null,
-                        style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 6),
-                            backgroundColor:
-                                stock > 0 ? Colors.green : Colors.grey,
-                            foregroundColor: Colors.white,
-                            minimumSize: const Size(0, 28),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8))),
-                        child: Text(
-                            stock > 0
-                                ? lang.translate(en: 'Buy', th: 'ซื้อ')
-                                : lang.translate(en: 'Out', th: 'หมด'),
-                            style: const TextStyle(fontSize: 11)),
-                      )),
-                      const SizedBox(width: 4),
-                      ElevatedButton(
-                        onPressed: () => _showInfoMessage(lang.translate(
-                            en: 'Opening details...',
-                            th: 'กำลังเปิดรายละเอียด...')),
-                        style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 6, horizontal: 8),
-                            backgroundColor:
-                                dark ? Colors.grey[700] : Colors.grey[300],
-                            foregroundColor:
-                                dark ? Colors.white : Colors.black87,
-                            minimumSize: const Size(0, 28),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8))),
-                        child: Text(lang.translate(en: 'More', th: 'เพิ่มเติม'),
-                            style: const TextStyle(fontSize: 11)),
+                  ),
+                ),
+              ]),
+              
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween, 
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(name,
+                              style: TextStyle(
+                                  fontSize: 12, // ปรับขนาดลงนิดนึงกันล้น
+                                  fontWeight: FontWeight.w600,
+                                  color: dark ? Colors.white : Colors.black87),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis),
+                          const SizedBox(height: 4),
+                          Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              Text(priceDisplay,
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: dark
+                                          ? Colors.orange[300]
+                                          : Colors.orange[700],
+                                      fontWeight: FontWeight.bold)),
+                              if (discPrice != null && price > 0) ...[
+                                const SizedBox(width: 4),
+                                Text('฿${price.toStringAsFixed(0)}',
+                                    style: TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.grey[500],
+                                        decoration:
+                                            TextDecoration.lineThrough)),
+                              ],
+                            ],
+                          ),
+                        ],
                       ),
-                    ]),
-                  ]),
-            ),
-          ]),
+                      
+                      // ส่วนของปุ่มกด
+                      Row(children: [
+                        Expanded(
+                            child: ElevatedButton(
+                          onPressed: stock > 0
+                              ? () async {
+                                  try {
+                                    await _basketApi.addToBasket(
+                                        clothingUuid: uuid);
+                                    _showSuccessMessage(lang.translate(
+                                        en: 'Added to cart!',
+                                        th: 'เพิ่มลงตะกร้าแล้ว!'));
+                                  } catch (_) {
+                                    _showError(lang.translate(
+                                        en: 'Failed to add to cart',
+                                        th: 'เพิ่มลงตะกร้าไม่สำเร็จ'));
+                                  }
+                                }
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                              padding: EdgeInsets.zero, // 
+                              backgroundColor:
+                                  stock > 0 ? Colors.green : Colors.grey,
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(0, 28),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8))),
+                          child: Text(
+                              stock > 0
+                                  ? lang.translate(en: 'Buy', th: 'ซื้อ')
+                                  : lang.translate(en: 'Out', th: 'หมด'),
+                              style: const TextStyle(fontSize: 11)),
+                        )),
+                        const SizedBox(width: 4),
+                        ElevatedButton(
+                          onPressed: () => _showInfoMessage(lang.translate(
+                              en: 'Opening details...',
+                              th: 'กำลังเปิดรายละเอียด...')),
+                          style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 8), 
+                              backgroundColor:
+                                  dark ? Colors.grey[700] : Colors.grey[300],
+                              foregroundColor:
+                                  dark ? Colors.white : Colors.black87,
+                              minimumSize: const Size(0, 28),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8))),
+                          child: Text(lang.translate(en: 'More', th: 'เพิ่มเติม'),
+                              style: const TextStyle(fontSize: 11)),
+                        ),
+                      ]),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         );
       },
     );
