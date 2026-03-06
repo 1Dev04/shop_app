@@ -47,6 +47,7 @@ class CatRecord {
   final double? legLengthCm;
   final double? confidence;
   final String? imageCat;
+  final String? imageClothing;
   final String? thumbnailUrl;
   final String? ageCategory;
   final int? bodyConditionScore;
@@ -74,6 +75,7 @@ class CatRecord {
     this.legLengthCm,
     this.confidence,
     this.imageCat,
+    this.imageClothing,
     this.thumbnailUrl,
     this.ageCategory,
     this.bodyConditionScore,
@@ -119,6 +121,7 @@ class CatRecord {
       legLengthCm: _toDouble(json['leg_length_cm']),
       confidence: _toDouble(json['confidence']),
       imageCat: json['image_cat']?.toString(),
+      imageClothing: json['image_clothing']?.toString(),
       thumbnailUrl: json['thumbnail_url']?.toString(),
       ageCategory: json['age_category']?.toString(),
       bodyConditionScore: _toInt(json['body_condition_score']),

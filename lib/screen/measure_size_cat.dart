@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 import 'package:flutter_application_1/api/service_fav_backet.dart';
@@ -113,23 +115,29 @@ class CatData {
   });
 
   factory CatData.fromJson(Map<String, dynamic> j) => CatData(
-        name: j['name'],
+        name: j['cat_color'] ?? j['name'] ?? 'Unknown',
         breed: j['breed'],
-        age: j['age'],
-        weight: (j['weight'] as num).toDouble(),
-        sizeCategory: j['size_category'],
-        chestCm: (j['chest_cm'] as num).toDouble(),
+        age: j['age'] is num ? (j['age'] as num).toInt() : null,
+        weight: j['weight'] != null ? (j['weight'] as num).toDouble() : 0.0,
+        sizeCategory: j['size_category'] ?? 'M',
+        chestCm: j['chest_cm'] != null ? (j['chest_cm'] as num).toDouble() : 0.0,
         neckCm: j['neck_cm'] != null ? (j['neck_cm'] as num).toDouble() : null,
         bodyLengthCm: j['body_length_cm'] != null
             ? (j['body_length_cm'] as num).toDouble()
             : null,
-        confidence: (j['confidence'] as num).toDouble(),
-        boundingBox: List<double>.from(
-            j['bounding_box'].map((e) => (e as num).toDouble())),
-        imageUrl: j['image_cat'] ?? j['image_url'] ?? '',
+        confidence:
+            j['confidence'] != null ? (j['confidence'] as num).toDouble() : 0.0,
+        boundingBox: j['bounding_box'] != null
+            ? List<double>.from(
+                (j['bounding_box'] as List).map((e) => (e as num).toDouble()))
+            : [0, 0, 1, 1],
+        // รูปแมว: image_cat (Cloudinary URL ที่ backend เก็บ)
+        imageUrl: j['image_cat'] ?? j['image_clothing'] ?? j['image_url'] ?? '',
         thumbnailUrl: j['thumbnail_url'],
-        detectedAt: DateTime.parse(j['detected_at']),
-        dbId: j['db_id'],
+        detectedAt: j['detected_at'] != null
+            ? DateTime.tryParse(j['detected_at'].toString()) ?? DateTime.now()
+            : DateTime.now(),
+        dbId: j['db_id'] is num ? (j['db_id'] as num).toInt() : j['id'] is num ? (j['id'] as num).toInt() : null,
       );
 }
 
@@ -163,7 +171,6 @@ class _MeasureSizeCatView extends StatefulWidget {
 class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
   final _picker = ImagePicker();
   final _favouriteApi = FavouriteApiService();
-  final _basketApi = BasketApiService();
 
   bool _isCapturing = false;
   bool _isDisposed = false;
@@ -172,10 +179,13 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
   File? _pendingFile;
   VoidCallback? _detectCleanup;
 
+  // ─── 🚀 PRODUCTION — ใช้ backend จริง ─────────────────────────────────────
+  static const bool _useMock = false;
+
   @override
   void initState() {
     super.initState();
-    _initCamera();
+    if (!_useMock) _initCamera();
   }
 
   @override
@@ -185,6 +195,8 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
     _cameraCtrl = null;
     super.dispose();
   }
+
+  // ─── Camera ────────────────────────────────────────────────────────────────
 
   void _initCamera() async {
     if (!mounted || _isDisposed) return;
@@ -207,7 +219,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
     }
   }
 
-  // ─── Image helpers ────────────────────────────────────────────────────────
+  // ─── Image helpers ──────────────────────────────────────────────────────────
 
   Future<File?> _cropToFrame(String path) async {
     try {
@@ -249,7 +261,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
     }
   }
 
-  // ─── Capture from Camera ──────────────────────────────────────────────────
+  // ─── Capture ────────────────────────────────────────────────────────────────
 
   Future<void> _captureFromCamera() async {
     if (_isCapturing || _isDisposed) return;
@@ -287,7 +299,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
     }
   }
 
-  // ─── Pick from Gallery ────────────────────────────────────────────────────
+  // ─── Gallery ────────────────────────────────────────────────────────────────
 
   Future<void> _pickFromGallery() async {
     if (_isCapturing || _isDisposed) return;
@@ -312,7 +324,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
     }
   }
 
-  // ─── หลัง detect ผ่าน → ส่งต่อ analyze ──────────────────────────────────
+  // ─── หลัง detect ผ่าน ──────────────────────────────────────────────────────
 
   void _proceedToAnalysis() {
     final file = _pendingFile;
@@ -336,7 +348,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
     _initCamera();
   }
 
-  // ─── _editCat — ใช้ CatRecord เปิด bottom sheet แล้ว dispatch CatAnalysisBloc ──
+  // ─── Edit Cat ────────────────────────────────────────────────────────────────
 
   Future<void> _editCat(CatData cat) async {
     final colorCtrl = TextEditingController(text: cat.name);
@@ -487,7 +499,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
     context.read<CatAnalysisBloc>().add(CatDataUpdated(updateData));
   }
 
-  // ─── Dialogs ──────────────────────────────────────────────────────────────
+  // ─── Dialogs ────────────────────────────────────────────────────────────────
 
   void _showQuotaDialog() {
     if (!mounted || _isDisposed) return;
@@ -661,7 +673,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
     if (mounted) context.read<CatAnalysisBloc>().add(CatDataDeleted());
   }
 
-  // ─── Snackbars ────────────────────────────────────────────────────────────
+  // ─── Snackbars ───────────────────────────────────────────────────────────────
 
   void _showSuccessMessage(String m) {
     if (!mounted || _isDisposed) return;
@@ -679,7 +691,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
         displayDuration: const Duration(milliseconds: 1500));
   }
 
-  // ─── Build ────────────────────────────────────────────────────────────────
+  // ─── Build ───────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -796,7 +808,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
     );
   }
 
-  // ─── Widgets ──────────────────────────────────────────────────────────────
+  // ─── Camera Preview ──────────────────────────────────────────────────────────
 
   Widget _buildCameraPreview() {
     if (_cameraCtrl == null || !_cameraCtrl!.value.isInitialized) {
@@ -845,6 +857,8 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
     ]);
   }
 
+  // ─── Loading Overlay ─────────────────────────────────────────────────────────
+
   Widget _buildLoadingOverlay(File? file, double progress, String label) {
     return Container(
       color: Colors.white.withOpacity(0.85),
@@ -883,6 +897,8 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
       ])),
     );
   }
+
+  // ─── Image Section ───────────────────────────────────────────────────────────
 
   Widget _buildImageSection(bool dark, File file, LanguageProvider lang, bool loading) {
     return Padding(
@@ -992,14 +1008,14 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
         ]));
   }
 
-  // ─── Result Section ───────────────────────────────────────────────────────
+  // ─── Result Section ──────────────────────────────────────────────────────────
 
   Widget _buildResultSection(bool dark, CatData cat, double screenH,
       LanguageProvider lang, List<Map<String, dynamic>> recs) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        // ── Cat Info Card ──────────────────────────────────────────────────
+        // ── Cat Info Card ────────────────────────────────────────────────────
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -1008,6 +1024,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
               border: Border.all(
                   color: dark ? Colors.grey[700]! : Colors.grey[300]!, width: 2)),
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            // รูปแมว
             Container(
               width: 100, height: 120,
               decoration: BoxDecoration(
@@ -1036,10 +1053,10 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
               const SizedBox(height: 10),
               _infoRow(lang.translate(en: 'Size:', th: 'ขนาด:'), cat.sizeCategory, dark),
             ])),
-            // ── ✏️ Edit → _editCat  /  🗑️ Delete ────────────────────
+            // ✏️ Edit / 🗑️ Delete
             Column(mainAxisSize: MainAxisSize.min, children: [
               IconButton(
-                onPressed: () => _editCat(cat), // ← ใช้ _editCat แทน _showEditDialog
+                onPressed: () => _editCat(cat),
                 icon: Icon(Icons.mode_edit_outline_outlined,
                     color: Colors.blue.shade700, size: 28),
               ),
@@ -1053,7 +1070,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
         ),
         const SizedBox(height: 20),
 
-        // ── Recommended Products ───────────────────────────────────────────
+        // ── Recommended Products ─────────────────────────────────────────────
         Text(lang.translate(en: 'Recommended Products', th: 'สินค้าแนะนำ'),
             style: TextStyle(
                 fontSize: 18,
@@ -1081,7 +1098,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                 crossAxisCount: 2,
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
-                childAspectRatio: 0.59),
+                childAspectRatio: 0.68),
             itemCount: recs.length,
             itemBuilder: (ctx, i) => _buildProductCard(recs[i], dark),
           ),
@@ -1104,15 +1121,41 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
     ]);
   }
 
-  // ─── Product Card (redesigned) ────────────────────────────────────────────
+  // ─── Extract image URL จาก product ──────────────────────────────────────────
+
+  String _extractImageUrl(Map<String, dynamic> product) {
+    // 1. image_clothing ตรงๆ
+    final direct = product['image_clothing'];
+    if (direct is String && direct.isNotEmpty) return direct;
+
+    // 2. images map (String JSON หรือ Map)
+    final raw = product['images'];
+    if (raw != null) {
+      try {
+        final Map<String, dynamic> map = raw is String
+            ? Map<String, dynamic>.from(jsonDecode(raw))
+            : raw is Map
+                ? Map<String, dynamic>.from(raw)
+                : {};
+        if (map.isNotEmpty) return map.values.first?.toString() ?? '';
+      } catch (_) {}
+    }
+
+    // 3. fallback
+    return product['image_url'] ?? product['imageUrl'] ?? '';
+  }
+
+  // ─── Product Card ────────────────────────────────────────────────────────────
 
   Widget _buildProductCard(Map<String, dynamic> product, bool dark) {
     final lang = Provider.of<LanguageProvider>(context);
     final uuid = product['uuid']?.toString() ?? product['id']?.toString() ?? '';
     final name = product['clothing_name'] ?? product['name'] ?? 'Unknown';
-    final imageUrl = product['image_url'] ?? product['imageUrl'] ?? '';
-    final stock = (product['stock'] as num?)?.toInt() ?? 99;
-    final match = (product['match_score'] as num?)?.toDouble() ?? 0.0;
+    final imageUrl = _extractImageUrl(product);
+    final price = (product['price'] as num?)?.toDouble() ?? 0.0;
+    final discPrice = (product['discount_price'] as num?)?.toDouble();
+    final hasDiscount = discPrice != null && discPrice < price;
+    final displayPrice = hasDiscount ? discPrice : price;
 
     return FutureBuilder<bool>(
       future: _favouriteApi.checkFavourite(clothingUuid: uuid),
@@ -1134,13 +1177,14 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // ── รูปสินค้า (ขนาด 1:1) ──────────────────────
+                // ── รูป + ❤️ ────────────────────────────────────────
                 Stack(children: [
                   ClipRRect(
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                     child: AspectRatio(
-                      aspectRatio: 1.0, 
+                      aspectRatio: 1.0,
                       child: imageUrl.isNotEmpty
                           ? Image.network(imageUrl,
                               fit: BoxFit.cover,
@@ -1156,25 +1200,6 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                             ),
                     ),
                   ),
-
-                  // Match % badge
-                  if (match >= 0.8)
-                    Positioned(
-                      top: 8, left: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: Colors.green.shade600,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text('${(match * 100).toInt()}%',
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold)),
-                      ),
-                    ),
-
                   // ❤️ Favourite
                   Positioned(
                     top: 6, right: 6,
@@ -1203,73 +1228,74 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                         ),
                         child: Icon(
                             isFav ? Icons.favorite : Icons.favorite_border,
-                            color: Colors.white,
-                            size: 16),
+                            color: Colors.white, size: 16),
                       ),
                     ),
                   ),
-
-                  // Out of stock overlay
-                  if (stock == 0)
-                    Positioned.fill(
-                      child: ClipRRect(
-                        borderRadius:
-                            const BorderRadius.vertical(top: Radius.circular(16)),
-                        child: Container(
-                          color: Colors.black.withOpacity(0.45),
-                          alignment: Alignment.center,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.black87,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                                lang.translate(en: 'Out of Stock', th: 'หมด'),
-                                style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold)),
-                          ),
-                        ),
-                      ),
-                    ),
                 ]),
 
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(name,
-                            style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: dark ? Colors.white : Colors.black87),
-                            maxLines: 2,
-
-                            overflow: TextOverflow.ellipsis),
-                        const SizedBox(height: 12),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.touch_app,
-                                size: 14,
-                                color: dark ? Colors.white70 : Colors.black54),
-                            const SizedBox(width: 4),
+                // ── ข้อความด้านล่าง ──────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // ชื่อ
+                      Text(
+                        name,
+                        style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: dark ? Colors.white : Colors.black87),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 5),
+                      // ราคา
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          if (hasDiscount) ...[
                             Text(
-                              lang.translate(en: 'Tap for details', th: 'แตะเพื่อดูรายละเอียด'),
+                              '฿${price.toStringAsFixed(0)}',
                               style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w500,
-                                  color: dark ? Colors.white70 : Colors.black54),
+                                fontSize: 11,
+                                color: Colors.grey[400],
+                                decoration: TextDecoration.lineThrough,
+                                decorationColor: Colors.grey[400],
+                              ),
                             ),
+                            const SizedBox(width: 5),
                           ],
-                        ),
-                      ],
-                    ),
+                          Text(
+                            '฿${displayPrice.toStringAsFixed(0)}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.orange,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 5),
+                      // Tap for details
+                      Row(
+                        children: [
+                          Icon(Icons.touch_app_outlined,
+                              size: 12,
+                              color: dark ? Colors.white38 : Colors.grey[400]),
+                          const SizedBox(width: 3),
+                          Text(
+                            lang.translate(
+                                en: 'Tap for details',
+                                th: 'แตะเพื่อดูรายละเอียด'),
+                            style: TextStyle(
+                                fontSize: 10,
+                                color: dark ? Colors.white38 : Colors.grey[400]),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -1279,6 +1305,8 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
       },
     );
   }
+
+  // ─── Bottom Bar ──────────────────────────────────────────────────────────────
 
   Widget _buildBottomBar(bool dark, CatAnalysisState state, LanguageProvider lang) {
     if (state is! CatAnalysisInitial) return const SizedBox.shrink();
