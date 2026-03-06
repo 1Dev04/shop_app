@@ -1081,7 +1081,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                 crossAxisCount: 2,
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
-                childAspectRatio: 0.72),
+                childAspectRatio: 0.50),
             itemCount: recs.length,
             itemBuilder: (ctx, i) => _buildProductCard(recs[i], dark),
           ),
@@ -1141,20 +1141,19 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── รูปสินค้า ──────────────────────────────────────
                 Stack(children: [
                   ClipRRect(
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                     child: AspectRatio(
-                      aspectRatio: 1.0,
+                      aspectRatio: 1.0, 
                       child: imageUrl.isNotEmpty
                           ? Image.network(imageUrl,
                               fit: BoxFit.cover,
                               errorBuilder: (_, __, ___) => Container(
-                                color: dark ? Colors.grey[800] : Colors.grey[200],
-                                child: Icon(Icons.shopping_bag,
-                                    size: 40, color: Colors.grey[400]),
-                              ))
+                                    color: dark ? Colors.grey[800] : Colors.grey[200],
+                                    child: Icon(Icons.shopping_bag,
+                                        size: 40, color: Colors.grey[400]),
+                                  ))
                           : Container(
                               color: dark ? Colors.grey[800] : Colors.grey[200],
                               child: Icon(Icons.shopping_bag,
@@ -1261,129 +1260,124 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                     ),
                 ]),
 
-                // ── ข้อมูล + badges ราคา + ปุ่ม ───────────────────
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // ชื่อสินค้า
-                      Text(name,
-                          style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: dark ? Colors.white : Colors.black87),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis),
-                      const SizedBox(height: 6),
-
-                      // ── ราคา row ──────────────────────────────────
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          // badge ราคา discount (สีเขียว)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: hasDiscount
-                                  ? Colors.green.shade600
-                                  : (dark
-                                      ? Colors.orange.shade700
-                                      : Colors.orange.shade600),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              '฿${displayPrice.toStringAsFixed(0)}',
-                              style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white),
-                            ),
-                          ),
-                          if (hasDiscount) ...[
-                            const SizedBox(width: 6),
-                            // badge ราคาเดิม (สีแดง strikethrough)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween, 
+                      children: [
+                        Text(name,
+                            style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: dark ? Colors.white : Colors.black87),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis),
+                        
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 3),
+                                  horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
-                                color: Colors.red.shade100,
-                                borderRadius: BorderRadius.circular(6),
+                                color: hasDiscount
+                                    ? Colors.green.shade600
+                                    : (dark
+                                        ? Colors.orange.shade700
+                                        : Colors.orange.shade600),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                '฿${price.toStringAsFixed(0)}',
-                                style: TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.red.shade700,
-                                    fontWeight: FontWeight.w600,
-                                    decoration: TextDecoration.lineThrough,
-                                    decorationColor: Colors.red.shade700),
+                                '฿${displayPrice.toStringAsFixed(0)}',
+                                style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white),
                               ),
                             ),
+                            if (hasDiscount) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.shade100,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  '฿${price.toStringAsFixed(0)}',
+                                  style: TextStyle(
+                                      fontSize: 10,
+                                      color: Colors.red.shade700,
+                                      fontWeight: FontWeight.w600,
+                                      decoration: TextDecoration.lineThrough,
+                                      decorationColor: Colors.red.shade700),
+                                ),
+                              ),
+                            ],
                           ],
-                        ],
-                      ),
-                      const SizedBox(height: 8),
+                        ),
 
-                      // ── ปุ่ม Buy + More ────────────────────────────
-                      Row(children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: stock > 0
-                                ? () async {
-                                    try {
-                                      await _basketApi.addToBasket(
-                                          clothingUuid: uuid);
-                                      _showSuccessMessage(lang.translate(
-                                          en: 'Added to cart!',
-                                          th: 'เพิ่มลงตะกร้าแล้ว!'));
-                                    } catch (_) {
-                                      _showError(lang.translate(
-                                          en: 'Failed to add to cart',
-                                          th: 'เพิ่มลงตะกร้าไม่สำเร็จ'));
+                        Row(children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: stock > 0
+                                  ? () async {
+                                      try {
+                                        await _basketApi.addToBasket(
+                                            clothingUuid: uuid);
+                                        _showSuccessMessage(lang.translate(
+                                            en: 'Added to cart!',
+                                            th: 'เพิ่มลงตะกร้าแล้ว!'));
+                                      } catch (_) {
+                                        _showError(lang.translate(
+                                            en: 'Failed to add to cart',
+                                            th: 'เพิ่มลงตะกร้าไม่สำเร็จ'));
+                                      }
                                     }
-                                  }
-                                : null,
-                            icon: const Icon(Icons.shopping_cart_outlined, size: 11),
-                            label: Text(
-                                stock > 0
-                                    ? lang.translate(en: 'Buy', th: 'ซื้อ')
-                                    : lang.translate(en: 'Out', th: 'หมด'),
-                                style: const TextStyle(
-                                    fontSize: 11, fontWeight: FontWeight.bold)),
+                                  : null,
+                              icon: const Icon(Icons.shopping_cart_outlined, size: 11),
+                              label: Text(
+                                  stock > 0
+                                      ? lang.translate(en: 'Buy', th: 'ซื้อ')
+                                      : lang.translate(en: 'Out', th: 'หมด'),
+                                  style: const TextStyle(
+                                      fontSize: 11, fontWeight: FontWeight.bold)),
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 7),
+                                backgroundColor:
+                                    stock > 0 ? Colors.green.shade600 : Colors.grey,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          ElevatedButton(
+                            onPressed: () => _showItemDetailPopup(product),
                             style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 7),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 7),
                               backgroundColor:
-                                  stock > 0 ? Colors.green.shade600 : Colors.grey,
-                              foregroundColor: Colors.white,
+                                  dark ? Colors.grey[700] : Colors.grey[200],
+                              foregroundColor:
+                                  dark ? Colors.white : Colors.black87,
                               elevation: 0,
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10)),
                             ),
+                            child: Text(
+                                lang.translate(en: 'More', th: 'เพิ่มเติม'),
+                                style: const TextStyle(
+                                    fontSize: 11, fontWeight: FontWeight.bold)),
                           ),
-                        ),
-                        const SizedBox(width: 6),
-                        ElevatedButton(
-                          onPressed: () => _showItemDetailPopup(product),
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 7),
-                            backgroundColor:
-                                dark ? Colors.grey[700] : Colors.grey[200],
-                            foregroundColor:
-                                dark ? Colors.white : Colors.black87,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10)),
-                          ),
-                          child: Text(
-                              lang.translate(en: 'More', th: 'เพิ่มเติม'),
-                              style: const TextStyle(
-                                  fontSize: 11, fontWeight: FontWeight.bold)),
-                        ),
-                      ]),
-                    ],
+                        ]),
+                      ],
+                    ),
                   ),
                 ),
               ],
