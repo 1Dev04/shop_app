@@ -148,106 +148,8 @@ class CatData {
 // MARK: - Widget Entry Point
 // ═══════════════════════════════════════════════════════════════════════════════
 
-
-class _RejectConfig {
-  final String title;
-  final String message;
-  final String emoji;
-  final Color color;
-  const _RejectConfig({
-    required this.title,
-    required this.message,
-    required this.emoji,
-    required this.color,
-  });
-}
-
-const Map<String, _RejectConfig> _rejectConfigs = {
-  'human_in_costume': _RejectConfig(
-    emoji: '🧑‍🎭',
-    title: 'ตรวจพบมนุษย์แต่งชุดแมว',
-    message: 'ระบบตรวจพบมนุษย์ที่แต่งตัวเป็นแมว\nกรุณาถ่ายรูปแมวจริงเท่านั้น',
-    color: Color(0xFFE91E63),
-  ),
-  'stuffed_toy': _RejectConfig(
-    emoji: '🧸',
-    title: 'ตรวจพบตุ๊กตาแมว',
-    message: 'ระบบตรวจพบตุ๊กตาหรือของเล่นรูปแมว\nกรุณาถ่ายรูปแมวที่มีชีวิตจริงเท่านั้น',
-    color: Color(0xFFFF9800),
-  ),
-  'figurine_model': _RejectConfig(
-    emoji: '🗿',
-    title: 'ตรวจพบโมเดล/ฟิกเกอร์แมว',
-    message: 'ระบบตรวจพบโมเดล ฟิกเกอร์ หรือของประดับรูปแมว\nกรุณาถ่ายรูปแมวจริงเท่านั้น',
-    color: Color(0xFF795548),
-  ),
-  'cat_mask_prop': _RejectConfig(
-    emoji: '🎭',
-    title: 'ตรวจพบหน้ากากแมว',
-    message: 'ระบบตรวจพบหน้ากากหรืออุปกรณ์ประกอบฉากรูปแมว\nกรุณาถ่ายรูปแมวจริงเท่านั้น',
-    color: Color(0xFF9C27B0),
-  ),
-  'printed_image': _RejectConfig(
-    emoji: '🖥️',
-    title: 'ตรวจพบภาพจากหน้าจอ/สิ่งพิมพ์',
-    message: 'ระบบตรวจพบว่าถ่ายรูปจากหน้าจอหรือรูปพิมพ์\nกรุณาถ่ายแมวโดยตรงจากกล้อง',
-    color: Color(0xFF607D8B),
-  ),
-  'other_animal': _RejectConfig(
-    emoji: '🐾',
-    title: 'ตรวจพบสัตว์อื่น',
-    message: 'ฟีเจอร์นี้รองรับเฉพาะแมวเท่านั้น',
-    color: Color(0xFFFF5722),
-  ),
-  'no_cat': _RejectConfig(
-    emoji: '😿',
-    title: 'ไม่พบแมวในภาพ',
-    message: 'ไม่สามารถตรวจพบแมวในภาพได้\nลองถ่ายรูปใหม่ให้เห็นแมวชัดเจนทั้งตัว',
-    color: Color(0xFF9E9E9E),
-  ),
-  'cartoon': _RejectConfig(
-    emoji: '🎨',
-    title: 'ไม่ใช่ภาพแมวจริง',
-    message: 'ระบบตรวจพบภาพการ์ตูน รูปวาด หรือ CGI\nกรุณาใช้รูปถ่ายแมวจริงเท่านั้น',
-    color: Color(0xFFFF9800),
-  ),
-  'multiple_cats': _RejectConfig(
-    emoji: '🐱🐱',
-    title: 'ตรวจพบแมวหลายตัว',
-    message: 'ระบบตรวจพบแมวมากกว่า 1 ตัวในภาพ\nกรุณาถ่ายรูปแมวทีละตัวเท่านั้น',
-    color: Color(0xFF9C27B0),
-  ),
-  'is_dog': _RejectConfig(
-    emoji: '🐶',
-    title: 'ตรวจพบสุนัข',
-    message: 'ภาพนี้มีลักษณะของสุนัข\nฟีเจอร์นี้รองรับเฉพาะแมวเท่านั้น',
-    color: Color(0xFF795548),
-  ),
-  'non_cat_animal': _RejectConfig(
-    emoji: '🚫',
-    title: 'ตรวจพบสัตว์อื่น',
-    message: 'ฟีเจอร์นี้รองรับเฉพาะแมวเท่านั้น',
-    color: Color(0xFFFF5722),
-  ),
-  'other': _RejectConfig(
-    emoji: '🤔',
-    title: 'ไม่สามารถระบุได้',
-    message: 'ลองถ่ายรูปใหม่ให้เห็นแมวชัดเจนยิ่งขึ้น',
-    color: Color(0xFFFF9800),
-  ),
-};
-
-const _RejectConfig _defaultRejectConfig = _RejectConfig(
-  emoji: '😿',
-  title: 'ไม่พบแมวในภาพ',
-  message: 'ไม่สามารถตรวจพบแมวในภาพได้\nลองถ่ายรูปใหม่ให้เห็นแมวชัดเจนทั้งตัว',
-  color: Color(0xFF9E9E9E),
-);
-
 class MeasureSizeCat extends StatelessWidget {
   const MeasureSizeCat({super.key});
-
-  
 
   @override
   Widget build(BuildContext context) => MultiBlocProvider(
@@ -257,8 +159,6 @@ class MeasureSizeCat extends StatelessWidget {
         ],
         child: const _MeasureSizeCatView(),
       );
-
-
 }
 
 class _MeasureSizeCatView extends StatefulWidget {
@@ -816,83 +716,122 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
     _showItemDetailPopup(product);
   }
 
-
-
   void _showRejectDialog(DetectCatResult result) {
     if (!mounted || _isDisposed) return;
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final cfg = _rejectConfigs[result.reason] ?? _defaultRejectConfig;
 
+    String title, message;
+    IconData icon;
+    Color iconColor;
+
+    switch (result.reason) {
+      // ── NEW: subject_type จาก analysis_cat.py ────────────────────
+      case 'human_in_costume':
+        title = '🧑‍🎭 ตรวจพบมนุษย์แต่งชุดแมว';
+        message =
+            'ระบบตรวจพบมนุษย์ที่แต่งตัวเป็นแมว\nกรุณาถ่ายรูปแมวจริงเท่านั้น';
+        icon = Icons.theater_comedy_outlined;
+        iconColor = Colors.pink;
+      case 'stuffed_toy':
+        title = '🧸 ตรวจพบตุ๊กตาแมว';
+        message =
+            'ระบบตรวจพบตุ๊กตาหรือของเล่นรูปแมว\nกรุณาถ่ายรูปแมวที่มีชีวิตจริงเท่านั้น';
+        icon = Icons.toys_outlined;
+        iconColor = Colors.orange;
+      case 'figurine_model':
+        title = '🗿 ตรวจพบโมเดล/ฟิกเกอร์แมว';
+        message =
+            'ระบบตรวจพบโมเดล ฟิกเกอร์ หรือของประดับรูปแมว\nกรุณาถ่ายรูปแมวจริงเท่านั้น';
+        icon = Icons.category_outlined;
+        iconColor = Colors.brown;
+      case 'cat_mask_prop':
+        title = '🎭 ตรวจพบหน้ากากแมว';
+        message =
+            'ระบบตรวจพบหน้ากากหรืออุปกรณ์ประกอบฉากรูปแมว\nกรุณาถ่ายรูปแมวจริงเท่านั้น';
+        icon = Icons.theater_comedy_outlined;
+        iconColor = Colors.purple;
+      case 'printed_image':
+        title = '🖥️ ตรวจพบภาพจากหน้าจอ/สิ่งพิมพ์';
+        message =
+            'ระบบตรวจพบว่าถ่ายรูปจากหน้าจอหรือรูปพิมพ์\nกรุณาถ่ายแมวโดยตรงจากกล้อง';
+        icon = Icons.monitor_outlined;
+        iconColor = Colors.blueGrey;
+      case 'other_animal':
+      case 'no_cat':
+        title = '😿 ไม่พบแมวในภาพ';
+        message =
+            'ไม่สามารถตรวจพบแมวในภาพได้\nลองถ่ายรูปใหม่ให้เห็นแมวชัดเจนทั้งตัว';
+        icon = Icons.search_off;
+        iconColor = Colors.grey;
+      // ── EXISTING ─────────────────────────────────────────────────
+      case 'multiple_cats':
+        title = '🐱🐱 ตรวจพบแมวหลายตัว';
+        message =
+            'ระบบตรวจพบแมวมากกว่า 1 ตัวในภาพ\nกรุณาถ่ายรูปแมวทีละตัวเท่านั้น';
+        icon = Icons.pets;
+        iconColor = Colors.purple;
+      case 'cartoon':
+        title = '🎨 ไม่ใช่ภาพแมวจริง';
+        message =
+            'ระบบตรวจพบว่าเป็นภาพการ์ตูน รูปวาด โมเดล\nหรือของเล่น กรุณาใช้รูปถ่ายแมวจริงเท่านั้น';
+        icon = Icons.draw_outlined;
+        iconColor = Colors.orange;
+      case 'is_dog':
+        title = '🐶 ตรวจพบสุนัข';
+        message = 'ภาพนี้มีลักษณะของสุนัข\nฟีเจอร์นี้รองรับเฉพาะแมวเท่านั้น';
+        icon = Icons.pets;
+        iconColor = Colors.brown;
+      case 'non_cat_animal':
+        title = '🚫 ตรวจพบสัตว์อื่น';
+        message = 'ฟีเจอร์นี้รองรับเฉพาะแมวเท่านั้น';
+        icon = Icons.pets;
+        iconColor = Colors.deepOrange;
+      case 'other':
+        title = '🤔 ไม่สามารถระบุได้';
+        message = 'ลองถ่ายรูปใหม่ให้เห็นแมวชัดเจนยิ่งขึ้น';
+        icon = Icons.help_outline;
+        iconColor = Colors.orange;
+      default:
+        title = '😿 ไม่พบแมวในภาพ';
+        message =
+            'ไม่สามารถตรวจพบแมวในภาพได้\nลองถ่ายรูปใหม่ให้เห็นแมวชัดเจนทั้งตัว';
+        icon = Icons.search_off;
+        iconColor = Colors.grey;
+    }
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: dark ? Colors.grey[900] : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        contentPadding: const EdgeInsets.fromLTRB(24, 28, 24, 0),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: cfg.color.withOpacity(0.12),
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: Text(cfg.emoji, style: const TextStyle(fontSize: 38)),
-          ),
+          Icon(icon, size: 64, color: iconColor),
           const SizedBox(height: 16),
-          Text(cfg.title,
+          Text(title,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center),
           const SizedBox(height: 12),
           Container(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: dark ? Colors.grey[800] : cfg.color.withOpacity(0.06),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: cfg.color.withOpacity(0.25)),
-            ),
-            child: Text(cfg.message,
+                color: dark ? Colors.grey[800] : Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(12)),
+            child: Text(message,
                 style: TextStyle(
                     fontSize: 14,
                     color: dark ? Colors.white70 : Colors.grey.shade700,
-                    height: 1.6),
+                    height: 1.5),
                 textAlign: TextAlign.center),
           ),
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              color: dark ? Colors.grey[700] : Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              'Confidence: ${(result.confidence * 100).toStringAsFixed(0)}%',
-              style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
-            ),
-          ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
+          Text('Confidence: ${(result.confidence * 100).toStringAsFixed(0)}%',
+              style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
         ]),
-        actionsAlignment: MainAxisAlignment.center,
         actions: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(ctx),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: cfg.color,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Text('ถ่ายใหม่',
-                    style:
-                        TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-              ),
-            ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('ถ่ายใหม่',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           ),
         ],
       ),
