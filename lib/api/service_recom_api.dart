@@ -53,34 +53,60 @@ class CatSummary {
   final String catColor;
   final String? breed;
   final int? age;
-  final int gender;
+  final String? gender;             // ✅ AZ (text) ในถัง: "male"/"female"/"unknown"
   final double? weight;
   final String sizeCategory;
   final double? chestCm;
   final double? neckCm;
   final double? bodyLengthCm;
+  final double? confidence;
   final String? ageCategory;
   final String? bodyCondition;
+  final String? bodyConditionDescription;
   final int? bodyConditionScore;
+  final double? bmi;
+  final double? waistCm;
+  final double? backLengthCm;
+  final double? legLengthCm;
+  final String? posture;
+  final String? sizeRecommendation;
+  final String? qualityFlag;
+  final String? analysisVersion;
+  final String? analysisMethod;
   final String? imageCat;
+  final String? thumbnailUrl;
   final DateTime? detectedAt;
+  final DateTime? updatedAt;
 
   CatSummary({
     required this.id,
     required this.catColor,
     this.breed,
     this.age,
-    required this.gender,
+    this.gender,
     this.weight,
     required this.sizeCategory,
     this.chestCm,
     this.neckCm,
     this.bodyLengthCm,
+    this.confidence,
     this.ageCategory,
     this.bodyCondition,
+    this.bodyConditionDescription,
     this.bodyConditionScore,
+    this.bmi,
+    this.waistCm,
+    this.backLengthCm,
+    this.legLengthCm,
+    this.posture,
+    this.sizeRecommendation,
+    this.qualityFlag,
+    this.analysisVersion,
+    this.analysisMethod,
     this.imageCat,
+    this.thumbnailUrl,
     this.detectedAt,
+    this.updatedAt,
   });
 
   static double? _d(dynamic v) {
@@ -103,18 +129,33 @@ class CatSummary {
         catColor: j['cat_color']?.toString() ?? 'Unknown',
         breed: j['breed']?.toString(),
         age: _i(j['age']),
-        gender: _i(j['gender']) ?? 0,
+        gender: j['gender']?.toString(),            // ✅ String? (AZ ในถัง)
         weight: _d(j['weight']),
         sizeCategory: j['size_category']?.toString() ?? 'M',
         chestCm: _d(j['chest_cm']),
         neckCm: _d(j['neck_cm']),
         bodyLengthCm: _d(j['body_length_cm']),
+        confidence: _d(j['confidence']),
         ageCategory: j['age_category']?.toString(),
         bodyCondition: j['body_condition']?.toString(),
+        bodyConditionDescription: j['body_condition_description']?.toString(),
         bodyConditionScore: _i(j['body_condition_score']),
+        bmi: _d(j['bmi']),
+        waistCm: _d(j['waist_cm']),
+        backLengthCm: _d(j['back_length_cm']),
+        legLengthCm: _d(j['leg_length_cm']),
+        posture: j['posture']?.toString(),
+        sizeRecommendation: j['size_recommendation']?.toString(),
+        qualityFlag: j['quality_flag']?.toString(),
+        analysisVersion: j['analysis_version']?.toString(),
+        analysisMethod: j['analysis_method']?.toString(),
         imageCat: j['image_cat']?.toString(),
+        thumbnailUrl: j['thumbnail_url']?.toString(),
         detectedAt: j['detected_at'] != null
             ? DateTime.tryParse(j['detected_at'].toString())
+            : null,
+        updatedAt: j['updated_at'] != null
+            ? DateTime.tryParse(j['updated_at'].toString())
             : null,
       );
 
