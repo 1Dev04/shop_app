@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 import 'package:flutter_application_1/api/service_fav_backet.dart';
@@ -149,8 +148,106 @@ class CatData {
 // MARK: - Widget Entry Point
 // ═══════════════════════════════════════════════════════════════════════════════
 
+
+class _RejectConfig {
+  final String title;
+  final String message;
+  final String emoji;
+  final Color color;
+  const _RejectConfig({
+    required this.title,
+    required this.message,
+    required this.emoji,
+    required this.color,
+  });
+}
+
+const Map<String, _RejectConfig> _rejectConfigs = {
+  'human_in_costume': _RejectConfig(
+    emoji: '🧑‍🎭',
+    title: 'ตรวจพบมนุษย์แต่งชุดแมว',
+    message: 'ระบบตรวจพบมนุษย์ที่แต่งตัวเป็นแมว\nกรุณาถ่ายรูปแมวจริงเท่านั้น',
+    color: Color(0xFFE91E63),
+  ),
+  'stuffed_toy': _RejectConfig(
+    emoji: '🧸',
+    title: 'ตรวจพบตุ๊กตาแมว',
+    message: 'ระบบตรวจพบตุ๊กตาหรือของเล่นรูปแมว\nกรุณาถ่ายรูปแมวที่มีชีวิตจริงเท่านั้น',
+    color: Color(0xFFFF9800),
+  ),
+  'figurine_model': _RejectConfig(
+    emoji: '🗿',
+    title: 'ตรวจพบโมเดล/ฟิกเกอร์แมว',
+    message: 'ระบบตรวจพบโมเดล ฟิกเกอร์ หรือของประดับรูปแมว\nกรุณาถ่ายรูปแมวจริงเท่านั้น',
+    color: Color(0xFF795548),
+  ),
+  'cat_mask_prop': _RejectConfig(
+    emoji: '🎭',
+    title: 'ตรวจพบหน้ากากแมว',
+    message: 'ระบบตรวจพบหน้ากากหรืออุปกรณ์ประกอบฉากรูปแมว\nกรุณาถ่ายรูปแมวจริงเท่านั้น',
+    color: Color(0xFF9C27B0),
+  ),
+  'printed_image': _RejectConfig(
+    emoji: '🖥️',
+    title: 'ตรวจพบภาพจากหน้าจอ/สิ่งพิมพ์',
+    message: 'ระบบตรวจพบว่าถ่ายรูปจากหน้าจอหรือรูปพิมพ์\nกรุณาถ่ายแมวโดยตรงจากกล้อง',
+    color: Color(0xFF607D8B),
+  ),
+  'other_animal': _RejectConfig(
+    emoji: '🐾',
+    title: 'ตรวจพบสัตว์อื่น',
+    message: 'ฟีเจอร์นี้รองรับเฉพาะแมวเท่านั้น',
+    color: Color(0xFFFF5722),
+  ),
+  'no_cat': _RejectConfig(
+    emoji: '😿',
+    title: 'ไม่พบแมวในภาพ',
+    message: 'ไม่สามารถตรวจพบแมวในภาพได้\nลองถ่ายรูปใหม่ให้เห็นแมวชัดเจนทั้งตัว',
+    color: Color(0xFF9E9E9E),
+  ),
+  'cartoon': _RejectConfig(
+    emoji: '🎨',
+    title: 'ไม่ใช่ภาพแมวจริง',
+    message: 'ระบบตรวจพบภาพการ์ตูน รูปวาด หรือ CGI\nกรุณาใช้รูปถ่ายแมวจริงเท่านั้น',
+    color: Color(0xFFFF9800),
+  ),
+  'multiple_cats': _RejectConfig(
+    emoji: '🐱🐱',
+    title: 'ตรวจพบแมวหลายตัว',
+    message: 'ระบบตรวจพบแมวมากกว่า 1 ตัวในภาพ\nกรุณาถ่ายรูปแมวทีละตัวเท่านั้น',
+    color: Color(0xFF9C27B0),
+  ),
+  'is_dog': _RejectConfig(
+    emoji: '🐶',
+    title: 'ตรวจพบสุนัข',
+    message: 'ภาพนี้มีลักษณะของสุนัข\nฟีเจอร์นี้รองรับเฉพาะแมวเท่านั้น',
+    color: Color(0xFF795548),
+  ),
+  'non_cat_animal': _RejectConfig(
+    emoji: '🚫',
+    title: 'ตรวจพบสัตว์อื่น',
+    message: 'ฟีเจอร์นี้รองรับเฉพาะแมวเท่านั้น',
+    color: Color(0xFFFF5722),
+  ),
+  'other': _RejectConfig(
+    emoji: '🤔',
+    title: 'ไม่สามารถระบุได้',
+    message: 'ลองถ่ายรูปใหม่ให้เห็นแมวชัดเจนยิ่งขึ้น',
+    color: Color(0xFFFF9800),
+  ),
+};
+
+const _RejectConfig _defaultRejectConfig = _RejectConfig(
+  emoji: '😿',
+  title: 'ไม่พบแมวในภาพ',
+  message: 'ไม่สามารถตรวจพบแมวในภาพได้\nลองถ่ายรูปใหม่ให้เห็นแมวชัดเจนทั้งตัว',
+  color: Color(0xFF9E9E9E),
+);
+
 class MeasureSizeCat extends StatelessWidget {
   const MeasureSizeCat({super.key});
+
+  
 
   @override
   Widget build(BuildContext context) => MultiBlocProvider(
@@ -160,6 +257,8 @@ class MeasureSizeCat extends StatelessWidget {
         ],
         child: const _MeasureSizeCatView(),
       );
+
+
 }
 
 class _MeasureSizeCatView extends StatefulWidget {
@@ -461,8 +560,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                 ),
               ),
               const Text('✏️ แก้ไขข้อมูลแมว',
-                  style:
-                      TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               TextField(
                 controller: colorCtrl,
@@ -504,8 +602,8 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                 Expanded(
                   child: TextField(
                     controller: weightCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
                     style: const TextStyle(
                         color: Colors.black45, fontWeight: FontWeight.bold),
                     decoration: const InputDecoration(
@@ -531,23 +629,18 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                       height: 40,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: selected
-                            ? Colors.orange
-                            : Colors.grey.shade200,
+                        color: selected ? Colors.orange : Colors.grey.shade200,
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: selected
-                              ? Colors.orange
-                              : Colors.grey.shade300,
+                          color:
+                              selected ? Colors.orange : Colors.grey.shade300,
                           width: 1.5,
                         ),
                       ),
                       child: Text(size,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: selected
-                                ? Colors.white
-                                : Colors.black87,
+                            color: selected ? Colors.white : Colors.black87,
                           )),
                     ),
                   );
@@ -560,8 +653,8 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                   onPressed: () => Navigator.pop(ctx, true),
                   icon: const Icon(Icons.save_outlined),
                   label: const Text('บันทึก',
-                      style: TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.bold)),
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     backgroundColor: Colors.orange,
@@ -580,9 +673,8 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
     if (result != true || !mounted) return;
 
     final updateData = <String, dynamic>{
-      'cat_color': colorCtrl.text.trim().isEmpty
-          ? cat.name
-          : colorCtrl.text.trim(),
+      'cat_color':
+          colorCtrl.text.trim().isEmpty ? cat.name : colorCtrl.text.trim(),
       'size_category': selectedSize,
       if (breedCtrl.text.trim().isNotEmpty) 'breed': breedCtrl.text.trim(),
       if (ageCtrl.text.trim().isNotEmpty)
@@ -628,16 +720,14 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: dark ? Colors.grey[900] : Colors.white,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
           const Icon(Icons.hourglass_bottom_rounded,
               size: 64, color: Colors.orange),
           const SizedBox(height: 16),
           const Text('⏳ ระบบวิเคราะห์เต็มชั่วคราว',
-              style:
-                  TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center),
           const SizedBox(height: 12),
           Container(
@@ -650,9 +740,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
             child: Text(
               'ขณะนี้ระบบ AI วิเคราะห์แมวถูกใช้งานเต็มแล้ว\nกรุณาลองใหม่อีกครั้งในภายหลัง',
               style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.orange.shade800,
-                  height: 1.5),
+                  fontSize: 14, color: Colors.orange.shade800, height: 1.5),
               textAlign: TextAlign.center,
             ),
           ),
@@ -661,8 +749,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('รับทราบ',
-                style:
-                    TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           ),
         ],
       ),
@@ -679,8 +766,8 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
       pageBuilder: (_, __, ___) {
         return BlocProvider(
           create: (_) => ItemDetailBloc()
-            ..add(ItemDetailFavCheckRequested(
-                product['uuid']?.toString() ?? '')),
+            ..add(
+                ItemDetailFavCheckRequested(product['uuid']?.toString() ?? '')),
           child: ItemDetailsCard(itemDetails: product),
         );
       },
@@ -729,92 +816,83 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
     _showItemDetailPopup(product);
   }
 
+
+
   void _showRejectDialog(DetectCatResult result) {
     if (!mounted || _isDisposed) return;
     final dark = Theme.of(context).brightness == Brightness.dark;
-
-    String title, message;
-    IconData icon;
-    Color iconColor;
-
-    switch (result.reason) {
-      case 'multiple_cats':
-        title = '🐱🐱 ตรวจพบแมวหลายตัว';
-        message =
-            'ระบบตรวจพบแมวมากกว่า 1 ตัวในภาพ\nกรุณาถ่ายรูปแมวทีละตัวเท่านั้น';
-        icon = Icons.pets;
-        iconColor = Colors.purple;
-      case 'cartoon':
-        title = '🎨 ไม่ใช่ภาพแมวจริง';
-        message =
-            'ระบบตรวจพบว่าเป็นภาพการ์ตูน รูปวาด โมเดล\nหรือของเล่น กรุณาใช้รูปถ่ายแมวจริงเท่านั้น';
-        icon = Icons.draw_outlined;
-        iconColor = Colors.orange;
-      case 'is_dog':
-        title = '🐶 ตรวจพบสุนัข';
-        message =
-            'ภาพนี้มีลักษณะของสุนัข\nฟีเจอร์นี้รองรับเฉพาะแมวเท่านั้น';
-        icon = Icons.pets;
-        iconColor = Colors.brown;
-      case 'non_cat_animal':
-        title = '🚫 ตรวจพบสัตว์อื่น';
-        message = 'ฟีเจอร์นี้รองรับเฉพาะแมวเท่านั้น';
-        icon = Icons.pets;
-        iconColor = Colors.deepOrange;
-      case 'other':
-        title = '🤔 ไม่สามารถระบุได้';
-        message = 'ลองถ่ายรูปใหม่ให้เห็นแมวชัดเจนยิ่งขึ้น';
-        icon = Icons.help_outline;
-        iconColor = Colors.orange;
-      default:
-        title = '😿 ไม่พบแมวในภาพ';
-        message =
-            'ไม่สามารถตรวจพบแมวในภาพได้\nลองถ่ายรูปใหม่ให้เห็นแมวชัดเจนทั้งตัว';
-        icon = Icons.search_off;
-        iconColor = Colors.grey;
-    }
+    final cfg = _rejectConfigs[result.reason] ?? _defaultRejectConfig;
 
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: dark ? Colors.grey[900] : Colors.white,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        contentPadding: const EdgeInsets.fromLTRB(24, 28, 24, 0),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 64, color: iconColor),
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: cfg.color.withOpacity(0.12),
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: Text(cfg.emoji, style: const TextStyle(fontSize: 38)),
+          ),
           const SizedBox(height: 16),
-          Text(title,
-              style: const TextStyle(
-                  fontSize: 18, fontWeight: FontWeight.bold),
+          Text(cfg.title,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center),
           const SizedBox(height: 12),
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-                color:
-                    dark ? Colors.grey[800] : Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(12)),
-            child: Text(message,
+              color: dark ? Colors.grey[800] : cfg.color.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: cfg.color.withOpacity(0.25)),
+            ),
+            child: Text(cfg.message,
                 style: TextStyle(
                     fontSize: 14,
-                    color:
-                        dark ? Colors.white70 : Colors.grey.shade700,
-                    height: 1.5),
+                    color: dark ? Colors.white70 : Colors.grey.shade700,
+                    height: 1.6),
                 textAlign: TextAlign.center),
           ),
-          const SizedBox(height: 8),
-          Text(
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: dark ? Colors.grey[700] : Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
               'Confidence: ${(result.confidence * 100).toStringAsFixed(0)}%',
-              style:
-                  TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+              style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+            ),
+          ),
+          const SizedBox(height: 4),
         ]),
+        actionsAlignment: MainAxisAlignment.center,
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('ถ่ายใหม่',
-                style: TextStyle(
-                    fontWeight: FontWeight.bold, fontSize: 16)),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(ctx),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: cfg.color,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('ถ่ายใหม่',
+                    style:
+                        TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+              ),
+            ),
           ),
         ],
       ),
@@ -827,8 +905,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: isDark ? Colors.grey[900] : Colors.white,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('ยืนยันการลบ'),
         content: const Text('ต้องการลบข้อมูลแมวนี้ใช่หรือไม่?'),
         actions: [
@@ -838,8 +915,8 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('ลบ',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            child:
+                const Text('ลบ', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -852,8 +929,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
 
   void _showSuccessMessage(String m) {
     if (!mounted || _isDisposed) return;
-    showTopSnackBar(Overlay.of(context),
-        CustomSnackBar.success(message: m),
+    showTopSnackBar(Overlay.of(context), CustomSnackBar.success(message: m),
         animationDuration: const Duration(milliseconds: 200),
         reverseAnimationDuration: const Duration(milliseconds: 200),
         displayDuration: const Duration(milliseconds: 1000));
@@ -893,8 +969,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
               color: dark ? Colors.white : Colors.black),
         ),
         backgroundColor: dark ? Colors.black : Colors.white,
-        iconTheme:
-            IconThemeData(color: dark ? Colors.white : Colors.black),
+        iconTheme: IconThemeData(color: dark ? Colors.white : Colors.black),
         actions: [
           IconButton(
             icon: const Icon(Icons.history_rounded),
@@ -909,8 +984,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
           BlocListener<DetectCatBloc, DetectCatState>(
             listener: (context, state) {
               if (state is DetectCatLoading) return;
-              if (mounted && !_isDisposed)
-                setState(() => _isCapturing = false);
+              if (mounted && !_isDisposed) setState(() => _isCapturing = false);
               _detectCleanup?.call();
               _detectCleanup = null;
 
@@ -952,8 +1026,8 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
             if (state is CatAnalysisUploading) imgFile = state.imageFile;
             if (state is CatAnalysisAnalyzing) imgFile = state.imageFile;
 
-            final processing = state is CatAnalysisUploading ||
-                state is CatAnalysisAnalyzing;
+            final processing =
+                state is CatAnalysisUploading || state is CatAnalysisAnalyzing;
             final progress = state is CatAnalysisUploading
                 ? 0.3
                 : state is CatAnalysisAnalyzing
@@ -986,15 +1060,13 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                             height: screenH * 0.78,
                             child: _buildCameraPreview()),
                       if (state is CatImageReady)
-                        _buildImageSection(
-                            dark, state.imageFile, lang, false),
+                        _buildImageSection(dark, state.imageFile, lang, false),
                       if (state is CatAnalysisUploading ||
                           state is CatAnalysisAnalyzing)
                         _buildImageSection(dark, imgFile!, lang, true),
                       // ── Result Section: ใช้ _recomItems จาก API ──────────
                       if (showResult && catData != null)
-                        _buildResultSection(
-                            dark, catData, screenH, lang),
+                        _buildResultSection(dark, catData, screenH, lang),
                     ]),
                   ),
                 ),
@@ -1026,11 +1098,9 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
         left: 24,
         right: 24,
         child: Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-              color: Colors.black54,
-              borderRadius: BorderRadius.circular(14)),
+              color: Colors.black54, borderRadius: BorderRadius.circular(14)),
           child: const Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -1062,8 +1132,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                     fontWeight: FontWeight.bold)),
             SizedBox(height: 6),
             Text('กรุณารอสักครู่',
-                style:
-                    TextStyle(color: Colors.white70, fontSize: 13)),
+                style: TextStyle(color: Colors.white70, fontSize: 13)),
           ])),
         ),
     ]);
@@ -1071,8 +1140,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
 
   // ─── Loading Overlay ─────────────────────────────────────────────────────────
 
-  Widget _buildLoadingOverlay(
-      File? file, double progress, String label) {
+  Widget _buildLoadingOverlay(File? file, double progress, String label) {
     return Container(
       color: Colors.white.withOpacity(0.85),
       child: Center(
@@ -1088,8 +1156,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                   value: v,
                   strokeWidth: 6,
                   backgroundColor: Colors.grey.shade300,
-                  valueColor:
-                      const AlwaysStoppedAnimation(Colors.orange)),
+                  valueColor: const AlwaysStoppedAnimation(Colors.orange)),
             ),
           ),
           Container(
@@ -1109,12 +1176,10 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
         ]),
         const SizedBox(height: 20),
         Text('${(progress * 100).toInt()}%',
-            style: const TextStyle(
-                fontSize: 22, fontWeight: FontWeight.bold)),
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
         const SizedBox(height: 6),
         Text(label,
-            style: TextStyle(
-                fontSize: 14, color: Colors.grey.shade700)),
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade700)),
       ])),
     );
   }
@@ -1148,8 +1213,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                 color: dark ? Colors.grey[850] : Colors.grey[50],
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                    color:
-                        dark ? Colors.grey[700]! : Colors.grey[300]!,
+                    color: dark ? Colors.grey[700]! : Colors.grey[300]!,
                     width: 2)),
             child: Row(children: [
               Container(
@@ -1158,9 +1222,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                 decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                        color: dark
-                            ? Colors.grey[600]!
-                            : Colors.grey[400]!,
+                        color: dark ? Colors.grey[600]! : Colors.grey[400]!,
                         width: 2)),
                 child: ClipRRect(
                     borderRadius: BorderRadius.circular(10),
@@ -1171,26 +1233,17 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                    _infoRow(lang.translate(en: 'Cat color:', th: 'สีแมว:'),
+                        'N/A', dark),
+                    const SizedBox(height: 10),
                     _infoRow(
-                        lang.translate(
-                            en: 'Cat color:', th: 'สีแมว:'),
-                        'N/A',
+                        lang.translate(en: 'Age:', th: 'อายุ:'), 'N/A', dark),
+                    const SizedBox(height: 10),
+                    _infoRow(lang.translate(en: 'Breed:', th: 'พันธุ์:'), 'N/A',
                         dark),
                     const SizedBox(height: 10),
                     _infoRow(
-                        lang.translate(en: 'Age:', th: 'อายุ:'),
-                        'N/A',
-                        dark),
-                    const SizedBox(height: 10),
-                    _infoRow(
-                        lang.translate(en: 'Breed:', th: 'พันธุ์:'),
-                        'N/A',
-                        dark),
-                    const SizedBox(height: 10),
-                    _infoRow(
-                        lang.translate(en: 'Size:', th: 'ขนาด:'),
-                        'N/A',
-                        dark),
+                        lang.translate(en: 'Size:', th: 'ขนาด:'), 'N/A', dark),
                   ])),
             ]),
           ),
@@ -1202,9 +1255,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                 borderRadius: BorderRadius.circular(12)),
             child: Row(children: [
               Icon(Icons.info_outline,
-                  color: dark
-                      ? Colors.orange[300]
-                      : Colors.orange[700],
+                  color: dark ? Colors.orange[300] : Colors.orange[700],
                   size: 20),
               const SizedBox(width: 8),
               Expanded(
@@ -1214,8 +1265,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                     th: 'โปรดมั่นใจว่ามองเห็นรูปร่างของแมวชัดเจน เพื่อความแม่นยำในการวัดขนาด'),
                 style: TextStyle(
                     fontSize: 12,
-                    color:
-                        dark ? Colors.white70 : Colors.black87),
+                    color: dark ? Colors.white70 : Colors.black87),
               )),
             ]),
           ),
@@ -1225,26 +1275,24 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                 child: ElevatedButton.icon(
               onPressed: loading
                   ? null
-                  : () => context
-                      .read<CatAnalysisBloc>()
-                      .add(CatAnalysisStarted()),
+                  : () =>
+                      context.read<CatAnalysisBloc>().add(CatAnalysisStarted()),
               icon: loading
                   ? const SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white)))
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white)))
                   : const Icon(Icons.analytics),
               label: Text(
                 loading
                     ? lang.translate(
                         en: 'Processing...', th: 'กำลังวิเคราะห์...')
-                    : lang.translate(
-                        en: 'Analyze Data', th: 'วิเคราะห์ข้อมูล'),
-                style: const TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.bold),
+                    : lang.translate(en: 'Analyze Data', th: 'วิเคราะห์ข้อมูล'),
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
@@ -1258,8 +1306,8 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
             ElevatedButton(
               onPressed: loading ? null : _clearData,
               style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                      vertical: 14, horizontal: 20),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
                   backgroundColor: Colors.red,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
@@ -1284,11 +1332,9 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
               color: dark ? Colors.grey[850] : Colors.grey[50],
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                  color:
-                      dark ? Colors.grey[700]! : Colors.grey[300]!,
+                  color: dark ? Colors.grey[700]! : Colors.grey[300]!,
                   width: 2)),
-          child:
-              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             // รูปแมว
             Container(
               width: 100,
@@ -1296,20 +1342,16 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
               decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                      color:
-                          dark ? Colors.grey[600]! : Colors.grey[400]!,
+                      color: dark ? Colors.grey[600]! : Colors.grey[400]!,
                       width: 2)),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(10),
                 child: cat.imageUrl.isNotEmpty
                     ? Image.network(cat.imageUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Icon(
-                            Icons.broken_image,
-                            size: 40,
-                            color: Colors.grey[400]))
-                    : Icon(Icons.pets,
-                        size: 40, color: Colors.grey[400]),
+                        errorBuilder: (_, __, ___) => Icon(Icons.broken_image,
+                            size: 40, color: Colors.grey[400]))
+                    : Icon(Icons.pets, size: 40, color: Colors.grey[400]),
               ),
             ),
             const SizedBox(width: 16),
@@ -1317,26 +1359,17 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                 child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                  _infoRow(
-                      lang.translate(
-                          en: 'Cat Color:', th: 'สีแมว:'),
-                      cat.name,
-                      dark),
+                  _infoRow(lang.translate(en: 'Cat Color:', th: 'สีแมว:'),
+                      cat.name, dark),
                   const SizedBox(height: 10),
-                  _infoRow(
-                      lang.translate(en: 'Age:', th: 'อายุ:'),
-                      cat.age != null ? '${cat.age} years' : 'N/A',
-                      dark),
+                  _infoRow(lang.translate(en: 'Age:', th: 'อายุ:'),
+                      cat.age != null ? '${cat.age} years' : 'N/A', dark),
                   const SizedBox(height: 10),
-                  _infoRow(
-                      lang.translate(en: 'Breed:', th: 'พันธุ์:'),
-                      cat.breed ?? 'N/A',
-                      dark),
+                  _infoRow(lang.translate(en: 'Breed:', th: 'พันธุ์:'),
+                      cat.breed ?? 'N/A', dark),
                   const SizedBox(height: 10),
-                  _infoRow(
-                      lang.translate(en: 'Size:', th: 'ขนาด:'),
-                      cat.sizeCategory,
-                      dark),
+                  _infoRow(lang.translate(en: 'Size:', th: 'ขนาด:'),
+                      cat.sizeCategory, dark),
                 ])),
             // ✏️ Edit / 🗑️ Delete
             Column(mainAxisSize: MainAxisSize.min, children: [
@@ -1357,9 +1390,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
 
         // ── Recommended Products header ──────────────────────────────────
         Row(children: [
-          Text(
-              lang.translate(
-                  en: 'Recommended Products', th: 'สินค้าแนะนำ'),
+          Text(lang.translate(en: 'Recommended Products', th: 'สินค้าแนะนำ'),
               style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -1387,8 +1418,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                 CircularProgressIndicator(color: Colors.orange),
                 SizedBox(height: 12),
                 Text('กำลังโหลดสินค้าแนะนำ...',
-                    style:
-                        TextStyle(fontSize: 13, color: Colors.grey)),
+                    style: TextStyle(fontSize: 13, color: Colors.grey)),
               ]),
             ),
           )
@@ -1399,15 +1429,13 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
             padding: const EdgeInsets.symmetric(vertical: 32),
             alignment: Alignment.center,
             child: Column(children: [
-              Icon(Icons.search_off,
-                  size: 48, color: Colors.grey[400]),
+              Icon(Icons.search_off, size: 48, color: Colors.grey[400]),
               const SizedBox(height: 8),
               Text(
                   lang.translate(
                       en: 'No matching products found',
                       th: 'ไม่พบสินค้าที่เหมาะสม'),
-                  style: TextStyle(
-                      color: Colors.grey[500], fontSize: 14)),
+                  style: TextStyle(color: Colors.grey[500], fontSize: 14)),
             ]),
           )
 
@@ -1416,8 +1444,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            gridDelegate:
-                const SliverGridDelegateWithFixedCrossAxisCount(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
@@ -1434,18 +1461,14 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
             const SizedBox(height: 16),
             Center(
               child: _recomLoadingMore
-                  ? const CircularProgressIndicator(
-                      color: Colors.orange)
+                  ? const CircularProgressIndicator(color: Colors.orange)
                   : OutlinedButton.icon(
                       onPressed: _loadMoreRecommendations,
-                      icon: const Icon(Icons.expand_more,
-                          color: Colors.orange),
+                      icon: const Icon(Icons.expand_more, color: Colors.orange),
                       label: Text(
-                        lang.translate(
-                            en: 'Load more', th: 'โหลดเพิ่ม'),
+                        lang.translate(en: 'Load more', th: 'โหลดเพิ่ม'),
                         style: const TextStyle(
-                            color: Colors.orange,
-                            fontWeight: FontWeight.bold),
+                            color: Colors.orange, fontWeight: FontWeight.bold),
                       ),
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: Colors.orange),
@@ -1496,8 +1519,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black
-                      .withOpacity(dark ? 0.3 : 0.08),
+                  color: Colors.black.withOpacity(dark ? 0.3 : 0.08),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -1511,29 +1533,24 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                 // ── รูป + ❤️ ──────────────────────────────────────────
                 Stack(children: [
                   ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(16)),
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(16)),
                     child: AspectRatio(
                       aspectRatio: 1.0,
                       child: item.resolvedImageUrl.isNotEmpty
-                          ? Image.network(
-                              item.resolvedImageUrl,
+                          ? Image.network(item.resolvedImageUrl,
                               fit: BoxFit.cover,
                               errorBuilder: (_, __, ___) => Container(
                                     color: dark
                                         ? Colors.grey[800]
                                         : Colors.grey[200],
                                     child: Icon(Icons.shopping_bag,
-                                        size: 40,
-                                        color: Colors.grey[400]),
+                                        size: 40, color: Colors.grey[400]),
                                   ))
                           : Container(
-                              color: dark
-                                  ? Colors.grey[800]
-                                  : Colors.grey[200],
+                              color: dark ? Colors.grey[800] : Colors.grey[200],
                               child: Icon(Icons.shopping_bag,
-                                  size: 40,
-                                  color: Colors.grey[400]),
+                                  size: 40, color: Colors.grey[400]),
                             ),
                     ),
                   ),
@@ -1567,9 +1584,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
-                            isFav
-                                ? Icons.favorite
-                                : Icons.favorite_border,
+                            isFav ? Icons.favorite : Icons.favorite_border,
                             color: Colors.white,
                             size: 16),
                       ),
@@ -1612,17 +1627,14 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                         style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
-                            color: dark
-                                ? Colors.white
-                                : Colors.black87),
+                            color: dark ? Colors.white : Colors.black87),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
                       // ราคา
                       Row(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           if (item.hasDiscount) ...[
                             Text(
@@ -1630,10 +1642,8 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                               style: TextStyle(
                                 fontSize: 11,
                                 color: Colors.grey[400],
-                                decoration:
-                                    TextDecoration.lineThrough,
-                                decorationColor:
-                                    Colors.grey[400],
+                                decoration: TextDecoration.lineThrough,
+                                decorationColor: Colors.grey[400],
                               ),
                             ),
                             const SizedBox(width: 4),
@@ -1652,13 +1662,11 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                           if (item.discountPercent != null) ...[
                             const SizedBox(width: 4),
                             Container(
-                              padding:
-                                  const EdgeInsets.symmetric(
-                                      horizontal: 4, vertical: 1),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 4, vertical: 1),
                               decoration: BoxDecoration(
                                 color: Colors.red.shade100,
-                                borderRadius:
-                                    BorderRadius.circular(4),
+                                borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
                                 '-${item.discountPercent}',
@@ -1677,9 +1685,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                         children: [
                           Icon(Icons.touch_app_outlined,
                               size: 11,
-                              color: dark
-                                  ? Colors.white38
-                                  : Colors.grey[400]),
+                              color: dark ? Colors.white38 : Colors.grey[400]),
                           const SizedBox(width: 3),
                           Flexible(
                             child: Text(
@@ -1688,9 +1694,8 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                                   th: 'แตะเพื่อดูรายละเอียด'),
                               style: TextStyle(
                                   fontSize: 10,
-                                  color: dark
-                                      ? Colors.white38
-                                      : Colors.grey[400]),
+                                  color:
+                                      dark ? Colors.white38 : Colors.grey[400]),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -1718,14 +1723,11 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
           color: dark ? Colors.grey[900] : Colors.white,
           boxShadow: const [
             BoxShadow(
-                color: Colors.black12,
-                blurRadius: 8,
-                offset: Offset(0, -2))
+                color: Colors.black12, blurRadius: 8, offset: Offset(0, -2))
           ]),
       child: SafeArea(
           top: false,
-          child:
-              Column(mainAxisSize: MainAxisSize.min, children: [
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
             Text(
               lang.translate(
                   en: 'Take a photo: Place the cat in the center of the frame and see the whole body\n'
@@ -1742,30 +1744,25 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
             Row(children: [
               Expanded(
                   child: ElevatedButton.icon(
-                onPressed:
-                    _isCapturing ? null : _captureFromCamera,
+                onPressed: _isCapturing ? null : _captureFromCamera,
                 icon: _isCapturing
                     ? const SizedBox(
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation(
-                                Colors.white)))
+                            valueColor: AlwaysStoppedAnimation(Colors.white)))
                     : const Icon(Icons.camera_alt),
                 label: Text(
                   _isCapturing
                       ? lang.translate(
-                          en: 'Detecting...',
-                          th: 'กำลังตรวจสอบ...')
-                      : lang.translate(
-                          en: 'Take Photo', th: 'ถ่ายรูป'),
+                          en: 'Detecting...', th: 'กำลังตรวจสอบ...')
+                      : lang.translate(en: 'Take Photo', th: 'ถ่ายรูป'),
                   style: const TextStyle(
                       fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 14),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                     backgroundColor: Colors.blue,
                     foregroundColor: Colors.white,
                     disabledBackgroundColor: Colors.grey[400],
@@ -1775,18 +1772,13 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
               const SizedBox(width: 12),
               Expanded(
                   child: ElevatedButton.icon(
-                onPressed:
-                    _isCapturing ? null : _pickFromGallery,
+                onPressed: _isCapturing ? null : _pickFromGallery,
                 icon: const Icon(Icons.photo_library),
-                label: Text(
-                    lang.translate(
-                        en: 'Choose Photo', th: 'เลือกรูป'),
+                label: Text(lang.translate(en: 'Choose Photo', th: 'เลือกรูป'),
                     style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold)),
+                        fontSize: 16, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 14),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                     backgroundColor: Colors.green,
                     foregroundColor: Colors.white,
                     disabledBackgroundColor: Colors.grey[400],
