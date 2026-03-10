@@ -712,11 +712,11 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
         message = 'ระบบตรวจพบหน้ากากหรืออุปกรณ์ประกอบฉากรูปแมว\nกรุณาถ่ายรูปแมวจริงเท่านั้น';
         icon = Icons.theater_comedy_outlined;
         iconColor = Colors.purple;
-      case 'printed_image':
-        title = '🖥️ ตรวจพบภาพจากหน้าจอ/สิ่งพิมพ์';
-        message = 'ระบบตรวจพบว่าถ่ายรูปจากหน้าจอหรือรูปพิมพ์\nกรุณาถ่ายแมวโดยตรงจากกล้อง';
-        icon = Icons.monitor_outlined;
-        iconColor = Colors.blueGrey;
+      // case 'printed_image':
+      //   title = '🖥️ ตรวจพบภาพจากหน้าจอ/สิ่งพิมพ์';
+      //   message = 'ระบบตรวจพบว่าถ่ายรูปจากหน้าจอหรือรูปพิมพ์\nกรุณาถ่ายแมวโดยตรงจากกล้อง';
+      //   icon = Icons.monitor_outlined;
+      //   iconColor = Colors.blueGrey;
       case 'other_animal':
       case 'no_cat':
         title = '😿 ไม่พบแมวในภาพ';

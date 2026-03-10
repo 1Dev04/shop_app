@@ -14,9 +14,7 @@ String getBaseUrl() {
     defaultValue: 'local',
   );
 
-  if (env == 'prod') {
-    return 'https://catshop-backend-9pzq.onrender.com';
-  }
+  if (env == 'prod') return 'https://backend-catshop.onrender.com';
 
   if (env == 'prod-v2') {
     return 'https://catshop-backend-v2.onrender.com';
