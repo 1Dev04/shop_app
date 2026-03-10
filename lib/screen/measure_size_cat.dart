@@ -7,6 +7,7 @@ import 'package:flutter_application_1/blocs/cat_detect/detect_bloc.dart';
 import 'package:flutter_application_1/blocs/cat_item_detail/item_detail_bloc.dart';
 import 'package:flutter_application_1/components/home_page.dart';
 import 'package:flutter_application_1/provider/language_provider.dart';
+import 'package:flutter_application_1/screen/basket_page.dart';
 import 'package:flutter_application_1/screen/history_page.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -868,6 +869,13 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
         iconTheme: IconThemeData(color: dark ? Colors.white : Colors.black),
         actions: [
           IconButton(
+            icon: const Icon(Icons.shopping_basket_outlined),
+            onPressed: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const BasketPage())),
+            tooltip: 'ตระกร้า',
+          ),
+          SizedBox(width: 10),
+          IconButton(
             icon: const Icon(Icons.history_rounded),
             onPressed: () => Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const HistoryPage())),
@@ -1310,11 +1318,17 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
 
   Widget _infoRow(String label, String value, bool dark) {
     return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label,
-          style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: dark ? Colors.white70 : Colors.black87)),
+      Flexible(
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: 12,
+          color: dark ? Colors.white70 : Colors.black87,
+        ),
+      ),
+    ),
       const SizedBox(width: 8),
       Expanded(
           child: Text(value,
