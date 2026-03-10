@@ -982,15 +982,22 @@ class _HistoryPageState extends State<HistoryPage>
 
   // ── Chip Widgets ───────────────────────────────────────────────────────────
   Widget _infoChip(IconData icon, String text, bool isDark) {
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      Icon(icon, size: 13, color: Colors.grey.shade500),
-      const SizedBox(width: 4),
-      Text(text,
-          style: TextStyle(
-              fontSize: 12,
-              color: isDark ? Colors.grey.shade300 : Colors.grey.shade600)),
-    ]);
-  }
+  return Row(mainAxisSize: MainAxisSize.min, children: [
+    Icon(icon, size: 13, color: Colors.grey.shade500),
+    const SizedBox(width: 4),
+    Flexible(
+      child: Text(
+        text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: 12,
+          color: isDark ? Colors.grey.shade300 : Colors.grey.shade600,
+        ),
+      ),
+    ),
+  ]);
+}
 
   Widget _measureChip(String label, String value, bool isDark) {
     return Container(
