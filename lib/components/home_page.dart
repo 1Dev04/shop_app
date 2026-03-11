@@ -856,7 +856,7 @@ class _ItemDetailsCardState extends State<ItemDetailsCard> {
                                               BorderRadius.circular(6),
                                         ),
                                         child: Text(
-                                          '-${widget.itemDetails['discount_percent']?.toString() ?? '0'}%',
+                                          '-${widget.itemDetails['discount_percent']?.toString() ?? '0'}',
                                           style: const TextStyle(
                                             color: Colors.white,
                                             fontSize: 16,

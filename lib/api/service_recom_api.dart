@@ -24,7 +24,7 @@ import 'dart:io';
 // ── Base URL (เหมือน service_cat_api.dart) ───────────────────────────────────
 String _getBaseUrl() {
   const String env = String.fromEnvironment('ENV', defaultValue: 'local');
-   if (env == 'prod') return 'https://backend-catshop.onrender.com';
+  if (env == 'prod') return 'https://backend-catshop.onrender.com';
   if (env == 'prod-v2') return 'https://catshop-backend-v2.onrender.com';
   if (env == 'prod-v3') return 'https://cat-shop-backend.onrender.com';
   if (kIsWeb) return 'http://localhost:10000';
@@ -53,7 +53,7 @@ class CatSummary {
   final String catColor;
   final String? breed;
   final int? age;
-  final String? gender;             // ✅ AZ (text) ในถัง: "male"/"female"/"unknown"
+  final String? gender; // ✅ AZ (text) ในถัง: "male"/"female"/"unknown"
   final double? weight;
   final String sizeCategory;
   final double? chestCm;
@@ -129,7 +129,7 @@ class CatSummary {
         catColor: j['cat_color']?.toString() ?? 'Unknown',
         breed: j['breed']?.toString(),
         age: _i(j['age']),
-        gender: j['gender']?.toString(),            // ✅ String? (AZ ในถัง)
+        gender: j['gender']?.toString(), // ✅ String? (AZ ในถัง)
         weight: _d(j['weight']),
         sizeCategory: j['size_category']?.toString() ?? 'M',
         chestCm: _d(j['chest_cm']),
@@ -317,12 +317,11 @@ class RecommendItem {
       );
 
   /// ราคาที่แสดงจริง (discount ถ้ามี)
-  double get displayPrice {
-    if (discountPrice != null && discountPrice! < price) return discountPrice!;
-    return price;
-  }
 
-  bool get hasDiscount => discountPrice != null && discountPrice! < price;
+  double get displayPrice => hasDiscount ? discountPrice! : price;
+
+  bool get hasDiscount =>
+      discountPrice != null && discountPrice! > 0 && discountPrice! < price;
 
   /// ดึง image URL จาก images map หรือ image_url
   String get resolvedImageUrl {
@@ -360,9 +359,8 @@ class RecommendDetail {
     final itemJson = Map<String, dynamic>.from(j);
     return RecommendDetail(
       item: RecommendItem.fromJson(itemJson),
-      catMatch: j['cat_match'] != null
-          ? CatMatchInfo.fromJson(j['cat_match'])
-          : null,
+      catMatch:
+          j['cat_match'] != null ? CatMatchInfo.fromJson(j['cat_match']) : null,
       clothingSeller: j['clothing_seller']?.toString(),
       createdAt: j['created_at'] != null
           ? DateTime.tryParse(j['created_at'].toString())
@@ -399,8 +397,12 @@ class Pagination {
       );
 
   factory Pagination.empty() => const Pagination(
-        total: 0, page: 1, pageSize: 10,
-        totalPages: 0, hasNext: false, hasPrev: false,
+        total: 0,
+        page: 1,
+        pageSize: 10,
+        totalPages: 0,
+        hasNext: false,
+        hasPrev: false,
       );
 }
 
