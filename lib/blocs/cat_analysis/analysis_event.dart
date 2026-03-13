@@ -1,6 +1,5 @@
 part of 'analysis_bloc.dart';
 
-
 abstract class CatAnalysisEvent {}
 
 // ถ่ายรูปหรือเลือกรูปสำเร็จ → พร้อมวิเคราะห์
@@ -23,3 +22,9 @@ class CatDataUpdated extends CatAnalysisEvent {
 
 // ลบข้อมูลแมว
 class CatDataDeleted extends CatAnalysisEvent {}
+
+
+class CatPreloadSuccess extends CatAnalysisEvent {
+  final int catId;
+  CatPreloadSuccess({required this.catId});
+}

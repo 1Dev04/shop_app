@@ -5,6 +5,7 @@ import 'package:flutter_application_1/api/service_recom_api.dart';
 import 'package:flutter_application_1/blocs/cat_analysis/analysis_bloc.dart';
 import 'package:flutter_application_1/blocs/cat_detect/detect_bloc.dart';
 import 'package:flutter_application_1/blocs/cat_item_detail/item_detail_bloc.dart';
+import 'package:flutter_application_1/components/controll_btn.dart';
 import 'package:flutter_application_1/components/home_page.dart';
 import 'package:flutter_application_1/provider/language_provider.dart';
 import 'package:flutter_application_1/screen/basket_page.dart';
@@ -150,7 +151,8 @@ class CatData {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 class MeasureSizeCat extends StatelessWidget {
-  const MeasureSizeCat({super.key});
+  final int? preloadCatId; // ✅ เพิ่ม
+  const MeasureSizeCat({super.key, this.preloadCatId});
 
   @override
   Widget build(BuildContext context) => MultiBlocProvider(
@@ -158,12 +160,14 @@ class MeasureSizeCat extends StatelessWidget {
           BlocProvider(create: (_) => CatAnalysisBloc()),
           BlocProvider(create: (_) => DetectCatBloc()),
         ],
-        child: const _MeasureSizeCatView(),
+        child: _MeasureSizeCatView(preloadCatId: preloadCatId),
       );
 }
 
 class _MeasureSizeCatView extends StatefulWidget {
-  const _MeasureSizeCatView();
+  final int? preloadCatId;
+  const _MeasureSizeCatView({this.preloadCatId});
+
   @override
   State<_MeasureSizeCatView> createState() => _MeasureSizeCatState();
 }
@@ -195,7 +199,13 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
   @override
   void initState() {
     super.initState();
-    if (!_useMock) _initCamera();
+    if (widget.preloadCatId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _preloadFromHistory(widget.preloadCatId!);
+      });
+    } else if (!_useMock) {
+      _initCamera(); // เดิม
+    }
   }
 
   @override
@@ -226,6 +236,29 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
       if (mounted && !_isDisposed) setState(() {});
     } catch (e) {
       if (mounted && !_isDisposed) _showError('เปิดกล้องไม่สำเร็จ: $e');
+    }
+  }
+
+  Future<void> _preloadFromHistory(int catId) async {
+    if (!mounted || _isDisposed) return;
+    setState(() => _recomLoading = true);
+    try {
+      // ✅ ส่ง catId → backend ดึง recommendation ของแมวตัวนี้โดยตรง
+      final result = await _recomApi.getRecommendations(page: 1, catId: catId);
+      if (!mounted || _isDisposed) return;
+      setState(() {
+        _recomCat = result.cat;
+        _recomItems = result.items;
+        _recomPagination = result.pagination;
+        _recomLoading = false;
+      });
+      if (mounted) {
+        context.read<CatAnalysisBloc>().add(CatPreloadSuccess(catId: catId));
+      }
+    } catch (e) {
+      if (!mounted || _isDisposed) return;
+      setState(() => _recomLoading = false);
+      _showError('โหลดข้อมูลแมวไม่สำเร็จ: $e');
     }
   }
 
@@ -411,451 +444,543 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
 
   // ─── Edit Cat ────────────────────────────────────────────────────────────────
 
-Future<void> _editCat(CatData cat) async {
-  final catId = _recomCat?.id ?? cat.dbId;
-  if (catId == null) {
-    _showError('ไม่พบ id ของแมว');
-    return;
-  }
+  Future<void> _editCat(CatData cat) async {
+    final catId = _recomCat?.id ?? cat.dbId;
+    if (catId == null) {
+      _showError('ไม่พบ id ของแมว');
+      return;
+    }
 
-  final colorCtrl  = TextEditingController(text: cat.name);
-  final breedCtrl  = TextEditingController(text: cat.breed ?? '');
-  final ageCtrl    = TextEditingController(text: cat.age?.toString() ?? '');
-  final weightCtrl = TextEditingController(text: cat.weight.toString());
+    final colorCtrl = TextEditingController(text: cat.name);
+    final breedCtrl = TextEditingController(text: cat.breed ?? '');
+    final ageCtrl = TextEditingController(text: cat.age?.toString() ?? '');
+    final weightCtrl = TextEditingController(text: cat.weight.toString());
 
-  final chestCtrl   = TextEditingController();
-  final neckCtrl    = TextEditingController();
-  final waistCtrl   = TextEditingController();
-  final bodyLenCtrl = TextEditingController();
-  final backLenCtrl = TextEditingController();
-  final legLenCtrl  = TextEditingController();
+    final chestCtrl = TextEditingController();
+    final neckCtrl = TextEditingController();
+    final waistCtrl = TextEditingController();
+    final bodyLenCtrl = TextEditingController();
+    final backLenCtrl = TextEditingController();
+    final legLenCtrl = TextEditingController();
 
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-  String  selectedSize = cat.sizeCategory;
-  bool    showMeasure  = false;
-  String? calculatedSize;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    String selectedSize = cat.sizeCategory;
+    bool showMeasure = false;
+    String? calculatedSize;
 
-  // ── default measurement ต่อ size (midpoint ของช่วง) ─────────────────────
-  // XS: รอบอก 28-32  S: 33-36  M: 37-40  L: 41-44  XL: 45-50+
-  const Map<String, Map<String, double>> sizeDefaults = {
-    'XS': {'chest': 30, 'neck': 18, 'waist': 26, 'body': 28, 'back': 25, 'leg': 8},
-    'S':  {'chest': 34, 'neck': 20, 'waist': 28, 'body': 32, 'back': 28, 'leg': 9},
-    'M':  {'chest': 38, 'neck': 22, 'waist': 32, 'body': 36, 'back': 32, 'leg': 10},
-    'L':  {'chest': 42, 'neck': 24, 'waist': 36, 'body': 40, 'back': 36, 'leg': 11},
-    'XL': {'chest': 47, 'neck': 26, 'waist': 40, 'body': 44, 'back': 40, 'leg': 12},
-  };
+    // ── default measurement ต่อ size (midpoint ของช่วง) ─────────────────────
+    // XS: รอบอก 28-32  S: 33-36  M: 37-40  L: 41-44  XL: 45-50+
+    const Map<String, Map<String, double>> sizeDefaults = {
+      'XS': {
+        'chest': 30,
+        'neck': 18,
+        'waist': 26,
+        'body': 28,
+        'back': 25,
+        'leg': 8
+      },
+      'S': {
+        'chest': 34,
+        'neck': 20,
+        'waist': 28,
+        'body': 32,
+        'back': 28,
+        'leg': 9
+      },
+      'M': {
+        'chest': 38,
+        'neck': 22,
+        'waist': 32,
+        'body': 36,
+        'back': 32,
+        'leg': 10
+      },
+      'L': {
+        'chest': 42,
+        'neck': 24,
+        'waist': 36,
+        'body': 40,
+        'back': 36,
+        'leg': 11
+      },
+      'XL': {
+        'chest': 47,
+        'neck': 26,
+        'waist': 40,
+        'body': 44,
+        'back': 40,
+        'leg': 12
+      },
+    };
 
-  void fillMeasureFromSize(String size, StateSetter setModal) {
-    final d = sizeDefaults[size];
-    if (d == null) return;
-    setModal(() {
-      chestCtrl.text   = d['chest']!.toStringAsFixed(1);
-      neckCtrl.text    = d['neck']!.toStringAsFixed(1);
-      waistCtrl.text   = d['waist']!.toStringAsFixed(1);
-      bodyLenCtrl.text = d['body']!.toStringAsFixed(1);
-      backLenCtrl.text = d['back']!.toStringAsFixed(1);
-      legLenCtrl.text  = d['leg']!.toStringAsFixed(1);
-      calculatedSize   = size;
-    });
-  }
+    void fillMeasureFromSize(String size, StateSetter setModal) {
+      final d = sizeDefaults[size];
+      if (d == null) return;
+      setModal(() {
+        chestCtrl.text = d['chest']!.toStringAsFixed(1);
+        neckCtrl.text = d['neck']!.toStringAsFixed(1);
+        waistCtrl.text = d['waist']!.toStringAsFixed(1);
+        bodyLenCtrl.text = d['body']!.toStringAsFixed(1);
+        backLenCtrl.text = d['back']!.toStringAsFixed(1);
+        legLenCtrl.text = d['leg']!.toStringAsFixed(1);
+        calculatedSize = size;
+      });
+    }
 
-  // XS:28-32 | S:33-36 | M:37-40 | L:41-44 | XL:45+
-  String calcSizeFromChest(double chest) {
-    if (chest <= 32) return 'XS';
-    if (chest <= 36) return 'S';
-    if (chest <= 40) return 'M';
-    if (chest <= 44) return 'L';
-    return 'XL';
-  }
+    // XS:28-32 | S:33-36 | M:37-40 | L:41-44 | XL:45+
+    String calcSizeFromChest(double chest) {
+      if (chest <= 32) return 'XS';
+      if (chest <= 36) return 'S';
+      if (chest <= 40) return 'M';
+      if (chest <= 44) return 'L';
+      return 'XL';
+    }
 
-  final result = await showModalBottomSheet<bool>(
-    context: context,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-    backgroundColor: isDark ? Colors.grey[900] : Colors.white,
-    builder: (ctx) => Padding(
-      padding: EdgeInsets.only(
-        left: 20, right: 20, top: 20,
-        bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-      ),
-      child: StatefulBuilder(
-        builder: (ctx2, setModal) {
-          void recalcSize() {
-            final chest = double.tryParse(chestCtrl.text);
-            if (chest != null && chest > 0) {
-              final s = calcSizeFromChest(chest);
-              setModal(() {
-                calculatedSize = s;
-                selectedSize   = s;
-              });
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      backgroundColor: isDark ? Colors.grey[900] : Colors.white,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 20,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+        ),
+        child: StatefulBuilder(
+          builder: (ctx2, setModal) {
+            void recalcSize() {
+              final chest = double.tryParse(chestCtrl.text);
+              if (chest != null && chest > 0) {
+                final s = calcSizeFromChest(chest);
+                setModal(() {
+                  calculatedSize = s;
+                  selectedSize = s;
+                });
+              }
             }
-          }
 
-          return SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40, height: 4,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade400,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                ),
-
-                const Text('✏️ แก้ไขข้อมูลแมว',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 16),
-
-                TextField(
-                  controller: colorCtrl,
-                  style: const TextStyle(color: Colors.black45, fontWeight: FontWeight.bold),
-                  decoration: const InputDecoration(
-                    labelText: 'สีแมว / Cat Color',
-                    prefixIcon: Icon(Icons.color_lens_outlined),
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: breedCtrl,
-                  style: const TextStyle(color: Colors.black45, fontWeight: FontWeight.bold),
-                  decoration: const InputDecoration(
-                    labelText: 'พันธุ์ / Breed',
-                    prefixIcon: Icon(Icons.pets),
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(children: [
-                  Expanded(
-                    child: TextField(
-                      controller: ageCtrl,
-                      keyboardType: TextInputType.number,
-                      style: const TextStyle(color: Colors.black45, fontWeight: FontWeight.bold),
-                      decoration: const InputDecoration(
-                        labelText: 'อายุ (ปี)',
-                        prefixIcon: Icon(Icons.cake_outlined),
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextField(
-                      controller: weightCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      style: const TextStyle(color: Colors.black45, fontWeight: FontWeight.bold),
-                      decoration: const InputDecoration(
-                        labelText: 'น้ำหนัก (kg)',
-                        prefixIcon: Icon(Icons.monitor_weight_outlined),
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                ]),
-                const SizedBox(height: 16),
-
-                // ── Size selector ───────────────────────────────────────
-                Row(children: [
-                  const Text('ขนาด / Size',
-                      style: TextStyle(fontSize: 13, color: Colors.grey)),
-                  const SizedBox(width: 6),
-                  if (showMeasure)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            return SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
                       decoration: BoxDecoration(
-                        color: Colors.orange.shade100,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        'กดเพื่อ auto-fill การวัด',
-                        style: TextStyle(fontSize: 10, color: Colors.orange.shade800),
+                        color: Colors.grey.shade400,
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                ]),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: ['XS', 'S', 'M', 'L', 'XL'].map((size) {
-                    final selected = selectedSize == size;
-                    return GestureDetector(
-                      onTap: () {
-                        setModal(() => selectedSize = size);
-                        // ถ้า measurement เปิดอยู่ → auto-fill ค่า
-                        if (showMeasure) fillMeasureFromSize(size, setModal);
-                      },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        width: 52, height: 40,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: selected ? Colors.orange : Colors.grey.shade200,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: selected ? Colors.orange : Colors.grey.shade300,
-                            width: 1.5,
-                          ),
-                        ),
-                        child: Text(size,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: selected ? Colors.white : Colors.black87,
-                            )),
-                      ),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 16),
-
-                // ── ปุ่มการวัดขนาดเอง ────────────────────────────────────
-                GestureDetector(
-                  onTap: () {
-                    setModal(() {
-                      showMeasure = !showMeasure;
-                      // เปิด → auto-fill จาก size ปัจจุบัน
-                      if (showMeasure) fillMeasureFromSize(selectedSize, setModal);
-                    });
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: showMeasure
-                          ? Colors.orange.shade50
-                          : isDark ? Colors.grey[800] : Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: showMeasure ? Colors.orange : Colors.grey.shade300,
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Row(children: [
-                      Icon(Icons.straighten_rounded, size: 18,
-                          color: showMeasure ? Colors.orange : Colors.grey.shade600),
-                      const SizedBox(width: 8),
-                      Text('การวัดขนาดเอง',
-                          style: TextStyle(
-                            fontSize: 14, fontWeight: FontWeight.w600,
-                            color: showMeasure ? Colors.orange : Colors.grey.shade700,
-                          )),
-                      const Spacer(),
-                      AnimatedRotation(
-                        turns: showMeasure ? 0.5 : 0.0,
-                        duration: const Duration(milliseconds: 200),
-                        child: Icon(Icons.keyboard_arrow_down_rounded,
-                            color: showMeasure ? Colors.orange : Colors.grey.shade500),
-                      ),
-                    ]),
                   ),
-                ),
 
-                // ── Dropdown measurement fields ───────────────────────────
-                AnimatedCrossFade(
-                  duration: const Duration(milliseconds: 250),
-                  crossFadeState: showMeasure
-                      ? CrossFadeState.showFirst
-                      : CrossFadeState.showSecond,
-                  firstChild: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: isDark ? Colors.grey[850] : Colors.orange.shade50,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.orange.shade200),
+                  const Text('✏️ แก้ไขข้อมูลแมว',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+
+                  TextField(
+                    controller: colorCtrl,
+                    style: const TextStyle(
+                        color: Colors.black45, fontWeight: FontWeight.bold),
+                    decoration: const InputDecoration(
+                      labelText: 'สีแมว / Cat Color',
+                      prefixIcon: Icon(Icons.color_lens_outlined),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: breedCtrl,
+                    style: const TextStyle(
+                        color: Colors.black45, fontWeight: FontWeight.bold),
+                    decoration: const InputDecoration(
+                      labelText: 'พันธุ์ / Breed',
+                      prefixIcon: Icon(Icons.pets),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(children: [
+                    Expanded(
+                      child: TextField(
+                        controller: ageCtrl,
+                        keyboardType: TextInputType.number,
+                        style: const TextStyle(
+                            color: Colors.black45, fontWeight: FontWeight.bold),
+                        decoration: const InputDecoration(
+                          labelText: 'อายุ (ปี)',
+                          prefixIcon: Icon(Icons.cake_outlined),
+                          border: OutlineInputBorder(),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(children: [
-                              const Icon(Icons.info_outline, size: 14, color: Colors.orange),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(
-                                  'แก้ไขค่าการวัด (cm) — size คำนวณจากรอบอก',
-                                  style: TextStyle(fontSize: 11, color: Colors.orange.shade800),
-                                ),
-                              ),
-                            ]),
-                            const SizedBox(height: 4),
-                            Text(
-                              'XS:28-32 | S:33-36 | M:37-40 | L:41-44 | XL:45+',
-                              style: TextStyle(
-                                  fontSize: 10, color: Colors.orange.shade700,
-                                  fontStyle: FontStyle.italic),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: weightCtrl,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        style: const TextStyle(
+                            color: Colors.black45, fontWeight: FontWeight.bold),
+                        decoration: const InputDecoration(
+                          labelText: 'น้ำหนัก (kg)',
+                          prefixIcon: Icon(Icons.monitor_weight_outlined),
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                  ]),
+                  const SizedBox(height: 16),
+
+                  // ── Size selector ───────────────────────────────────────
+                  Row(children: [
+                    const Text('ขนาด / Size',
+                        style: TextStyle(fontSize: 13, color: Colors.grey)),
+                    const SizedBox(width: 6),
+                    if (showMeasure)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade100,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          'กดเพื่อ auto-fill การวัด',
+                          style: TextStyle(
+                              fontSize: 10, color: Colors.orange.shade800),
+                        ),
+                      ),
+                  ]),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: ['XS', 'S', 'M', 'L', 'XL'].map((size) {
+                      final selected = selectedSize == size;
+                      return GestureDetector(
+                        onTap: () {
+                          setModal(() => selectedSize = size);
+                          // ถ้า measurement เปิดอยู่ → auto-fill ค่า
+                          if (showMeasure) fillMeasureFromSize(size, setModal);
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          width: 52,
+                          height: 40,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color:
+                                selected ? Colors.orange : Colors.grey.shade200,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: selected
+                                  ? Colors.orange
+                                  : Colors.grey.shade300,
+                              width: 1.5,
                             ),
-                            const SizedBox(height: 12),
-                            Row(children: [
-                              Expanded(child: _measureField(
-                                controller: chestCtrl,
-                                label: 'รอบอก *',
-                                icon: Icons.radio_button_unchecked,
-                                onChanged: (_) => recalcSize(),
+                          ),
+                          child: Text(size,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: selected ? Colors.white : Colors.black87,
                               )),
-                              const SizedBox(width: 10),
-                              Expanded(child: _measureField(
-                                controller: neckCtrl,
-                                label: 'รอบคอ',
-                                icon: Icons.radio_button_unchecked,
-                              )),
-                            ]),
-                            const SizedBox(height: 10),
-                            Row(children: [
-                              Expanded(child: _measureField(
-                                controller: bodyLenCtrl,
-                                label: 'ยาวตัว',
-                                icon: Icons.straighten,
-                              )),
-                              const SizedBox(width: 10),
-                              Expanded(child: _measureField(
-                                controller: backLenCtrl,
-                                label: 'ยาวหลัง',
-                                icon: Icons.straighten,
-                              )),
-                            ]),
-                            const SizedBox(height: 10),
-                            Row(children: [
-                              Expanded(child: _measureField(
-                                controller: waistCtrl,
-                                label: 'รอบเอว',
-                                icon: Icons.radio_button_unchecked,
-                              )),
-                              const SizedBox(width: 10),
-                              Expanded(child: _measureField(
-                                controller: legLenCtrl,
-                                label: 'ยาวขา',
-                                icon: Icons.straighten,
-                              )),
-                            ]),
-                            if (calculatedSize != null) ...[
-                              const SizedBox(height: 12),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // ── ปุ่มการวัดขนาดเอง ────────────────────────────────────
+                  GestureDetector(
+                    onTap: () {
+                      setModal(() {
+                        showMeasure = !showMeasure;
+                        // เปิด → auto-fill จาก size ปัจจุบัน
+                        if (showMeasure)
+                          fillMeasureFromSize(selectedSize, setModal);
+                      });
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: showMeasure
+                            ? Colors.orange.shade50
+                            : isDark
+                                ? Colors.grey[800]
+                                : Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: showMeasure
+                              ? Colors.orange
+                              : Colors.grey.shade300,
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Row(children: [
+                        Icon(Icons.straighten_rounded,
+                            size: 18,
+                            color: showMeasure
+                                ? Colors.orange
+                                : Colors.grey.shade600),
+                        const SizedBox(width: 8),
+                        Text('การวัดขนาดเอง',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: showMeasure
+                                  ? Colors.orange
+                                  : Colors.grey.shade700,
+                            )),
+                        const Spacer(),
+                        AnimatedRotation(
+                          turns: showMeasure ? 0.5 : 0.0,
+                          duration: const Duration(milliseconds: 200),
+                          child: Icon(Icons.keyboard_arrow_down_rounded,
+                              color: showMeasure
+                                  ? Colors.orange
+                                  : Colors.grey.shade500),
+                        ),
+                      ]),
+                    ),
+                  ),
+
+                  // ── Dropdown measurement fields ───────────────────────────
+                  AnimatedCrossFade(
+                    duration: const Duration(milliseconds: 250),
+                    crossFadeState: showMeasure
+                        ? CrossFadeState.showFirst
+                        : CrossFadeState.showSecond,
+                    firstChild: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? Colors.grey[850]
+                                : Colors.orange.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.orange.shade200),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                               Row(children: [
-                                const Icon(Icons.check_circle, size: 16, color: Colors.green),
+                                const Icon(Icons.info_outline,
+                                    size: 14, color: Colors.orange),
                                 const SizedBox(width: 6),
-                                Text('Size ที่คำนวณได้: ',
-                                    style: TextStyle(fontSize: 13, color: Colors.grey.shade700)),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: Colors.orange,
-                                    borderRadius: BorderRadius.circular(8),
+                                Expanded(
+                                  child: Text(
+                                    'แก้ไขค่าการวัด (cm) — size คำนวณจากรอบอก',
+                                    style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.orange.shade800),
                                   ),
-                                  child: Text(calculatedSize!,
-                                      style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14)),
                                 ),
                               ]),
+                              const SizedBox(height: 4),
+                              Text(
+                                'XS:28-32 | S:33-36 | M:37-40 | L:41-44 | XL:45+',
+                                style: TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.orange.shade700,
+                                    fontStyle: FontStyle.italic),
+                              ),
+                              const SizedBox(height: 12),
+                              Row(children: [
+                                Expanded(
+                                    child: _measureField(
+                                  controller: chestCtrl,
+                                  label: 'รอบอก *',
+                                  icon: Icons.radio_button_unchecked,
+                                  onChanged: (_) => recalcSize(),
+                                )),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                    child: _measureField(
+                                  controller: neckCtrl,
+                                  label: 'รอบคอ',
+                                  icon: Icons.radio_button_unchecked,
+                                )),
+                              ]),
+                              const SizedBox(height: 10),
+                              Row(children: [
+                                Expanded(
+                                    child: _measureField(
+                                  controller: bodyLenCtrl,
+                                  label: 'ยาวตัว',
+                                  icon: Icons.straighten,
+                                )),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                    child: _measureField(
+                                  controller: backLenCtrl,
+                                  label: 'ยาวหลัง',
+                                  icon: Icons.straighten,
+                                )),
+                              ]),
+                              const SizedBox(height: 10),
+                              Row(children: [
+                                Expanded(
+                                    child: _measureField(
+                                  controller: waistCtrl,
+                                  label: 'รอบเอว',
+                                  icon: Icons.radio_button_unchecked,
+                                )),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                    child: _measureField(
+                                  controller: legLenCtrl,
+                                  label: 'ยาวขา',
+                                  icon: Icons.straighten,
+                                )),
+                              ]),
+                              if (calculatedSize != null) ...[
+                                const SizedBox(height: 12),
+                                Row(children: [
+                                  const Icon(Icons.check_circle,
+                                      size: 16, color: Colors.green),
+                                  const SizedBox(width: 6),
+                                  Text('Size ที่คำนวณได้: ',
+                                      style: TextStyle(
+                                          fontSize: 13,
+                                          color: Colors.grey.shade700)),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(calculatedSize!,
+                                        style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14)),
+                                  ),
+                                ]),
+                              ],
                             ],
-                          ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
+                    secondChild: const SizedBox.shrink(),
                   ),
-                  secondChild: const SizedBox.shrink(),
-                ),
 
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () => Navigator.pop(ctx, true),
-                    icon: const Icon(Icons.save_outlined),
-                    label: const Text('บันทึก',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      backgroundColor: Colors.orange,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      icon: const Icon(Icons.save_outlined),
+                      label: const Text('บันทึก',
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        backgroundColor: Colors.orange,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          );
-        },
+                ],
+              ),
+            );
+          },
+        ),
       ),
-    ),
-  );
-
-  if (result != true || !mounted) return;
-
-  final updateData = <String, dynamic>{
-    'cat_color': colorCtrl.text.trim().isEmpty ? cat.name : colorCtrl.text.trim(),
-    'size_category': selectedSize,
-    if (breedCtrl.text.trim().isNotEmpty) 'breed': breedCtrl.text.trim(),
-    if (ageCtrl.text.trim().isNotEmpty) 'age': int.tryParse(ageCtrl.text.trim()),
-    if (weightCtrl.text.trim().isNotEmpty) 'weight': double.tryParse(weightCtrl.text.trim()),
-    if (chestCtrl.text.trim().isNotEmpty) 'chest_cm': double.tryParse(chestCtrl.text.trim()),
-    if (neckCtrl.text.trim().isNotEmpty) 'neck_cm': double.tryParse(neckCtrl.text.trim()),
-    if (waistCtrl.text.trim().isNotEmpty) 'waist_cm': double.tryParse(waistCtrl.text.trim()),
-    if (bodyLenCtrl.text.trim().isNotEmpty) 'body_length_cm': double.tryParse(bodyLenCtrl.text.trim()),
-    if (backLenCtrl.text.trim().isNotEmpty) 'back_length_cm': double.tryParse(backLenCtrl.text.trim()),
-    if (legLenCtrl.text.trim().isNotEmpty) 'leg_length_cm': double.tryParse(legLenCtrl.text.trim()),
-  };
-
-  if (!mounted || _isDisposed) return;
-  setState(() => _recomLoading = true);
-
-  try {
-    final refreshed = await _recomApi.updateCatAndRefresh(
-      catId: catId,
-      updateData: updateData,
     );
+
+    if (result != true || !mounted) return;
+
+    final updateData = <String, dynamic>{
+      'cat_color':
+          colorCtrl.text.trim().isEmpty ? cat.name : colorCtrl.text.trim(),
+      'size_category': selectedSize,
+      if (breedCtrl.text.trim().isNotEmpty) 'breed': breedCtrl.text.trim(),
+      if (ageCtrl.text.trim().isNotEmpty)
+        'age': int.tryParse(ageCtrl.text.trim()),
+      if (weightCtrl.text.trim().isNotEmpty)
+        'weight': double.tryParse(weightCtrl.text.trim()),
+      if (chestCtrl.text.trim().isNotEmpty)
+        'chest_cm': double.tryParse(chestCtrl.text.trim()),
+      if (neckCtrl.text.trim().isNotEmpty)
+        'neck_cm': double.tryParse(neckCtrl.text.trim()),
+      if (waistCtrl.text.trim().isNotEmpty)
+        'waist_cm': double.tryParse(waistCtrl.text.trim()),
+      if (bodyLenCtrl.text.trim().isNotEmpty)
+        'body_length_cm': double.tryParse(bodyLenCtrl.text.trim()),
+      if (backLenCtrl.text.trim().isNotEmpty)
+        'back_length_cm': double.tryParse(backLenCtrl.text.trim()),
+      if (legLenCtrl.text.trim().isNotEmpty)
+        'leg_length_cm': double.tryParse(legLenCtrl.text.trim()),
+    };
+
     if (!mounted || _isDisposed) return;
-    setState(() {
-      _recomCat        = refreshed.cat;
-      _recomItems      = refreshed.items;
-      _recomPagination = refreshed.pagination;
-      _recomLoading    = false;
-    });
-    _showSuccessMessage('อัปเดตข้อมูลแมวแล้ว ✅ รีเฟรชสินค้าแนะนำ');
-    context.read<CatAnalysisBloc>().add(CatDataUpdated(updateData));
-  } catch (e) {
-    if (!mounted || _isDisposed) return;
-    setState(() => _recomLoading = false);
-    _showError('แก้ไขข้อมูลแมวไม่สำเร็จ: $e');
+    setState(() => _recomLoading = true);
+
+    try {
+      final refreshed = await _recomApi.updateCatAndRefresh(
+        catId: catId,
+        updateData: updateData,
+      );
+      if (!mounted || _isDisposed) return;
+      setState(() {
+        _recomCat = refreshed.cat;
+        _recomItems = refreshed.items;
+        _recomPagination = refreshed.pagination;
+        _recomLoading = false;
+      });
+      _showSuccessMessage('อัปเดตข้อมูลแมวแล้ว ✅ รีเฟรชสินค้าแนะนำ');
+      context.read<CatAnalysisBloc>().add(CatDataUpdated(updateData));
+    } catch (e) {
+      if (!mounted || _isDisposed) return;
+      setState(() => _recomLoading = false);
+      _showError('แก้ไขข้อมูลแมวไม่สำเร็จ: $e');
+    }
   }
-}
 
 // ── helper widget ─────────────────────────────────────────────────────────────
-Widget _measureField({
-  required TextEditingController controller,
-  required String label,
-  required IconData icon,
-  void Function(String)? onChanged,
-}) {
-  return TextField(
-    controller: controller,
-    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-    onChanged: onChanged,
-    style: const TextStyle(fontSize: 13, color: Colors.black87),
-    decoration: InputDecoration(
-      labelText: label,
-      labelStyle: const TextStyle(fontSize: 12),
-      prefixIcon: Icon(icon, size: 16, color: Colors.orange),
-      suffixText: 'cm',
-      suffixStyle: TextStyle(fontSize: 11, color: Colors.grey.shade500),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: Colors.orange, width: 1.5),
+  Widget _measureField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    void Function(String)? onChanged,
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      onChanged: onChanged,
+      style: const TextStyle(fontSize: 13, color: Colors.black87),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(fontSize: 12),
+        prefixIcon: Icon(icon, size: 16, color: Colors.orange),
+        suffixText: 'cm',
+        suffixStyle: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Colors.orange, width: 1.5),
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   // ─── Dialogs ────────────────────────────────────────────────────────────────
 
@@ -1141,7 +1266,7 @@ Widget _measureField({
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-       leading: IconButton(
+        leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new_rounded,
               color: dark ? Colors.white : Colors.black87, size: 20),
           onPressed: () {
@@ -1151,7 +1276,7 @@ Widget _measureField({
             } else {
               // ไม่มี route ให้ pop (เป็น root) → ไปหน้า Home
               Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const HomePage()),
+                MaterialPageRoute(builder: (_) => const MyControll()),
                 (route) => false,
               );
             }

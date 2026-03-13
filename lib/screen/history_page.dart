@@ -5,6 +5,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/provider/language_provider.dart';
+import 'package:flutter_application_1/screen/measure_size_cat.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_application_1/api/service_cat_api.dart';
@@ -64,8 +65,6 @@ class _HistoryPageState extends State<HistoryPage>
     super.dispose();
   }
 
-
-
   // ── Delete Confirm ─────────────────────────────────────────────────────────
   Future<void> _deleteCat(BuildContext context, CatRecord cat) async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -115,7 +114,7 @@ class _HistoryPageState extends State<HistoryPage>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── Handle bar ──────────────────────────────────────────
-               const SizedBox(height: 16),
+              const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -955,7 +954,21 @@ class _HistoryPageState extends State<HistoryPage>
                 style: TextStyle(fontSize: 11, color: Colors.grey.shade400),
               ),
             ),
-           
+            IconButton(
+              onPressed: () {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(
+                    builder: (_) => MeasureSizeCat(preloadCatId: cat.id),
+                  ),
+                  (route) => false,
+                );
+              },
+              icon: Icon(Icons.recommend_outlined,
+                  color: Colors.orange.shade600, size: 22),
+              tooltip: 'ดูสินค้าแนะนำ',
+              padding: const EdgeInsets.all(8),
+              constraints: const BoxConstraints(),
+            ),
             const SizedBox(width: 4),
             IconButton(
               onPressed: () => _deleteCat(blocCtx, cat),
@@ -982,22 +995,22 @@ class _HistoryPageState extends State<HistoryPage>
 
   // ── Chip Widgets ───────────────────────────────────────────────────────────
   Widget _infoChip(IconData icon, String text, bool isDark) {
-  return Row(mainAxisSize: MainAxisSize.min, children: [
-    Icon(icon, size: 13, color: Colors.grey.shade500),
-    const SizedBox(width: 4),
-    Flexible(
-      child: Text(
-        text,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          fontSize: 12,
-          color: isDark ? Colors.grey.shade300 : Colors.grey.shade600,
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      Icon(icon, size: 13, color: Colors.grey.shade500),
+      const SizedBox(width: 4),
+      Flexible(
+        child: Text(
+          text,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 12,
+            color: isDark ? Colors.grey.shade300 : Colors.grey.shade600,
+          ),
         ),
       ),
-    ),
-  ]);
-}
+    ]);
+  }
 
   Widget _measureChip(String label, String value, bool isDark) {
     return Container(

@@ -86,20 +86,20 @@ class _MyControllState extends State<MyControll> {
   // ── Title helpers ─────────────────────────────────────────────────────────
   String setTitleEN() {
     if (screenIndex == 0) return "Search";
-    if (screenIndex == 1) return "ABC shop";
+    if (screenIndex == 1) return "ABCat";
     if (screenIndex == 2) return "Shops";
     if (screenIndex == 3) return "Notification";
     if (screenIndex == 4) return "Menu";
-    return "ABC shop";
+    return "ABCat";
   }
 
   String setTitleTH() {
     if (screenIndex == 0) return "ค้นหา";
-    if (screenIndex == 1) return "ร้าน ABC";
+    if (screenIndex == 1) return "ABCat";
     if (screenIndex == 2) return "ร้านค้า";
     if (screenIndex == 3) return "การแจ้งเตือน";
     if (screenIndex == 4) return "เมนู";
-    return "ร้าน ABC";
+    return "ABCat";
   }
 
   @override

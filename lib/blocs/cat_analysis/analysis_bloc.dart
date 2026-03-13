@@ -26,6 +26,7 @@ class CatAnalysisBloc extends Bloc<CatAnalysisEvent, CatAnalysisState> {
     on<CatAnalysisReset>(_onReset);
     on<CatDataUpdated>(_onDataUpdated);
     on<CatDataDeleted>(_onDataDeleted);
+    on<CatPreloadSuccess>(_onPreloadSuccess);
   }
 
   // ── เลือกรูปแล้ว ──────────────────────────────────────
@@ -133,6 +134,33 @@ class CatAnalysisBloc extends Bloc<CatAnalysisEvent, CatAnalysisState> {
     emit(CatAnalysisInitial());
   }
 
+  Future<void> _onPreloadSuccess(
+    CatPreloadSuccess event,
+    Emitter<CatAnalysisState> emit,
+  ) async {
+    try {
+      final catRecord = await CatApiService().getCatById(event.catId);
+      final cat = CatData(
+        name: catRecord.catColor,
+        breed: catRecord.breed,
+        age: catRecord.age,
+        weight: catRecord.weight ?? 0.0,
+        sizeCategory: catRecord.sizeCategory,
+        chestCm: catRecord.chestCm ?? 0.0,
+        neckCm: catRecord.neckCm,
+        bodyLengthCm: catRecord.bodyLengthCm,
+        confidence: catRecord.confidence ?? 0.0,
+        boundingBox: [0, 0, 1, 1],
+        imageUrl: catRecord.imageCat ?? '',
+        detectedAt: catRecord.detectedAt ?? DateTime.now(),
+        dbId: catRecord.id,
+      );
+      emit(CatAnalysisSuccess(cat));
+    } catch (e) {
+      emit(CatAnalysisFailure(e.toString().replaceAll('Exception: ', '')));
+    }
+  }
+
   // ── Update ─────────────────────────────────────────────
   Future<void> _onDataUpdated(
     CatDataUpdated event,
@@ -163,8 +191,7 @@ class CatAnalysisBloc extends Bloc<CatAnalysisEvent, CatAnalysisState> {
         breed: event.updateData['breed'] ?? catData.breed,
         age: event.updateData['age'] ?? catData.age,
         weight: catData.weight,
-        sizeCategory:
-            event.updateData['size_category'] ?? catData.sizeCategory,
+        sizeCategory: event.updateData['size_category'] ?? catData.sizeCategory,
         chestCm: catData.chestCm,
         neckCm: catData.neckCm,
         bodyLengthCm: catData.bodyLengthCm,
@@ -241,8 +268,7 @@ class CatAnalysisBloc extends Bloc<CatAnalysisEvent, CatAnalysisState> {
       request.fields['folder'] = _cloudinaryFolder;
       request.files
           .add(await http.MultipartFile.fromPath('file', imageFile.path));
-      final response =
-          await http.Response.fromStream(await request.send());
+      final response = await http.Response.fromStream(await request.send());
       if (response.statusCode == 200) {
         return jsonDecode(utf8.decode(response.bodyBytes))['secure_url'];
       }
@@ -254,7 +280,7 @@ class CatAnalysisBloc extends Bloc<CatAnalysisEvent, CatAnalysisState> {
 
   String _getBaseUrl() {
     const String env = String.fromEnvironment('ENV', defaultValue: 'local');
-     if (env == 'prod') return 'https://backend-catshop.onrender.com';
+    if (env == 'prod') return 'https://backend-catshop.onrender.com';
     if (env == 'prod-v2') return 'https://catshop-backend-v2.onrender.com';
     if (env == 'prod-v3') return 'https://cat-shop-backend.onrender.com';
     if (kIsWeb) return 'http://localhost:10000';

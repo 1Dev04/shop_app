@@ -447,11 +447,16 @@ class RecommendApiService {
   Future<RecommendListResult> getRecommendations({
     int page = 1,
     int pageSize = 10,
+    int? catId,
   }) async {
     final token = await _getFirebaseToken();
     if (token == null) throw Exception('กรุณาเข้าสู่ระบบก่อน');
 
-    final uri = Uri.parse('$_base/?page=$page&page_size=$pageSize');
+    
+
+    final uri = catId != null
+      ? Uri.parse('$_base/?page=$page&page_size=$pageSize&cat_id=$catId')
+      : Uri.parse('$_base/?page=$page&page_size=$pageSize');
     final response = await http
         .get(uri, headers: _headers(token))
         .timeout(const Duration(seconds: 30));
