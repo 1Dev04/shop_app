@@ -193,6 +193,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
   Pagination? _recomPagination;
   bool _recomLoading = false;
   bool _recomLoadingMore = false;
+  int? _currentCatId;
 
   static const bool _useMock = false;
 
@@ -247,6 +248,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
       final result = await _recomApi.getRecommendations(page: 1, catId: catId);
       if (!mounted || _isDisposed) return;
       setState(() {
+        _currentCatId = catId;
         _recomCat = result.cat;
         _recomItems = result.items;
         _recomPagination = result.pagination;
@@ -290,7 +292,8 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
 
     setState(() => _recomLoadingMore = true);
     try {
-      final result = await _recomApi.loadMore(current: pagination);
+      final result =
+          await _recomApi.loadMore(current: pagination, catId: _currentCatId);
       if (!mounted || _isDisposed) return;
       setState(() {
         _recomItems = [..._recomItems, ...result.items];
@@ -1826,6 +1829,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
   Widget _buildRecomProductCard(
       RecommendItem item, bool dark, LanguageProvider lang) {
     return FutureBuilder<bool>(
+      key: ValueKey('fav_${item.uuid}'),
       future: _favouriteApi.checkFavourite(clothingUuid: item.uuid),
       builder: (ctx, snap) {
         final isFav = snap.data ?? false;
@@ -1923,6 +1927,27 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                               color: Colors.white,
                               fontSize: 10,
                               fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  if (item.matchBreed && item.breed != null)
+                    Positioned(
+                      bottom: 6,
+                      left: 6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.85),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '🐾 ${item.breed}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),

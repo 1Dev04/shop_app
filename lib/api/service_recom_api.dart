@@ -188,6 +188,8 @@ class CatMatchInfo {
   final bool matchSize;
   final bool matchWeight;
   final bool matchChest;
+  final bool matchBreed;
+
   final String reason;
 
   CatMatchInfo({
@@ -200,6 +202,7 @@ class CatMatchInfo {
     required this.matchSize,
     required this.matchWeight,
     required this.matchChest,
+    required this.matchBreed,
     required this.reason,
   });
 
@@ -213,6 +216,7 @@ class CatMatchInfo {
         matchSize: j['match_size'] == true,
         matchWeight: j['match_weight'] == true,
         matchChest: j['match_chest'] == true,
+         matchBreed: j['match_breed'] == true,
         reason: j['reason']?.toString() ?? '',
       );
 
@@ -253,6 +257,7 @@ class RecommendItem {
   final bool matchSize;
   final bool matchWeight;
   final bool matchChest;
+  final bool matchBreed;
   final double matchScore;
 
   RecommendItem({
@@ -279,6 +284,7 @@ class RecommendItem {
     required this.matchSize,
     required this.matchWeight,
     required this.matchChest,
+    required this.matchBreed,
     required this.matchScore,
   });
 
@@ -313,6 +319,7 @@ class RecommendItem {
         matchSize: j['match_size'] == true,
         matchWeight: j['match_weight'] == true,
         matchChest: j['match_chest'] == true,
+        matchBreed: j['match_breed'] == true,
         matchScore: _d(j['match_score']) ?? 0.0,
       );
 
@@ -549,7 +556,7 @@ class RecommendApiService {
     }
 
     // ── Step 2: GET /recommend/ อีกครั้งเพื่อ refresh ─────────────────────
-    return getRecommendations(page: page, pageSize: pageSize);
+    return getRecommendations(page: page, pageSize: pageSize, catId: catId,);
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -558,6 +565,7 @@ class RecommendApiService {
   Future<RecommendListResult> loadMore({
     required Pagination current,
     int pageSize = 10,
+    int? catId,
   }) async {
     if (!current.hasNext) {
       throw Exception('ไม่มีหน้าถัดไปแล้ว');
@@ -565,6 +573,7 @@ class RecommendApiService {
     return getRecommendations(
       page: current.page + 1,
       pageSize: pageSize,
+      catId: catId, 
     );
   }
 }
