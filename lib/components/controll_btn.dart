@@ -109,77 +109,82 @@ class _MyControllState extends State<MyControll> {
 
     return Scaffold(
       //------------------- AppBar -------------------
-      appBar: AppBar(
-        leading: SizedBox.shrink(),
-        elevation: 0,
-        title: Text(
-          languageProvider.translate(en: setTitleEN(), th: setTitleTH()),
-          style: TextStyle(
-            fontFamily: 'Catfont',
-            fontSize: 30,
-            color: themeProvider.themeMode == ThemeMode.dark
-                ? Colors.white
-                : Colors.black,
-          ),
+  appBar: AppBar(
+  leading: Padding(
+    padding: EdgeInsets.only(left: 12),
+    child: Align(
+      alignment: Alignment.centerLeft,
+      child: Text(
+        languageProvider.translate(en: setTitleEN(), th: setTitleTH()),
+        style: TextStyle(
+          fontFamily: 'Catfont',
+          fontSize: 30,
+          color: themeProvider.themeMode == ThemeMode.dark
+              ? Colors.white
+              : Colors.black,
         ),
-        backgroundColor: themeProvider.themeMode == ThemeMode.dark
-            ? Colors.black
-            : Colors.white,
-        actions: [
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                if (screenIndex == 0) {
-                  screenIndex = 1;
-                  activeButton = 1;
-                } else {
-                  screenIndex = 0;
-                  activeButton = 0;
-                }
-              });
-            },
-            child: Icon(
-              screenIndex == 0 ? Icons.cancel : Icons.search,
-              size: 30,
-              color: AppBarTheme.of(context).iconTheme?.color,
-            ),
-          ),
-          const SizedBox(width: 10),
-          IconButton(
-            onPressed: () {
-              if (_isGuest) {
-                _showGuestDialog(context);
-                return;
-              }
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => FavouritePage()));
-            },
-            icon: Icon(
-              Icons.favorite_border_outlined,
-              color: AppBarTheme.of(context).iconTheme?.color,
-              size: 30,
-            ),
-          ),
-          const SizedBox(width: 10),
-          IconButton(
-            onPressed: () {
-              if (_isGuest) {
-                _showGuestDialog(context);
-                return;
-              }
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => BasketPage()));
-            },
-            icon: Icon(
-              Icons.add_shopping_cart_sharp,
-              color: AppBarTheme.of(context).iconTheme?.color,
-              size: 30,
-            ),
-          ),
-          const SizedBox(width: 10),
-        ],
       ),
-
+    ),
+  ),
+  leadingWidth: 190,
+  elevation: 0,
+  backgroundColor: themeProvider.themeMode == ThemeMode.dark
+      ? Colors.black
+      : Colors.white,
+  actions: [
+    GestureDetector(
+      onTap: () {
+        setState(() {
+          if (screenIndex == 0) {
+            screenIndex = 1;
+            activeButton = 1;
+          } else {
+            screenIndex = 0;
+            activeButton = 0;
+          }
+        });
+      },
+      child: Icon(
+        screenIndex == 0 ? Icons.cancel : Icons.search,
+        size: 30,
+        color: AppBarTheme.of(context).iconTheme?.color,
+      ),
+    ),
+    const SizedBox(width: 10),
+    IconButton(
+      onPressed: () {
+        if (_isGuest) {
+          _showGuestDialog(context);
+          return;
+        }
+        Navigator.push(context,
+            MaterialPageRoute(builder: (context) => FavouritePage()));
+      },
+      icon: Icon(
+        Icons.favorite_border_outlined,
+        color: AppBarTheme.of(context).iconTheme?.color,
+        size: 30,
+      ),
+    ),
+    const SizedBox(width: 10),
+    IconButton(
+      onPressed: () {
+        if (_isGuest) {
+          _showGuestDialog(context);
+          return;
+        }
+        Navigator.push(context,
+            MaterialPageRoute(builder: (context) => BasketPage()));
+      },
+      icon: Icon(
+        Icons.add_shopping_cart_sharp,
+        color: AppBarTheme.of(context).iconTheme?.color,
+        size: 30,
+      ),
+    ),
+    const SizedBox(width: 10),
+  ],
+),
       //------------------- body -------------------
       body: SafeArea(
         child: mobileScreen[screenIndex],
