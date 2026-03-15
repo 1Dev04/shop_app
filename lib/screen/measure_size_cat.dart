@@ -88,7 +88,7 @@ class CatData {
   final int? age;
   final double weight;
   final String sizeCategory;
-  final double chestCm;
+  final double? chestCm;
   final double? neckCm;
   final double? bodyLengthCm;
   final double confidence;
@@ -104,7 +104,7 @@ class CatData {
     this.age,
     required this.weight,
     required this.sizeCategory,
-    required this.chestCm,
+    this.chestCm,   
     this.neckCm,
     this.bodyLengthCm,
     required this.confidence,
@@ -122,7 +122,7 @@ class CatData {
         weight: j['weight'] != null ? (j['weight'] as num).toDouble() : 0.0,
         sizeCategory: j['size_category'] ?? 'M',
         chestCm:
-            j['chest_cm'] != null ? (j['chest_cm'] as num).toDouble() : 0.0,
+            j['chest_cm'] != null ? (j['chest_cm'] as num).toDouble() : null,
         neckCm: j['neck_cm'] != null ? (j['neck_cm'] as num).toDouble() : null,
         bodyLengthCm: j['body_length_cm'] != null
             ? (j['body_length_cm'] as num).toDouble()
@@ -181,6 +181,14 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
   final _favouriteApi = FavouriteApiService();
   final _recomApi = RecommendApiService();
 
+  final TextEditingController _chestCtrl = TextEditingController();
+  final TextEditingController _neckCtrl = TextEditingController();
+  final TextEditingController _waistCtrl = TextEditingController();
+  final TextEditingController _bodyLenCtrl = TextEditingController();
+  final TextEditingController _backLenCtrl = TextEditingController();
+  final TextEditingController _legLenCtrl = TextEditingController();
+  bool _showMeasurePanel = false;
+
   bool _isCapturing = false;
   bool _isDisposed = false;
   CameraController? _cameraCtrl;
@@ -214,6 +222,12 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
     _isDisposed = true;
     _cameraCtrl?.dispose();
     _cameraCtrl = null;
+    _chestCtrl.dispose();
+    _neckCtrl.dispose();
+    _waistCtrl.dispose();
+    _bodyLenCtrl.dispose();
+    _backLenCtrl.dispose();
+    _legLenCtrl.dispose();
     super.dispose();
   }
 
@@ -1517,94 +1531,121 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
   Widget _buildImageSection(
       bool dark, File file, LanguageProvider lang, bool loading) {
     return Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(children: [
-          Container(
-            height: 300,
-            decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: const [
-                  BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 10,
-                      offset: Offset(0, 4))
-                ]),
-            child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Image.file(file,
-                    fit: BoxFit.cover, width: double.infinity)),
-          ),
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-                color: dark ? Colors.grey[850] : Colors.grey[50],
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                    color: dark ? Colors.grey[700]! : Colors.grey[300]!,
-                    width: 2)),
-            child: Row(children: [
-              Container(
-                width: 100,
-                height: 120,
-                decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                        color: dark ? Colors.grey[600]! : Colors.grey[400]!,
-                        width: 2)),
-                child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.file(file, fit: BoxFit.cover)),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                    _infoRow(lang.translate(en: 'Cat color:', th: 'สีแมว:'),
-                        'N/A', dark),
-                    const SizedBox(height: 10),
-                    _infoRow(
-                        lang.translate(en: 'Age:', th: 'อายุ:'), 'N/A', dark),
-                    const SizedBox(height: 10),
-                    _infoRow(lang.translate(en: 'Breed:', th: 'พันธุ์:'), 'N/A',
-                        dark),
-                    const SizedBox(height: 10),
-                    _infoRow(
-                        lang.translate(en: 'Size:', th: 'ขนาด:'), 'N/A', dark),
-                  ])),
-            ]),
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-                color: dark ? Colors.grey[800] : Colors.grey[200],
-                borderRadius: BorderRadius.circular(12)),
-            child: Row(children: [
-              Icon(Icons.info_outline,
-                  color: dark ? Colors.orange[300] : Colors.orange[700],
-                  size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                  child: Text(
-                lang.translate(
-                    en: 'Please ensure that the cat is clearly visible for accurate measurement.',
-                    th: 'โปรดมั่นใจว่ามองเห็นรูปร่างของแมวชัดเจน เพื่อความแม่นยำในการวัดขนาด'),
-                style: TextStyle(
-                    fontSize: 12,
-                    color: dark ? Colors.white70 : Colors.black87),
-              )),
-            ]),
-          ),
-          const SizedBox(height: 16),
-          Row(children: [
+      padding: const EdgeInsets.all(16),
+      child: Column(children: [
+        Container(
+          height: 300,
+          decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: const [
+                BoxShadow(
+                    color: Colors.black26, blurRadius: 10, offset: Offset(0, 4))
+              ]),
+          child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child:
+                  Image.file(file, fit: BoxFit.cover, width: double.infinity)),
+        ),
+        const SizedBox(height: 20),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+              color: dark ? Colors.grey[850] : Colors.grey[50],
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                  color: dark ? Colors.grey[700]! : Colors.grey[300]!,
+                  width: 2)),
+          child: Row(children: [
+            Container(
+              width: 100,
+              height: 120,
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: dark ? Colors.grey[600]! : Colors.grey[400]!,
+                      width: 2)),
+              child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.file(file, fit: BoxFit.cover)),
+            ),
+            const SizedBox(width: 16),
             Expanded(
-                child: ElevatedButton.icon(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  _infoRow(lang.translate(en: 'Cat color:', th: 'สีแมว:'),
+                      'N/A', dark),
+                  const SizedBox(height: 10),
+                  _infoRow(
+                      lang.translate(en: 'Age:', th: 'อายุ:'), 'N/A', dark),
+                  const SizedBox(height: 10),
+                  _infoRow(
+                      lang.translate(en: 'Breed:', th: 'พันธุ์:'), 'N/A', dark),
+                  const SizedBox(height: 10),
+                  _infoRow(
+                      lang.translate(en: 'Size:', th: 'ขนาด:'), 'N/A', dark),
+                ])),
+          ]),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+              color: dark ? Colors.grey[800] : Colors.grey[200],
+              borderRadius: BorderRadius.circular(12)),
+          child: Row(children: [
+            Icon(Icons.info_outline,
+                color: dark ? Colors.orange[300] : Colors.orange[700],
+                size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+                child: Text(
+              lang.translate(
+                  en: 'Please ensure that the cat is clearly visible for accurate measurement.',
+                  th: 'โปรดมั่นใจว่ามองเห็นรูปร่างของแมวชัดเจน เพื่อความแม่นยำในการวัดขนาด'),
+              style: TextStyle(
+                  fontSize: 12, color: dark ? Colors.white70 : Colors.black87),
+            )),
+          ]),
+        ),
+        const SizedBox(height: 16),
+        // _buildImageSection — ส่วนหลังปุ่ม info box
+        const SizedBox(height: 16),
+
+// ✅ ปุ่ม Analyze + X อยู่ใน Row เหมือนเดิม
+        Row(children: [
+          Expanded(
+            child: ElevatedButton.icon(
               onPressed: loading
                   ? null
-                  : () =>
-                      context.read<CatAnalysisBloc>().add(CatAnalysisStarted()),
+                  : () {
+                      final measurements = <String, dynamic>{};
+                      if (_chestCtrl.text.trim().isNotEmpty)
+                        measurements['chest_cm'] =
+                            double.tryParse(_chestCtrl.text.trim());
+                      if (_neckCtrl.text.trim().isNotEmpty)
+                        measurements['neck_cm'] =
+                            double.tryParse(_neckCtrl.text.trim());
+                      if (_waistCtrl.text.trim().isNotEmpty)
+                        measurements['waist_cm'] =
+                            double.tryParse(_waistCtrl.text.trim());
+                      if (_bodyLenCtrl.text.trim().isNotEmpty)
+                        measurements['body_length_cm'] =
+                            double.tryParse(_bodyLenCtrl.text.trim());
+                      if (_backLenCtrl.text.trim().isNotEmpty)
+                        measurements['back_length_cm'] =
+                            double.tryParse(_backLenCtrl.text.trim());
+                      if (_legLenCtrl.text.trim().isNotEmpty)
+                        measurements['leg_length_cm'] =
+                            double.tryParse(_legLenCtrl.text.trim());
+
+                      context.read<CatAnalysisBloc>().add(
+                            CatAnalysisStarted(
+                              measurements:
+                                  measurements.isEmpty ? null : measurements,
+                            ),
+                          );
+                    },
               icon: loading
                   ? const SizedBox(
                       width: 20,
@@ -1623,27 +1664,132 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
                     const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  backgroundColor: Colors.orange,
-                  foregroundColor: Colors.white,
-                  disabledBackgroundColor: Colors.grey[400],
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12))),
-            )),
-            const SizedBox(width: 12),
-            ElevatedButton(
-              onPressed: loading ? null : _clearData,
-              style: ElevatedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12))),
-              child: const Icon(Icons.close, size: 24),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: Colors.grey[400],
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
             ),
-          ]),
-        ]));
+          ),
+          const SizedBox(width: 12),
+          ElevatedButton(
+            onPressed: loading ? null : _clearData,
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Icon(Icons.close, size: 24),
+          ),
+        ]),
+
+        const SizedBox(height: 12),
+
+// ✅ ปุ่ม toggle measurement — อยู่นอก Row เป็น Column ของตัวเอง
+        GestureDetector(
+          onTap: () => setState(() => _showMeasurePanel = !_showMeasurePanel),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: _showMeasurePanel
+                  ? Colors.orange.shade50
+                  : (dark ? Colors.grey[800] : Colors.grey.shade100),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: _showMeasurePanel ? Colors.orange : Colors.grey.shade300,
+                width: 1.5,
+              ),
+            ),
+            child: Row(children: [
+              Icon(Icons.straighten_rounded,
+                  size: 18,
+                  color:
+                      _showMeasurePanel ? Colors.orange : Colors.grey.shade600),
+              const SizedBox(width: 8),
+              Text('กรอกการวัดเอง (optional)',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: _showMeasurePanel
+                        ? Colors.orange
+                        : Colors.grey.shade700,
+                  )),
+              const Spacer(),
+              AnimatedRotation(
+                turns: _showMeasurePanel ? 0.5 : 0.0,
+                duration: const Duration(milliseconds: 200),
+                child: Icon(Icons.keyboard_arrow_down_rounded,
+                    color: _showMeasurePanel
+                        ? Colors.orange
+                        : Colors.grey.shade500),
+              ),
+            ]),
+          ),
+        ),
+
+// ✅ measurement fields — expand ลงมาใต้ปุ่ม toggle
+        AnimatedCrossFade(
+          duration: const Duration(milliseconds: 250),
+          crossFadeState: _showMeasurePanel
+              ? CrossFadeState.showFirst
+              : CrossFadeState.showSecond,
+          firstChild: Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: Column(children: [
+              Row(children: [
+                Expanded(
+                    child: _measureField(
+                        controller: _chestCtrl,
+                        label: 'รอบอก *',
+                        icon: Icons.radio_button_unchecked)),
+                const SizedBox(width: 10),
+                Expanded(
+                    child: _measureField(
+                        controller: _neckCtrl,
+                        label: 'รอบคอ',
+                        icon: Icons.radio_button_unchecked)),
+              ]),
+              const SizedBox(height: 10),
+              Row(children: [
+                Expanded(
+                    child: _measureField(
+                        controller: _bodyLenCtrl,
+                        label: 'ยาวตัว',
+                        icon: Icons.straighten)),
+                const SizedBox(width: 10),
+                Expanded(
+                    child: _measureField(
+                        controller: _backLenCtrl,
+                        label: 'ยาวหลัง',
+                        icon: Icons.straighten)),
+              ]),
+              const SizedBox(height: 10),
+              Row(children: [
+                Expanded(
+                    child: _measureField(
+                        controller: _waistCtrl,
+                        label: 'รอบเอว',
+                        icon: Icons.radio_button_unchecked)),
+                const SizedBox(width: 10),
+                Expanded(
+                    child: _measureField(
+                        controller: _legLenCtrl,
+                        label: 'ยาวขา',
+                        icon: Icons.straighten)),
+              ]),
+            ]),
+          ),
+          secondChild: const SizedBox.shrink(),
+        ),
+        const SizedBox(height: 16),
+      ]),
+    );
   }
 
   // ─── Result Section ───────────────────────────────────────────────────────────

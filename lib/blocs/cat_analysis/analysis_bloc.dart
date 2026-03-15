@@ -34,7 +34,7 @@ class CatAnalysisBloc extends Bloc<CatAnalysisEvent, CatAnalysisState> {
     emit(CatImageReady(event.imageFile));
   }
 
-  // ── เริ่มวิเคราะห์ ─────────────────────────────────────
+// ── เริ่มวิเคราะห์ ─────────────────────────────────────
   Future<void> _onAnalysisStarted(
     CatAnalysisStarted event,
     Emitter<CatAnalysisState> emit,
@@ -44,7 +44,6 @@ class CatAnalysisBloc extends Bloc<CatAnalysisEvent, CatAnalysisState> {
     final imageFile = currentState.imageFile;
 
     try {
-      // Step 1: Upload to Cloudinary
       emit(CatAnalysisUploading(imageFile));
       final imageUrl = await _uploadToCloudinary(imageFile);
       if (imageUrl == null) {
@@ -53,7 +52,6 @@ class CatAnalysisBloc extends Bloc<CatAnalysisEvent, CatAnalysisState> {
         return;
       }
 
-      // Step 2: Get Firebase token
       final token = await _getFirebaseToken();
       if (token == null) {
         emit(CatAnalysisFailure('กรุณาเข้าสู่ระบบก่อนใช้งาน'));
@@ -61,8 +59,20 @@ class CatAnalysisBloc extends Bloc<CatAnalysisEvent, CatAnalysisState> {
         return;
       }
 
-      // Step 3: Analyze — backend จะ INSERT cat + query recommendations ให้เลย
       emit(CatAnalysisAnalyzing(imageFile));
+
+      // ✅ ส่ง measurements ไปด้วยถ้ามี
+      final requestBody = <String, dynamic>{'image_cat': imageUrl};
+      if (event.measurements != null && event.measurements!.isNotEmpty) {
+        // กรอง null ออก ไม่ส่ง field ที่ไม่มีค่า
+        final cleaned = Map<String, dynamic>.fromEntries(
+          event.measurements!.entries.where((e) => e.value != null),
+        );
+        if (cleaned.isNotEmpty) {
+          requestBody['measurements'] = cleaned;
+        }
+      }
+
       final response = await http
           .post(
             Uri.parse('${_getBaseUrl()}/api/vision/analyze-cat'),
@@ -70,13 +80,12 @@ class CatAnalysisBloc extends Bloc<CatAnalysisEvent, CatAnalysisState> {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer $token',
             },
-            body: jsonEncode({'image_cat': imageUrl}),
+            body: jsonEncode(requestBody),
           )
           .timeout(const Duration(seconds: 60));
 
       final body = jsonDecode(utf8.decode(response.bodyBytes));
 
-      // Step 4: Handle response
       if (response.statusCode == 500) {
         final detail = body['detail'] ?? '';
         if (detail.contains('quota') ||
@@ -90,33 +99,25 @@ class CatAnalysisBloc extends Bloc<CatAnalysisEvent, CatAnalysisState> {
         emit(CatAnalysisInitial());
         return;
       }
-
       if (response.statusCode == 401) {
         emit(CatAnalysisFailure('Session หมดอายุ กรุณาเข้าสู่ระบบใหม่'));
         emit(CatAnalysisInitial());
         return;
       }
-
       if (response.statusCode != 200) {
         emit(CatAnalysisFailure('HTTP ${response.statusCode}'));
         emit(CatAnalysisInitial());
         return;
       }
-
       if (body['is_cat'] != true) {
         emit(CatAnalysisNotFound(body['message'] ?? 'ไม่พบแมวในภาพ'));
         emit(CatAnalysisInitial());
         return;
       }
 
-      // ✅ Parse recommendations จาก backend โดยตรง
-      // vision.py ส่ง recommendations[] มาพร้อมกันเลย ไม่ต้อง call เพิ่ม
       final recommendations = _parseRecommendations(body['recommendations']);
-
-      emit(CatAnalysisSuccess(
-        CatData.fromJson(body),
-        recommendations: recommendations,
-      ));
+      emit(CatAnalysisSuccess(CatData.fromJson(body),
+          recommendations: recommendations));
     } on TimeoutException {
       emit(CatAnalysisFailure('Backend ใช้เวลานานเกินไป'));
       emit(CatAnalysisInitial());
@@ -134,6 +135,7 @@ class CatAnalysisBloc extends Bloc<CatAnalysisEvent, CatAnalysisState> {
     emit(CatAnalysisInitial());
   }
 
+// ── Preload จาก history ────────────────────────────────
   Future<void> _onPreloadSuccess(
     CatPreloadSuccess event,
     Emitter<CatAnalysisState> emit,
@@ -144,9 +146,10 @@ class CatAnalysisBloc extends Bloc<CatAnalysisEvent, CatAnalysisState> {
         name: catRecord.catColor,
         breed: catRecord.breed,
         age: catRecord.age,
-        weight: catRecord.weight ?? 0.0,
+        // ✅ NULL-safe — ไม่ใช้ ?? 0.0
+        weight: catRecord.weight ?? 0.0, 
+        chestCm: catRecord.chestCm, 
         sizeCategory: catRecord.sizeCategory,
-        chestCm: catRecord.chestCm ?? 0.0,
         neckCm: catRecord.neckCm,
         bodyLengthCm: catRecord.bodyLengthCm,
         confidence: catRecord.confidence ?? 0.0,
@@ -161,14 +164,12 @@ class CatAnalysisBloc extends Bloc<CatAnalysisEvent, CatAnalysisState> {
     }
   }
 
-  // ── Update ─────────────────────────────────────────────
+// ── Update ─────────────────────────────────────────────
   Future<void> _onDataUpdated(
     CatDataUpdated event,
     Emitter<CatAnalysisState> emit,
   ) async {
     final currentState = state;
-
-    // ดึง catData + recommendations จาก state ปัจจุบัน
     CatData? catData;
     List<Map<String, dynamic>> recommendations = const [];
 
@@ -186,15 +187,34 @@ class CatAnalysisBloc extends Bloc<CatAnalysisEvent, CatAnalysisState> {
       emit(CatDataUpdating(catData, recommendations: recommendations));
       await _catApi.updateCat(catData.dbId!, event.updateData);
 
+      // ✅ อัปเดตทุก field จาก updateData รวม weight และ chestCm
+      final newWeight = event.updateData['weight'] != null
+          ? (event.updateData['weight'] as num).toDouble()
+          : catData.weight;
+
+      final newChestCm = event.updateData['chest_cm'] != null
+          ? (event.updateData['chest_cm'] as num).toDouble()
+          : catData.chestCm;
+
+      final newNeckCm = event.updateData['neck_cm'] != null
+          ? (event.updateData['neck_cm'] as num).toDouble()
+          : catData.neckCm;
+
+      final newBodyLengthCm = event.updateData['body_length_cm'] != null
+          ? (event.updateData['body_length_cm'] as num).toDouble()
+          : catData.bodyLengthCm;
+
       final updated = CatData(
         name: event.updateData['cat_color'] ?? catData.name,
         breed: event.updateData['breed'] ?? catData.breed,
-        age: event.updateData['age'] ?? catData.age,
-        weight: catData.weight,
+        age: event.updateData['age'] != null
+            ? (event.updateData['age'] as num).toInt()
+            : catData.age,
+        weight: newWeight, // ✅ ใช้ค่าใหม่
         sizeCategory: event.updateData['size_category'] ?? catData.sizeCategory,
-        chestCm: catData.chestCm,
-        neckCm: catData.neckCm,
-        bodyLengthCm: catData.bodyLengthCm,
+        chestCm: newChestCm, // ✅ ใช้ค่าใหม่
+        neckCm: newNeckCm, // ✅ ใช้ค่าใหม่
+        bodyLengthCm: newBodyLengthCm,
         confidence: catData.confidence,
         boundingBox: catData.boundingBox,
         imageUrl: catData.imageUrl,
@@ -203,7 +223,6 @@ class CatAnalysisBloc extends Bloc<CatAnalysisEvent, CatAnalysisState> {
         dbId: catData.dbId,
       );
 
-      // ✅ ส่ง recommendations ต่อไปให้ state ใหม่ด้วย — ไม่หายหลัง edit
       emit(CatDataUpdateSuccess(
         updated,
         'บันทึกข้อมูลแล้ว ✅',

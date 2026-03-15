@@ -183,7 +183,7 @@ class CatMatchInfo {
   final String catColor;
   final String catSize;
   final double catWeight;
-  final double catChestCm;
+  final double? catChestCm;
   final double matchScore;
   final bool matchSize;
   final bool matchWeight;
@@ -211,7 +211,7 @@ class CatMatchInfo {
         catColor: j['cat_color']?.toString() ?? '',
         catSize: j['cat_size']?.toString() ?? '',
         catWeight: (j['cat_weight'] as num?)?.toDouble() ?? 0,
-        catChestCm: (j['cat_chest_cm'] as num?)?.toDouble() ?? 0,
+        catChestCm: (j['cat_chest_cm'] as num?)?.toDouble(),
         matchScore: (j['match_score'] as num?)?.toDouble() ?? 0,
         matchSize: j['match_size'] == true,
         matchWeight: j['match_weight'] == true,
