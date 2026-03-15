@@ -30230,7 +30230,7 @@ PO:function PO(a,b,c){this.c=a
 this.d=b
 this.a=c},
 afH:function afH(){this.c=this.a=this.d=null},
-b32(){return"http://localhost:10000"},
+b32(){return"https://backend-catshop.onrender.com"},
 Hb(){var s=0,r=A.v(t.A),q,p=2,o=[],n,m,l,k,j
 var $async$Hb=A.q(function(a,b){if(a===1){o.push(b)
 s=p}for(;;)switch(s){case 0:p=4
@@ -30338,7 +30338,7 @@ _.fx=a2
 _.fy=a3},
 Ir:function Ir(){},
 akj:function akj(){},
-fX(){return"http://localhost:10000"},
+fX(){return"https://backend-catshop.onrender.com"},
 oR(){var s=0,r=A.v(t.N),q,p,o,n
 var $async$oR=A.q(function(a,b){if(a===1)return A.r(b,r)
 for(;;)switch(s){case 0:A.bK("\ud83d\udd11 [Auth] Getting Firebase UID...")
@@ -30399,7 +30399,7 @@ lc:function lc(a){this.a=a},
 aiR:function aiR(){},
 jT:function jT(a){this.a=a},
 aoE:function aoE(){},
-bhR(){return"http://localhost:10000"},
+bhR(){return"https://backend-catshop.onrender.com"},
 ahe(){var s=0,r=A.v(t.A),q,p=2,o=[],n,m,l,k,j
 var $async$ahe=A.q(function(a,b){if(a===1){o.push(b)
 s=p}for(;;)switch(s){case 0:p=4
@@ -30680,7 +30680,7 @@ this.b=b},
 xT:function xT(a){this.a=a},
 tA:function tA(a,b){this.a=a
 this.b=b},
-b1V(){return"http://localhost:10000"},
+b1V(){return"https://backend-catshop.onrender.com"},
 u0:function u0(a,b,c,d,e,f,g){var _=this
 _.e=a
 _.f=b
@@ -30750,7 +30750,7 @@ a2o:function a2o(){},
 N5:function N5(){},
 N6:function N6(){},
 uq:function uq(a){this.a=a},
-b1W(){return"http://localhost:10000"},
+b1W(){return"https://backend-catshop.onrender.com"},
 uz:function uz(a,b,c,d,e,f,g){var _=this
 _.e=a
 _.f=b
@@ -30851,7 +30851,7 @@ _.r=g
 _.w=h
 _.x=i
 _.y=j},
-b8f(){return"http://localhost:10000"},
+b8f(){return"https://backend-catshop.onrender.com"},
 uL:function uL(a,b,c,d,e,f,g){var _=this
 _.e=a
 _.f=b
@@ -109349,7 +109349,7 @@ break
 case 6:case 1:return A.t(q,r)
 case 2:return A.r(o.at(-1),r)}})
 return A.u($async$Hf,r)},
-akG(){return"http://localhost:10000"}}
+akG(){return"https://backend-catshop.onrender.com"}}
 A.akh.prototype={
 $1(a){return a.b!=null},
 $S:663}
@@ -109469,7 +109469,7 @@ switch(a.c){case"user-not-found":return"No user found for that email."
 case"wrong-password":return"Wrong password provided."
 default:s=a.b
 return s==null?"Login failed":s}},
-akY(){return"http://localhost:10000"}}
+akY(){return"https://backend-catshop.onrender.com"}}
 A.ru.prototype={
 gaW(){return[]}}
 A.w1.prototype={
@@ -109483,7 +109483,7 @@ A.HY.prototype={}
 A.rv.prototype={
 gaW(){return[this.a]}}
 A.rY.prototype={
-aop(){return"http://localhost:10000"},
+aop(){return"https://backend-catshop.onrender.com"},
 Fd(){var s=0,r=A.v(t.A),q,p=2,o=[],n,m,l,k,j
 var $async$Fd=A.q(function(a,b){if(a===1){o.push(b)
 s=p}for(;;)switch(s){case 0:p=4
@@ -109952,7 +109952,7 @@ else if(t.f.b(a)&&J.nj(a,"data"))s=r.a(J.n(a,"data"))
 r=J.e5(s,new A.arL(),t.a)
 r=A.U(r,r.$ti.i("ap.E"))
 return r},
-a0l(){return"http://localhost:10000"}}
+a0l(){return"https://backend-catshop.onrender.com"}}
 A.arL.prototype={
 $1(a){var s=J.n(a,"images"),r=A.nW(t.a.a(a),t.N,t.z)
 r.m(0,"images",typeof s=="string"?B.T.h5(0,s,null):s)
@@ -110398,7 +110398,7 @@ break
 case 6:case 1:return A.t(q,r)
 case 2:return A.r(o.at(-1),r)}})
 return A.u($async$qk,r)},
-aqi(){return"http://localhost:10000"}}
+aqi(){return"https://backend-catshop.onrender.com"}}
 A.zc.prototype={
 gaW(){return[]}}
 A.zd.prototype={
