@@ -956,11 +956,10 @@ class _HistoryPageState extends State<HistoryPage>
             ),
             IconButton(
               onPressed: () {
-                Navigator.of(context).pushAndRemoveUntil(
+                Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => MeasureSizeCat(preloadCatId: cat.id),
                   ),
-                  (route) => false,
                 );
               },
               icon: Icon(Icons.recommend_outlined,

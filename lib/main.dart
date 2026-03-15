@@ -93,7 +93,7 @@ class WelcomeScreen extends StatelessWidget {
             ),
             SizedBox(height: 30),
             Text(
-              'ABC SHOP',
+              'ABCat SHOP',
               style: TextStyle(
                 fontSize: 50,
                 fontFamily: 'Catfont',
