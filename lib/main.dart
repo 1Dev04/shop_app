@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+
 import 'package:flutter_application_1/provider/language_provider.dart';
 import 'firebase_options.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter_application_1/provider/favorite_provider.dart';
+
 import 'package:flutter_application_1/provider/theme.dart';
 import 'package:flutter_application_1/provider/theme_provider.dart';
 import 'package:flutter_application_1/screen/auth_page.dart';
@@ -37,7 +38,6 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider(create: (_) => FavoriteProvider()),
         ChangeNotifierProvider(create: (_) => LanguageProvider()),
       ],
       child: MyApp(),
@@ -112,7 +112,7 @@ class WelcomeScreen extends StatelessWidget {
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
-                Navigator.pushReplacement(
+                Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => authPage()),
                 );

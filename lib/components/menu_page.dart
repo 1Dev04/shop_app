@@ -1,13 +1,14 @@
 // ----MenuPage--------------------------------------------------------------------------
 
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/components/history_page.dart';
+
 import 'package:flutter_application_1/components/my_order_page.dart';
 import 'package:flutter_application_1/components/my_coupon_page.dart';
 import 'package:flutter_application_1/documents/faq.dart';
 import 'package:flutter_application_1/documents/terms_of_use.dart';
 import 'package:flutter_application_1/documents/privacy_policy.dart';
 import 'package:flutter_application_1/provider/language_provider.dart';
+import 'package:flutter_application_1/screen/history_page.dart';
 import 'package:flutter_application_1/screen/profile_user.dart';
 import 'package:flutter_application_1/screen/setting_page.dart';
 import 'package:provider/provider.dart';
@@ -104,7 +105,7 @@ class _MenuPageState extends State<MenuPage> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => const HistoryPage()),
+                                  builder: (context) => HistoryPage()),
                             );
                           },
                           child: Container(
@@ -345,8 +346,8 @@ class _MenuPageState extends State<MenuPage> {
               Center(
                   child: Text(
                       languageProvider.translate(
-                          en: "Version: 4.0 | By 1DEV co.,ltd.",
-                          th: "เวอร์ชัน: 4.0 | โดย 1DEV co.,ltd."),
+                          en: "Version: 6 | By 1DEV co.,ltd.",
+                          th: "เวอร์ชัน: 6 | โดย 1DEV co.,ltd."),
                       style: TextStyle(fontSize: 15)))
             ],
           ),

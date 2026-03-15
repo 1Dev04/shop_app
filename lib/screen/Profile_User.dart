@@ -2,10 +2,12 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_application_1/provider/theme_provider.dart';
 import 'package:flutter_application_1/screen/edit_profile.dart';
 import 'package:flutter_application_1/screen/signin_user.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 class Profile extends StatefulWidget {
   @override
@@ -29,12 +31,14 @@ class _ProfileState extends State<Profile> {
   }
 
   void showLogAlertExit(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
             title: const Text("Are you sure you want to log out?"),
-            
+            backgroundColor: isDark ? Colors.grey[900] : Colors.white,
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
@@ -42,20 +46,17 @@ class _ProfileState extends State<Profile> {
               ),
               ElevatedButton(
                 onPressed: () async {
-                  Navigator.of(context).pop();
+                  Navigator.of(context).pop(); // ปิด dialog อย่างเดียว
                   await signOut();
 
                   if (mounted) {
-                    Navigator.of(context).pop();
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(builder: (context) => Login()),
                     );
                   }
                 },
-                child: const Text(
-                  "Confirm",
-                ),
+                child: const Text("Confirm"),
               ),
             ],
           );
@@ -71,10 +72,26 @@ class _ProfileState extends State<Profile> {
   @override
   void initState() {
     super.initState();
-    fetchUser(); 
+    fetchUser();
   }
 
   void fetchUser() async {
+    // ดัก Guest — ไม่ต้องดึง Firestore
+    if (FirebaseAuth.instance.currentUser?.email == 'guest678@gmail.com') {
+      setState(() {
+        _name = 'Guest';
+        _email = 'guest678@gmail.com';
+        _phone = '-';
+        _postal = '-';
+        _birthdate = '';
+        _gender = '-';
+        _newsletter = '-';
+        _memberAgreement = '-';
+      });
+      return; // หยุดตรงนี้
+    }
+
+    // member ปกติ
     String uid = FirebaseAuth.instance.currentUser!.uid;
     DocumentSnapshot userDoc =
         await FirebaseFirestore.instance.collection('users').doc(uid).get();
@@ -100,13 +117,19 @@ class _ProfileState extends State<Profile> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = context.watch<ThemeProvider>();
+    final isDark = themeProvider.themeMode == ThemeMode.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Profile",
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 28)),
         centerTitle: true,
-
-   
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new_rounded,
+              color: isDark ? Colors.white : Colors.black87, size: 20),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       body: SingleChildScrollView(
         child: Container(
@@ -124,28 +147,39 @@ class _ProfileState extends State<Profile> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => editProfilePage(),
+                          onTap: () {
+                            // ดัก Guest
+                            if (FirebaseAuth.instance.currentUser?.email ==
+                                'guest678@gmail.com') {
+                              showDialog(
+                                context: context,
+                                builder: (_) => AlertDialog(
+                                  title: const Text('Members Only'),
+                                  content: const Text(
+                                      'Please login to edit your profile.'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text('OK'),
+                                    ),
+                                  ],
                                 ),
                               );
-                            },
-                            child: Column(
-                              children: [
-                                Icon(
-                                  Icons.edit_outlined,
-                                  size: 30,
-                                ),
-                                Text(
-                                  'Edit',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ],
-                            ))
+                              return;
+                            }
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => EditProfilePage()),
+                            );
+                          },
+                          child: Column(
+                            children: [
+                              Icon(Icons.edit_outlined, size: 30),
+                              Text('Edit', style: TextStyle(fontSize: 16)),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -201,7 +235,9 @@ class _ProfileState extends State<Profile> {
                     onPressed: () => showLogAlertExit(context),
                     child: Text(
                       "Logout",
-                      style: TextStyle(fontSize: 16 ,),
+                      style: TextStyle(
+                        fontSize: 16,
+                      ),
                     ),
                   ),
                 ],
