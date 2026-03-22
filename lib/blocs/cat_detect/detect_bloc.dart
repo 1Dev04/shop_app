@@ -1,10 +1,10 @@
 import 'dart:convert';
-import 'dart:io';
+
 import 'package:bloc/bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:path/path.dart' as p;
+
 
 part 'detect_event.dart';
 part 'detect_state.dart';
@@ -18,12 +18,15 @@ class DetectCatBloc extends Bloc<DetectCatEvent, DetectCatState> {
   // ── Base URL ────────────────────────────────────────────────────────────────
   String _getBaseUrl() {
     const String env = String.fromEnvironment('ENV', defaultValue: 'local');
-      if (env == 'prod') return 'https://backend-catshop.onrender.com';
-    if (env == 'prod-v2')  return 'https://catshop-backend-v2.onrender.com';
-    if (env == 'prod-v3')  return 'https://cat-shop-backend.onrender.com';
-    if (kIsWeb)            return 'http://localhost:10000';
-    if (!kIsWeb && Platform.isAndroid) return 'http://10.0.2.2:10000';
-    return 'http://localhost:10000';
+    if (env == 'prod') return 'https://backend-catshop.onrender.com';
+    if (env == 'prod-v2') return 'https://catshop-backend-v2.onrender.com';
+    if (env == 'prod-v3') return 'https://cat-shop-backend.onrender.com';
+
+    // เช็ค kIsWeb ก่อน Platform เสมอ
+    if (kIsWeb) return 'https://backend-catshop.onrender.com';
+
+    // import dart:io เฉพาะ non-web
+    return 'http://10.0.2.2:10000';
   }
 
   // ── Firebase Token ──────────────────────────────────────────────────────────
@@ -44,12 +47,14 @@ class DetectCatBloc extends Bloc<DetectCatEvent, DetectCatState> {
   ) async {
     emit(DetectCatLoading());
     try {
-      // 1. อ่านไฟล์ → base64
-      final bytes       = await event.imageFile.readAsBytes();
+      // ✅ อ่าน bytes รองรับทั้ง File และ XFile
+      final bytes = await event.imageFile.readAsBytes();
       final base64Image = base64Encode(bytes);
-      final ext         = p.extension(event.imageFile.path)
-          .replaceFirst('.', '')
-          .toLowerCase();
+
+      // ✅ ดึง extension รองรับทั้ง 2 แบบ
+      final path = event.imageFile.path as String;
+      final ext =
+          path.contains('.') ? path.split('.').last.toLowerCase() : 'jpg';
       final mimeType = 'image/${ext == 'jpg' ? 'jpeg' : ext}';
 
       // 2. Firebase token
@@ -64,12 +69,12 @@ class DetectCatBloc extends Bloc<DetectCatEvent, DetectCatState> {
           .post(
             Uri.parse('${_getBaseUrl()}/api/detect/cat'),
             headers: {
-              'Content-Type':  'application/json',
+              'Content-Type': 'application/json',
               'Authorization': 'Bearer $token',
             },
             body: jsonEncode({
               'image_base64': base64Image,
-              'mime_type':    mimeType,
+              'mime_type': mimeType,
             }),
           )
           .timeout(const Duration(seconds: 30));
@@ -87,7 +92,7 @@ class DetectCatBloc extends Bloc<DetectCatEvent, DetectCatState> {
         return;
       }
 
-      final json   = jsonDecode(utf8.decode(response.bodyBytes));
+      final json = jsonDecode(utf8.decode(response.bodyBytes));
       final result = DetectCatResult.fromJson(json);
 
       // 5. Emit ตาม result
@@ -96,7 +101,7 @@ class DetectCatBloc extends Bloc<DetectCatEvent, DetectCatState> {
       } else {
         emit(DetectCatRejected(result));
       }
-    } on SocketException {
+    } on http.ClientException {
       emit(DetectCatFailure('ไม่สามารถเชื่อมต่อ Server ได้'));
     } catch (e) {
       emit(DetectCatFailure(e.toString().replaceAll('Exception: ', '')));

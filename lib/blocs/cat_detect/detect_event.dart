@@ -2,9 +2,9 @@ part of 'detect_bloc.dart';
 
 abstract class DetectCatEvent {}
 
-/// ส่ง File มา → bloc จะ base64 แล้ว POST ไปหลังบ้าน
+/// ส่ง XFile มา → รองรับทั้ง Mobile และ Web
 class DetectCatStarted extends DetectCatEvent {
-  final File imageFile;
+  final dynamic imageFile; // ✅ dynamic รองรับทั้ง File (mobile) และ XFile (web)
   DetectCatStarted(this.imageFile);
 }
 

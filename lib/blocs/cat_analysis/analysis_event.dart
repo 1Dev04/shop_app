@@ -3,11 +3,10 @@ part of 'analysis_bloc.dart';
 abstract class CatAnalysisEvent {}
 
 class CatImageSelected extends CatAnalysisEvent {
-  final File imageFile;
+  final dynamic imageFile; // ✅ dynamic รองรับทั้ง File และ XFile
   CatImageSelected(this.imageFile);
 }
 
-// ✅ เพิ่ม measurements — รองรับกรณี user กรอกก่อนกด Analyze
 class CatAnalysisStarted extends CatAnalysisEvent {
   final Map<String, dynamic>? measurements;
   CatAnalysisStarted({this.measurements});

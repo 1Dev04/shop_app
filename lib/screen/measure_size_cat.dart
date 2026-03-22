@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_application_1/api/service_fav_backet.dart';
@@ -104,7 +105,7 @@ class CatData {
     this.age,
     required this.weight,
     required this.sizeCategory,
-    this.chestCm,   
+    this.chestCm,
     this.neckCm,
     this.bodyLengthCm,
     required this.confidence,
@@ -234,6 +235,7 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
   // ─── Camera ────────────────────────────────────────────────────────────────
 
   void _initCamera() async {
+    if (kIsWeb) return;
     if (!mounted || _isDisposed) return;
     try {
       final cams = await availableCameras();
@@ -364,6 +366,11 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
   // ─── Capture ────────────────────────────────────────────────────────────────
 
   Future<void> _captureFromCamera() async {
+    if (kIsWeb) {
+      _showError('กล้องไม่รองรับบน Web กรุณากด "เลือกรูป" แทน');
+      return;
+    }
+
     if (_isCapturing || _isDisposed) return;
     final ctrl = _cameraCtrl;
     if (ctrl == null || !ctrl.value.isInitialized) {
@@ -1426,6 +1433,20 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
   // ─── Camera Preview ──────────────────────────────────────────────────────────
 
   Widget _buildCameraPreview() {
+    if (kIsWeb) {
+      return Center(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.photo_library_outlined,
+              size: 80, color: Colors.orange.shade300),
+          const SizedBox(height: 24),
+          const Text('วัดขนาดแมวบน Web',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text('กด "เลือกรูป" เพื่ออัปโหลดรูปแมวจากเครื่อง',
+              style: TextStyle(fontSize: 14, color: Colors.grey.shade500)),
+        ]),
+      );
+    }
     if (_cameraCtrl == null || !_cameraCtrl!.value.isInitialized) {
       return const Center(child: CircularProgressIndicator());
     }

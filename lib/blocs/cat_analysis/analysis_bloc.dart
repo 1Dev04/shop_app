@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+
 import 'package:bloc/bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -121,8 +121,8 @@ class CatAnalysisBloc extends Bloc<CatAnalysisEvent, CatAnalysisState> {
     } on TimeoutException {
       emit(CatAnalysisFailure('Backend ใช้เวลานานเกินไป'));
       emit(CatAnalysisInitial());
-    } on SocketException {
-      emit(CatAnalysisFailure('ไม่สามารถเชื่อมต่อ Backend ได้'));
+    } on http.ClientException {
+    emit(CatAnalysisFailure('ไม่สามารถเชื่อมต่อ Backend ได้'));
       emit(CatAnalysisInitial());
     } catch (e) {
       emit(CatAnalysisFailure(e.toString().replaceAll('Exception: ', '')));
@@ -147,8 +147,8 @@ class CatAnalysisBloc extends Bloc<CatAnalysisEvent, CatAnalysisState> {
         breed: catRecord.breed,
         age: catRecord.age,
         // ✅ NULL-safe — ไม่ใช้ ?? 0.0
-        weight: catRecord.weight ?? 0.0, 
-        chestCm: catRecord.chestCm, 
+        weight: catRecord.weight ?? 0.0,
+        chestCm: catRecord.chestCm,
         sizeCategory: catRecord.sizeCategory,
         neckCm: catRecord.neckCm,
         bodyLengthCm: catRecord.bodyLengthCm,
@@ -278,32 +278,47 @@ class CatAnalysisBloc extends Bloc<CatAnalysisEvent, CatAnalysisState> {
     }
   }
 
-  Future<String?> _uploadToCloudinary(File imageFile) async {
-    try {
-      final url = Uri.parse(
-          'https://api.cloudinary.com/v1_1/$_cloudinaryCloudName/image/upload');
-      final request = http.MultipartRequest('POST', url);
-      request.fields['upload_preset'] = _cloudinaryUploadPreset;
-      request.fields['folder'] = _cloudinaryFolder;
+  Future<String?> _uploadToCloudinary(dynamic imageFile) async {
+  try {
+    final url = Uri.parse(
+        'https://api.cloudinary.com/v1_1/$_cloudinaryCloudName/image/upload');
+    final request = http.MultipartRequest('POST', url);
+    request.fields['upload_preset'] = _cloudinaryUploadPreset;
+    request.fields['folder'] = _cloudinaryFolder;
+
+    // ✅ Web ใช้ fromBytes แทน fromPath
+    if (kIsWeb) {
+      final bytes = await imageFile.readAsBytes();
+      request.files.add(http.MultipartFile.fromBytes(
+        'file',
+        bytes,
+        filename: 'cat_image.jpg',
+      ));
+    } else {
       request.files
           .add(await http.MultipartFile.fromPath('file', imageFile.path));
-      final response = await http.Response.fromStream(await request.send());
-      if (response.statusCode == 200) {
-        return jsonDecode(utf8.decode(response.bodyBytes))['secure_url'];
-      }
-      return null;
-    } catch (_) {
-      return null;
     }
+
+    final response = await http.Response.fromStream(await request.send());
+    if (response.statusCode == 200) {
+      return jsonDecode(utf8.decode(response.bodyBytes))['secure_url'];
+    }
+    return null;
+  } catch (_) {
+    return null;
   }
+}
 
   String _getBaseUrl() {
     const String env = String.fromEnvironment('ENV', defaultValue: 'local');
     if (env == 'prod') return 'https://backend-catshop.onrender.com';
     if (env == 'prod-v2') return 'https://catshop-backend-v2.onrender.com';
     if (env == 'prod-v3') return 'https://cat-shop-backend.onrender.com';
-    if (kIsWeb) return 'http://localhost:10000';
-    if (!kIsWeb && Platform.isAndroid) return 'http://10.0.2.2:10000';
-    return 'http://localhost:10000';
+
+    // เช็ค kIsWeb ก่อน Platform เสมอ
+    if (kIsWeb) return 'https://backend-catshop.onrender.com';
+
+    // import dart:io เฉพาะ non-web
+    return 'http://10.0.2.2:10000';
   }
 }
