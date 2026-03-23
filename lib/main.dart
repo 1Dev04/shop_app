@@ -32,7 +32,6 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  await initializeCameras();
 
   runApp(
     MultiProvider(

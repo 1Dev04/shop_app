@@ -8,6 +8,7 @@ import 'package:flutter_application_1/blocs/cat_home/home_bloc.dart';
 import 'package:flutter_application_1/blocs/cat_item_detail/item_detail_bloc.dart';
 
 import 'package:flutter_application_1/provider/language_provider.dart';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
@@ -205,7 +206,7 @@ class _HomeViewState extends State<_HomeView> {
         final ads = _adsFromState(state);
         final isDetailLoading = state is HomeItemDetailLoading;
         final isBasketLoading = state is HomeBasketActionInProgress;
-             final isDark = Theme.of(context).brightness == Brightness.dark;
+        final isDark = Theme.of(context).brightness == Brightness.dark;
 
         if (ads.isEmpty) {
           return const Scaffold(
@@ -490,6 +491,7 @@ class _HomeViewState extends State<_HomeView> {
                   ),
                 ),
               ),
+              
             ],
           ),
         );
