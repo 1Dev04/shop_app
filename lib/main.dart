@@ -11,7 +11,19 @@ import 'package:flutter_application_1/provider/theme_provider.dart';
 import 'package:flutter_application_1/screen/auth_page.dart';
 import 'package:provider/provider.dart';
 
+import 'package:camera/camera.dart';
 
+List<CameraDescription>? _availableCameras;
+
+Future<void> initializeCameras() async {
+  try {
+    _availableCameras = await availableCameras();
+    print('✅ Cameras initialized: ${_availableCameras?.length ?? 0}');
+  } catch (e) {
+    print('❌ Camera initialization error: $e');
+    _availableCameras = [];
+  }
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,6 +32,7 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  await initializeCameras();
 
   runApp(
     MultiProvider(
