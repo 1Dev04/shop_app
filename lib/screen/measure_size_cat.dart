@@ -193,10 +193,8 @@ class _MeasureSizeCatState extends State<_MeasureSizeCatView> {
   bool _isCapturing = false;
   bool _isDisposed = false;
   CameraController? _cameraCtrl;
-
   File? _pendingFile;
   VoidCallback? _detectCleanup;
-
   List<RecommendItem> _recomItems = [];
   CatSummary? _recomCat;
   Pagination? _recomPagination;
