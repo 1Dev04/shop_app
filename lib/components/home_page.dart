@@ -8,7 +8,8 @@ import 'package:flutter_application_1/blocs/cat_home/home_bloc.dart';
 import 'package:flutter_application_1/blocs/cat_item_detail/item_detail_bloc.dart';
 
 import 'package:flutter_application_1/provider/language_provider.dart';
-
+import 'package:flutter_application_1/screen/SignIn_User.dart';
+import 'package:flutter_application_1/screen/chat_page.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
@@ -491,7 +492,69 @@ class _HomeViewState extends State<_HomeView> {
                   ),
                 ),
               ),
-              
+              Positioned(
+                top: 16,
+                right: 10,
+                child: SafeArea(
+                  child: FloatingActionButton.small(
+                    heroTag: 'home_fab',
+                    onPressed: () {
+                      if (FirebaseAuth.instance.currentUser?.email ==
+                          'guest678@gmail.com') {
+                        final languageProvider = Provider.of<LanguageProvider>(
+                            context,
+                            listen: false);
+                        final isDark =
+                            Theme.of(context).brightness == Brightness.dark;
+                        showDialog(
+                            context: context,
+                            builder: (_) => AlertDialog(
+                                  backgroundColor:
+                                      isDark ? Colors.grey[900] : Colors.white,
+                                  title: Text(languageProvider.translate(
+                                    en: 'Members Only',
+                                    th: 'สำหรับสมาชิกเท่านั้น',
+                                  )),
+                                  content: Text(languageProvider.translate(
+                                    en: 'Please register or login to access this feature.',
+                                    th: 'กรุณาสมัครสมาชิก หรือเข้าสู่ระบบเพื่อใช้งาน',
+                                  )),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: Text(languageProvider.translate(
+                                        en: 'Cancel',
+                                        th: 'ยกเลิก',
+                                      )),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (_) => const Login()),
+                                        );
+                                      },
+                                      child: Text(languageProvider.translate(
+                                        en: 'Login / Register',
+                                        th: 'เข้าสู่ระบบ / สมัครสมาชิก',
+                                      )),
+                                    ),
+                                  ],
+                                ));
+                      }
+                      else {
+                        Navigator.push(context,
+                          MaterialPageRoute(builder: (_) => const ChatPage()));
+                      }
+                    },
+                    backgroundColor: Colors.white.withOpacity(0.85),
+                    child: const Icon(Icons.chat_bubble_outline,
+                        color: Colors.black87),
+                  ),
+                ),
+              ),
             ],
           ),
         );
