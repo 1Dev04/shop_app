@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:lottie/lottie.dart';
+
 import 'package:flutter_application_1/blocs/cat_chatbot/chatbot_bloc.dart';
 import 'package:flutter_application_1/blocs/cat_chatbot/chatbot_event.dart';
 import 'package:flutter_application_1/blocs/cat_chatbot/chatbot_state.dart';
@@ -24,28 +26,64 @@ class _ChatView extends StatefulWidget {
   State<_ChatView> createState() => _ChatPageState();
 }
 
-class _ChatPageState extends State<_ChatView> {
+class _ChatPageState extends State<_ChatView>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _controller = TextEditingController();
+
+  late final AnimationController _shakeController;
+  late final Animation<double> _shakeAnim;
 
   bool _showWelcome = true;
   bool _isDancing = false;
+  bool _isHappy = false;
+  bool _is8bit = false;
+  bool _isCMD = false;
+  bool _isScan = false;
   bool _isError = false;
   bool _showBotPopup = false;
-  bool _isTapped = false;
+  bool _isFight = false;
+
+  bool _isTapLocked = false;
+  DateTime _lastTapTime = DateTime.now();
+  int _tapCount = 0;
 
   String _userText = '';
   String _botPopup = '';
 
-  // ── animation state ──────────────────────────────────────────
+  AudioPlayer? _audioPlayer;
+
   String get _currentAnim {
     if (_isError) return 'lib/assets/CatError.json';
+    if (_isFight) return 'lib/assets/CatTB.json';
     if (_isDancing) return 'lib/assets/CatDance.json';
+    if (_isHappy) return 'lib/assets/CarLovePS.json';
+    if (_is8bit) return 'lib/assets/Cat8Bit.json';
+    if (_isCMD) return 'lib/assets/CatCMD.json';
+    if (_isScan) return 'lib/assets/CatScan.json';
     return 'lib/assets/CatBot.json';
   }
 
   @override
   void initState() {
     super.initState();
+
+    // ✅ setup shake animation
+    _shakeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+
+    _shakeAnim = TweenSequence([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: -8.0), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: -8.0, end: 8.0), weight: 2),
+      TweenSequenceItem(tween: Tween(begin: 8.0, end: -6.0), weight: 2),
+      TweenSequenceItem(tween: Tween(begin: -6.0, end: 6.0), weight: 2),
+      TweenSequenceItem(tween: Tween(begin: 6.0, end: 0.0), weight: 1),
+    ]).animate(CurvedAnimation(
+      parent: _shakeController,
+      curve: Curves.easeInOut,
+    ));
+
     Future.delayed(const Duration(seconds: 4), () {
       if (!mounted) return;
       setState(() => _showWelcome = false);
@@ -54,20 +92,27 @@ class _ChatPageState extends State<_ChatView> {
 
   @override
   void dispose() {
+    _shakeController.dispose();
+    _audioPlayer?.dispose();
     _controller.dispose();
     super.dispose();
   }
 
-  // ── ส่งข้อความ ───────────────────────────────────────────────
+
+  Future<void> _playMeow() async {
+  try {
+    await _audioPlayer?.dispose();
+    _audioPlayer = AudioPlayer();
+    await _audioPlayer!.setAsset('assets/meow_robot.ogg');
+    await _audioPlayer!.play();
+  } catch (_) {}
+}
+
   void _sendMessage() {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
-    // ถ้ากำลัง error อยู่ → reset กลับ CatBot ก่อน
-    if (_isError) {
-      setState(() => _isError = false);
-    }
-
+    if (_isError) setState(() => _isError = false);
     if (_showWelcome) setState(() => _showWelcome = false);
 
     setState(() {
@@ -80,15 +125,39 @@ class _ChatPageState extends State<_ChatView> {
     context.read<ChatbotBloc>().add(ChatbotMessageSent(text));
   }
 
-  // ── แตะ Maffin ───────────────────────────────────────────────
   void _onTapMaffin() {
-    if (_isError) return; // ถ้า error อยู่ ไม่ให้กด
+    if (_isTapLocked || _isError) return;
 
-    setState(() => _isTapped = true);
-    Future.delayed(const Duration(milliseconds: 800), () {
-      if (!mounted) return;
-      setState(() => _isTapped = false);
-    });
+    final now = DateTime.now();
+    if (now.difference(_lastTapTime).inMilliseconds < 400) return;
+    _lastTapTime = now;
+
+    _tapCount++;
+
+    // ✅ สั่น + เสียงแมวทุกครั้งที่กด
+    _shakeController.forward(from: 0);
+    _playMeow();
+
+    if (_tapCount >= 5) {
+      _tapCount = 0;
+      _isTapLocked = true;
+
+      setState(() {
+        _isFight = true;
+        _botPopup = 'จี๊ Maffin เยอะละนะ!! 😾🐾';
+        _showBotPopup = true;
+      });
+
+      Future.delayed(const Duration(seconds: 3), () {
+        if (!mounted) return;
+        setState(() {
+          _isFight = false;
+          _showBotPopup = false;
+        });
+        _isTapLocked = false;
+      });
+      return;
+    }
 
     setState(() {
       _botPopup = _getMaffinReaction();
@@ -103,10 +172,11 @@ class _ChatPageState extends State<_ChatView> {
 
   String _getMaffinReaction() {
     final reactions = [
-      'อย่ากดเลย~ เมี้ยว! 😾',
-      'จี้ๆ ตัว Maffin อยู่นะ! 🐾',
-      'เมี้ยวๆ~ หยิก! 😸',
-      'ทำอะไรอยู่เนี่ย! 😹',
+      'หืม~ มือซนอีกแล้วนะ! 😼',
+      'อย่ามาแกล้งกันนะเมี้ยว! 🐾',
+      'Maffin งอนแล้วนะ! 😾',
+      'โดนจับได้แล้ววว! 😹',
+      'แอบมาจิ้มอีก! 👀',
     ];
     reactions.shuffle();
     return reactions.first;
@@ -136,9 +206,13 @@ class _ChatPageState extends State<_ChatView> {
             _botPopup = state.reply;
             _showBotPopup = true;
             _isError = false;
+            _isDancing = false;
+            _isHappy = false;
+            _is8bit = false;
+            _isCMD = false;
+            _isScan = false;
           });
 
-          // dance animation
           if (state.action == 'dance') {
             setState(() => _isDancing = true);
             Future.delayed(const Duration(seconds: 10), () {
@@ -146,8 +220,35 @@ class _ChatPageState extends State<_ChatView> {
               setState(() => _isDancing = false);
             });
           }
+          if (state.action == 'happy') {
+            setState(() => _isHappy = true);
+            Future.delayed(const Duration(seconds: 8), () {
+              if (!mounted) return;
+              setState(() => _isHappy = false);
+            });
+          }
+          if (state.action == '8bit') {
+            setState(() => _is8bit = true);
+            Future.delayed(const Duration(seconds: 8), () {
+              if (!mounted) return;
+              setState(() => _is8bit = false);
+            });
+          }
+          if (state.action == 'command') {
+            setState(() => _isCMD = true);
+            Future.delayed(const Duration(seconds: 15), () {
+              if (!mounted) return;
+              setState(() => _isCMD = false);
+            });
+          }
+          if (state.action == 'scan') {
+            setState(() => _isScan = true);
+            Future.delayed(const Duration(seconds: 7), () {
+              if (!mounted) return;
+              setState(() => _isScan = false);
+            });
+          }
 
-          // ซ่อน popup หลัง 7 วิ
           Future.delayed(const Duration(seconds: 7), () {
             if (!mounted) return;
             setState(() {
@@ -157,15 +258,12 @@ class _ChatPageState extends State<_ChatView> {
           });
         }
 
-        // ── Error → แสดง CatError 10 วิ ──────────────────────────
         if (state is ChatbotFailure) {
           setState(() {
             _isError = true;
             _botPopup = '😿 เชื่อมต่อไม่ได้ ลองใหม่อีกครั้งนะ!';
             _showBotPopup = true;
           });
-
-          // คืน CatBot หลัง 10 วิ ถ้า user ยังไม่ได้พิมพ์
           Future.delayed(const Duration(seconds: 10), () {
             if (!mounted) return;
             setState(() {
@@ -204,19 +302,23 @@ class _ChatPageState extends State<_ChatView> {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  // Maffin ใหญ่
+                  // ✅ Maffin ใหญ่ + shake animation
                   Center(
-                    child: GestureDetector(
-                      onTap: _onTapMaffin,
-                      child: AnimatedScale(
-                        scale: _isTapped ? 0.92 : 1.0,
-                        duration: const Duration(milliseconds: 150),
+                    child: AnimatedBuilder(
+                      animation: _shakeAnim,
+                      builder: (context, child) {
+                        return Transform.translate(
+                          offset: Offset(_shakeAnim.value, 0),
+                          child: child,
+                        );
+                      },
+                      child: GestureDetector(
+                        onTap: _onTapMaffin,
                         child: _buildMaffin(size: 420),
                       ),
                     ),
                   ),
 
-                  // welcome text
                   if (_showWelcome)
                     Positioned(
                       bottom: 20,
@@ -251,7 +353,6 @@ class _ChatPageState extends State<_ChatView> {
                       ),
                     ),
 
-                  // bot popup
                   AnimatedPositioned(
                     duration: const Duration(milliseconds: 350),
                     curve: Curves.easeOut,
@@ -306,12 +407,10 @@ class _ChatPageState extends State<_ChatView> {
                     ),
                   ),
 
-                  // searching / loading indicator
                   BlocBuilder<ChatbotBloc, ChatbotState>(
                     builder: (context, state) {
-                      if (state is! ChatbotLoading) {
+                      if (state is! ChatbotLoading)
                         return const SizedBox.shrink();
-                      }
                       return Positioned(
                         bottom: 16,
                         child: Container(
@@ -351,8 +450,6 @@ class _ChatPageState extends State<_ChatView> {
                 ],
               ),
             ),
-
-            // ── ข้อความ user ────────────────────────────────────
             AnimatedSize(
               duration: const Duration(milliseconds: 250),
               child: _userText.isNotEmpty
@@ -373,9 +470,8 @@ class _ChatPageState extends State<_ChatView> {
                               _userText,
                               style: TextStyle(
                                 fontSize: 14,
-                                color: isDark
-                                    ? Colors.white70
-                                    : Colors.grey[700],
+                                color:
+                                    isDark ? Colors.white70 : Colors.grey[700],
                               ),
                             ),
                           ),
@@ -384,11 +480,8 @@ class _ChatPageState extends State<_ChatView> {
                     )
                   : const SizedBox.shrink(),
             ),
-
-            // ── Input bar ────────────────────────────────────────
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: isDark ? Colors.grey[900] : Colors.white,
                 boxShadow: const [
@@ -420,9 +513,8 @@ class _ChatPageState extends State<_ChatView> {
                           ),
                         ),
                         style: TextStyle(
-                            color: isDark
-                                ? Colors.grey[200]
-                                : Colors.grey[800]),
+                            color:
+                                isDark ? Colors.grey[200] : Colors.grey[800]),
                       ),
                     ),
                     const SizedBox(width: 8),

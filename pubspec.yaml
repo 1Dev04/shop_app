@@ -41,6 +41,7 @@ dependencies:
     sdk: flutter
   lottie: ^3.1.0
   top_snackbar_flutter: ^3.1.0
+  just_audio: ^0.9.40
   
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -87,6 +88,7 @@ flutter:
 
   assets:
     - assets/icons/ 
+    - assets/
     - lib/assets/
   fonts:
     - family: Catfont
