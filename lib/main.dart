@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-
 import 'package:flutter_application_1/provider/language_provider.dart';
+
+
 import 'package:flutter_application_1/screen/auth_page.dart';
 import 'firebase_options.dart';
 
