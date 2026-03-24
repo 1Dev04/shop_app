@@ -6,8 +6,7 @@ import 'package:flutter_application_1/blocs/cat_register/register_bloc.dart';
 import 'package:flutter_application_1/provider/language_provider.dart';
 import 'package:flutter_application_1/provider/theme.dart';
 import 'package:flutter_application_1/provider/theme_provider.dart';
-
-import 'package:flutter_application_1/screen/auth_page.dart';
+import 'package:flutter_application_1/screen/Auth_Page.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
@@ -147,7 +146,7 @@ class _RegisterViewState extends State<_RegisterView> {
           );
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => authPage()),
+            MaterialPageRoute(builder: (_) => AuthPage()),
           );
         } else if (state is RegisterFailure) {
           final msg = state.message;

@@ -5,8 +5,8 @@ import 'package:flutter_application_1/components/controll_btn.dart';
 
 import 'package:flutter_application_1/screen/signin_user.dart';
 
-class authPage extends StatelessWidget {
-  const authPage({super.key});
+class AuthPage extends StatelessWidget {
+  const AuthPage({super.key});
 
   
 

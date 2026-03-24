@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:flutter_application_1/provider/language_provider.dart';
+import 'package:flutter_application_1/screen/Auth_Page.dart';
 import 'firebase_options.dart';
 
 import 'package:firebase_core/firebase_core.dart';
@@ -8,7 +9,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 
 import 'package:flutter_application_1/provider/theme.dart';
 import 'package:flutter_application_1/provider/theme_provider.dart';
-import 'package:flutter_application_1/screen/auth_page.dart';
+
 import 'package:provider/provider.dart';
 
 import 'package:camera/camera.dart';
@@ -114,7 +115,7 @@ class WelcomeScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => authPage()),
+                  MaterialPageRoute(builder: (context) => AuthPage()),
                 );
               },
               child: Text(
