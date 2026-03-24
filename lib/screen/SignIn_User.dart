@@ -8,7 +8,7 @@ import 'package:flutter_application_1/documents/terms_of_use.dart';
 import 'package:flutter_application_1/provider/language_provider.dart';
 import 'package:flutter_application_1/provider/theme.dart';
 import 'package:flutter_application_1/provider/theme_provider.dart';
-import 'package:flutter_application_1/screen/Auth_Page.dart';
+import 'package:flutter_application_1/screen/auth_page.dart';
 import 'package:flutter_application_1/screen/signup_user.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';

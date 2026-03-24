@@ -1,19 +1,4 @@
-// lib/api/service_recom_api.dart
-//
-// Recommend API Service
-// เชื่อมกับ backend: app/api/recommen_api.py
-//
-// Endpoints:
-//   GET /api/system/recommend/                      → list + pagination
-//   GET /api/system/recommend/detail/{clothing_id}  → detail + cat match
-//   PUT /api/system/cats/{cat_id}                   → update cat (re-use cat endpoint)
-//
-// Flow:
-//   1. CatApiService.analyze() สำเร็จ → บันทึก cat ลง DB
-//   2. RecommendApiService.getRecommendations() → ดึง clothing ที่เหมาะกับ cat ล่าสุด
-//   3. User กด detail → RecommendApiService.getRecommendationDetail()
-//   4. User กด Edit Cat → RecommendApiService.updateCatAndRefresh()
-//      → PUT /system/cats/{id} แล้ว refresh recommendations อัตโนมัติ
+
 
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
