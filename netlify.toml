@@ -1,9 +1,6 @@
 [build]
-  command = "flutter build web --release"
+  command = "git clone https://github.com/flutter/flutter.git -b stable --depth 1 && export PATH=$PATH:`pwd`/flutter/bin && flutter build web --release"
   publish = "build/web"
 
 [build.environment]
-  FLUTTER_VERSION = "3.19.0"
-
-[[plugins]]
-  package = "netlify-plugin-flutter"
+  FLUTTER_VERSION = "stable"
