@@ -6,7 +6,7 @@ import 'package:lottie/lottie.dart';
 import 'package:flutter_application_1/blocs/cat_chatbot/chatbot_bloc.dart';
 import 'package:flutter_application_1/blocs/cat_chatbot/chatbot_event.dart';
 import 'package:flutter_application_1/blocs/cat_chatbot/chatbot_state.dart';
-
+import 'package:flutter_application_1/repositories/cat_memory_game.dart';
 class ChatPage extends StatelessWidget {
   const ChatPage({super.key});
 
@@ -42,6 +42,7 @@ class _ChatPageState extends State<_ChatView>
   bool _isError = false;
   bool _showBotPopup = false;
   bool _isFight = false;
+  bool _showGame = false;
 
   bool _isTapLocked = false;
   DateTime _lastTapTime = DateTime.now();
@@ -98,15 +99,14 @@ class _ChatPageState extends State<_ChatView>
     super.dispose();
   }
 
-
   Future<void> _playMeow() async {
-  try {
-    await _audioPlayer?.dispose();
-    _audioPlayer = AudioPlayer();
-    await _audioPlayer!.setAsset('assets/meow_robot.ogg');
-    await _audioPlayer!.play();
-  } catch (_) {}
-}
+    try {
+      await _audioPlayer?.dispose();
+      _audioPlayer = AudioPlayer();
+      await _audioPlayer!.setAsset('assets/meow_robot.ogg');
+      await _audioPlayer!.play();
+    } catch (_) {}
+  }
 
   void _sendMessage() {
     final text = _controller.text.trim();
@@ -134,7 +134,6 @@ class _ChatPageState extends State<_ChatView>
 
     _tapCount++;
 
-    // ✅ สั่น + เสียงแมวทุกครั้งที่กด
     _shakeController.forward(from: 0);
     _playMeow();
 
@@ -170,6 +169,10 @@ class _ChatPageState extends State<_ChatView>
     });
   }
 
+  void _catGame() {
+    setState(() => _showGame = true);
+  }
+
   String _getMaffinReaction() {
     final reactions = [
       'หืม~ มือซนอีกแล้วนะ! 😼',
@@ -192,6 +195,25 @@ class _ChatPageState extends State<_ChatView>
         fit: BoxFit.contain,
         repeat: true,
       ),
+    );
+  }
+
+  Widget _buildGameOverlay() {
+    return CatMemoryGame(
+      onWin: (int percent) {
+        setState(() => _showGame = false);
+        setState(() {
+          _botPopup = '🎉 WON! คุณได้รับ Coupon ส่วนลด $percent% แล้วนะเมี้ยว~';
+          _showBotPopup = true;
+        });
+        Future.delayed(const Duration(seconds: 8), () {
+          if (!mounted) return;
+          setState(() => _showBotPopup = false);
+        });
+      },
+      onLose: () {
+        setState(() => _showGame = false);
+      },
     );
   }
 
@@ -236,7 +258,7 @@ class _ChatPageState extends State<_ChatView>
           }
           if (state.action == 'command') {
             setState(() => _isCMD = true);
-            Future.delayed(const Duration(seconds: 15), () {
+            Future.delayed(const Duration(seconds: 7), () {
               if (!mounted) return;
               setState(() => _isCMD = false);
             });
@@ -247,6 +269,10 @@ class _ChatPageState extends State<_ChatView>
               if (!mounted) return;
               setState(() => _isScan = false);
             });
+          }
+
+          if (state.action == 'game') {
+            _catGame();
           }
 
           Future.delayed(const Duration(seconds: 7), () {
@@ -278,7 +304,12 @@ class _ChatPageState extends State<_ChatView>
         appBar: AppBar(
           title: Row(
             children: [
-              _buildMaffin(size: 42),
+              Image.network(
+                'https://res.cloudinary.com/dag73dhpl/image/upload/v1741695020/cat3_thqyg3.png',
+                width: 40,
+                height: 40,
+                fit: BoxFit.cover,
+              ),
               const SizedBox(width: 8),
               const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -318,7 +349,10 @@ class _ChatPageState extends State<_ChatView>
                       ),
                     ),
                   ),
-
+                  if (_showGame)
+                    Positioned.fill(
+                      child: _buildGameOverlay(),
+                    ),
                   if (_showWelcome)
                     Positioned(
                       bottom: 20,
