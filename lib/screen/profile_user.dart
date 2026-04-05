@@ -72,12 +72,21 @@ class _ProfileState extends State<Profile> {
   @override
   void initState() {
     super.initState();
-    fetchUser();
+    FirebaseAuth.instance.authStateChanges().first.then((_) {
+      fetchUser();
+    });
   }
 
   void fetchUser() async {
-    // ดัก Guest — ไม่ต้องดึง Firestore
-    if (FirebaseAuth.instance.currentUser?.email == 'guest678@gmail.com') {
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser == null) {
+      print("❌ currentUser is null");
+      return;
+    }
+
+
+    if (currentUser.email == 'guest678@gmail.com') {
       setState(() {
         _name = 'Guest';
         _email = 'guest678@gmail.com';
@@ -88,30 +97,38 @@ class _ProfileState extends State<Profile> {
         _newsletter = '-';
         _memberAgreement = '-';
       });
-      return; // หยุดตรงนี้
+      return;
     }
 
-    // member ปกติ
-    String uid = FirebaseAuth.instance.currentUser!.uid;
-    DocumentSnapshot userDoc =
-        await FirebaseFirestore.instance.collection('users').doc(uid).get();
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .get();
 
-    if (userDoc.exists) {
-      var data = userDoc.data() as Map<String, dynamic>;
-      setState(() {
-        _name = data['name'] ?? 'No name';
-        _email = data['email'] ?? 'No email';
-        _phone = data['phone'] ?? 'No phone';
-        _postal = data['postal'] ?? 'No postal code';
-        _birthdate = data['birthdate'] ?? 'No date';
-        _gender = data['gender'] ?? 'No gender';
-        _newsletter = data['subscribeNewsletter'] != null
-            ? (data['subscribeNewsletter'] ? 'Subscribed' : 'Not subscribed')
-            : 'No data';
-        _memberAgreement = data['acceptTerms'] != null
-            ? (data['acceptTerms'] ? 'Accepted' : 'Not accepted')
-            : 'No data';
-      });
+     
+
+      if (userDoc.exists) {
+        var data = userDoc.data() as Map<String, dynamic>;
+        setState(() {
+          _name = data['name'] ?? 'No name';
+          _email = data['email'] ?? 'No email';
+          _phone = data['phone'] ?? 'No phone';
+          _postal = data['postal'] ?? 'No postal code';
+          _birthdate = data['birthdate'] ?? '';
+          _gender = data['gender'] ?? 'No gender';
+          _newsletter = data['subscribeNewsletter'] != null
+              ? (data['subscribeNewsletter'] ? 'Subscribed' : 'Not subscribed')
+              : 'No data';
+          _memberAgreement = data['acceptTerms'] != null
+              ? (data['acceptTerms'] ? 'Accepted' : 'Not accepted')
+              : 'No data';
+        });
+      } else {
+        print("❌ ไม่พบ document UID: ${currentUser.uid}");
+      }
+    } catch (e) {
+      print("❌ Error: $e");
     }
   }
 

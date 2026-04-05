@@ -31,7 +31,8 @@ Future<String> getFirebaseUid() async {
     print('❌ [Auth] User not logged in!');
     throw Exception('User not logged in');
   }
-  print('✅ [Auth] Firebase UID: ${user.uid.substring(0, 10)}...');
+  // print('✅ [Auth] Firebase UID: ${user.uid.substring(0, 10)}...');
+   print('✅ [Auth] User logged in!');
   return user.uid;
 }
 
@@ -212,15 +213,15 @@ class BasketApiService {
       if (response.statusCode == 200) {
         final decodedBody = utf8.decode(response.bodyBytes);
         final data = json.decode(decodedBody);
-        print('✅ [BasketApi] Items: ${data['items'].length}');
+        // print('✅ [BasketApi] Items: ${data['items'].length}');
 
         final items = (data['items'] as List)
             .map((json) => BasketItem.fromJson(json))
             .toList();
 
         final summary = BasketSummary.fromJson(data['summary']);
-        print(
-            '✅ [BasketApi] Total: ${summary.totalItems} items, ฿${summary.totalPrice}');
+        // print(
+        //     '✅ [BasketApi] Total: ${summary.totalItems} items, ฿${summary.totalPrice}');
 
         return {'items': items, 'summary': summary};
       } else {
@@ -240,15 +241,15 @@ class BasketApiService {
       final firebaseUid = await getFirebaseUid();
       final url =
           Uri.parse('$baseUrl/api/get/person-baskets/count/$firebaseUid');
-      print('📤 [BasketApi] GET $url');
+      // print('📤 [BasketApi] GET $url');
 
       final response = await http.get(url).timeout(const Duration(seconds: 5));
       print('📥 [BasketApi] Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        print(
-            '✅ [BasketApi] Count: ${data['total_items']} items, ${data['total_quantity']} qty');
+        // print(
+        //     '✅ [BasketApi] Count: ${data['total_items']} items, ${data['total_quantity']} qty');
         return {
           'total_items': data['total_items'],
           'total_quantity': data['total_quantity'],
@@ -269,7 +270,7 @@ class BasketApiService {
     int quantity = 1,
   }) async {
     print('\n➕ [BasketApi] addToBasket() - START');
-    print('📦 [BasketApi] Item: $clothingUuid, Qty: $quantity');
+    // print('📦 [BasketApi] Item: $clothingUuid, Qty: $quantity');
     try {
       final firebaseUid = await getFirebaseUid();
       final url = Uri.parse('$baseUrl/api/post/person-baskets');
@@ -310,7 +311,7 @@ class BasketApiService {
     required int quantity,
   }) async {
     print('\n🔄 [BasketApi] updateQuantity() - START');
-    print('📦 [BasketApi] Item: $clothingUuid, New Qty: $quantity');
+    // print('📦 [BasketApi] Item: $clothingUuid, New Qty: $quantity');
     try {
       final firebaseUid = await getFirebaseUid();
       final url = Uri.parse('$baseUrl/api/put/person-baskets/quantity');
@@ -350,7 +351,7 @@ class BasketApiService {
     required String clothingUuid,
   }) async {
     print('\n🗑️ [BasketApi] removeFromBasket() - START');
-    print('📦 [BasketApi] Item: $clothingUuid');
+    // print('📦 [BasketApi] Item: $clothingUuid');
     try {
       final firebaseUid = await getFirebaseUid();
       final url = Uri.parse('$baseUrl/api/del/person-baskets');
@@ -391,7 +392,7 @@ class BasketApiService {
       final firebaseUid = await getFirebaseUid();
       final url =
           Uri.parse('$baseUrl/api/del/person-baskets/clear/$firebaseUid');
-      print('📤 [BasketApi] DELETE $url');
+      // print('📤 [BasketApi] DELETE $url');
 
       final response =
           await http.delete(url).timeout(const Duration(seconds: 10));
@@ -426,7 +427,7 @@ class FavouriteApiService {
     try {
       final firebaseUid = await getFirebaseUid();
       final url = Uri.parse('$baseUrl/api/get/person-favourite/$firebaseUid');
-      print('📤 [FavouriteApi] GET $url');
+      // print('📤 [FavouriteApi] GET $url');
 
       final response = await http.get(url).timeout(const Duration(seconds: 10));
       print('📥 [FavouriteApi] Status: ${response.statusCode}');
@@ -434,7 +435,7 @@ class FavouriteApiService {
       if (response.statusCode == 200) {
         final decodedBody = utf8.decode(response.bodyBytes);
         final List<dynamic> data = json.decode(decodedBody);
-        print('✅ [FavouriteApi] Items: ${data.length}');
+        // print('✅ [FavouriteApi] Items: ${data.length}');
         return data.map((json) => FavouriteItem.fromJson(json)).toList();
       } else {
         print('❌ [FavouriteApi] Failed: ${response.statusCode}');
@@ -453,7 +454,7 @@ class FavouriteApiService {
       final firebaseUid = await getFirebaseUid();
       final url =
           Uri.parse('$baseUrl/api/get/person-favourite/count/$firebaseUid');
-      print('📤 [FavouriteApi] GET $url');
+      // print('📤 [FavouriteApi] GET $url');
 
       final response = await http.get(url).timeout(const Duration(seconds: 5));
       print('📥 [FavouriteApi] Status: ${response.statusCode}');
@@ -477,7 +478,7 @@ class FavouriteApiService {
     required String clothingUuid,
   }) async {
     print('\n➕ [FavouriteApi] addToFavourite() - START');
-    print('📦 [FavouriteApi] Item: $clothingUuid');
+    // print('📦 [FavouriteApi] Item: $clothingUuid');
     try {
       final firebaseUid = await getFirebaseUid();
       final url = Uri.parse('$baseUrl/api/post/person-favourite');
@@ -516,7 +517,7 @@ class FavouriteApiService {
     required String clothingUuid,
   }) async {
     print('\n🗑️ [FavouriteApi] removeFromFavourite() - START');
-    print('📦 [FavouriteApi] Item: $clothingUuid');
+    // print('📦 [FavouriteApi] Item: $clothingUuid');
     try {
       final firebaseUid = await getFirebaseUid();
       final url = Uri.parse('$baseUrl/api/del/person-favourite');
@@ -556,12 +557,12 @@ class FavouriteApiService {
     required String clothingUuid,
   }) async {
     print('\n🔍 [FavouriteApi] checkFavourite() - START');
-    print('📦 [FavouriteApi] Item: $clothingUuid');
+    // print('📦 [FavouriteApi] Item: $clothingUuid');
     try {
       final firebaseUid = await getFirebaseUid();
       final url = Uri.parse(
           '$baseUrl/api/get/check-favourite/$firebaseUid/$clothingUuid');
-      print('📤 [FavouriteApi] GET $url');
+      // print('📤 [FavouriteApi] GET $url');
 
       final response = await http.get(url).timeout(const Duration(seconds: 5));
       print('📥 [FavouriteApi] Status: ${response.statusCode}');
